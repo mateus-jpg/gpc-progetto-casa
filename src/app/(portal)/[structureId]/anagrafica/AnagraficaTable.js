@@ -4,8 +4,17 @@ import { MaterialReactTable } from 'material-react-table'
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 import { useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { FileDown, SquareArrowOutUpRight, View, ExternalLink, HousePlus, Loader2 } from "lucide-react";
+import { FileDown, SquareArrowOutUpRight, View, ExternalLink, MoreVertical, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from 'next/navigation';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import DeleteAnagraficaDialog from '@/components/Anagrafica/DeleteAnagraficaDialog';
 import { getExportData } from './data';
 
 const csvConfig = mkConfig({
@@ -207,9 +216,11 @@ const columnsDef = [
   }
 ];
 
-export function AnagraficaTable({ rows, structureId }) {
+export function AnagraficaTable({ rows, structureId, isAdmin = false }) {
   const [globalFilter, setGlobalFilter] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const router = useRouter();
 
   const columns = useMemo(() => columnsDef, []);
 
@@ -276,14 +287,40 @@ export function AnagraficaTable({ rows, structureId }) {
         displayColumnDefOptions={<> </>}
 
         renderRowActions={({ row }) => (
-          <div className="flex gap-2 flex-row justify-around items-center ">
-            <Link
-              href={`/${structureId}/anagrafica/${row.original.id}`}
-            >
-              <View className="size-4" />
-            </Link>
-            <HousePlus className="size-4" />
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={`/${structureId}/anagrafica/${row.original.id}`}>
+                  <View className="mr-2 h-4 w-4" />
+                  Visualizza
+                </Link>
+              </DropdownMenuItem>
+              {isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() =>
+                      setDeleteTarget({
+                        id: row.original.id,
+                        nome: row.original.anagrafica?.nome || '',
+                        cognome: row.original.anagrafica?.cognome || '',
+                        canBeAccessedBy: row.original.canBeAccessedBy || [],
+                      })
+                    }
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Elimina
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
         initialState={{
           pagination: { pageSize: 25, pageIndex: 0 },
@@ -352,6 +389,18 @@ export function AnagraficaTable({ rows, structureId }) {
             </Button>
           </div>
         )}
+      />
+      <DeleteAnagraficaDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        anagrafica={deleteTarget}
+        structureId={structureId}
+        onSuccess={() => {
+          setDeleteTarget(null);
+          router.refresh();
+        }}
       />
     </div>
   );
