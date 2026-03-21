@@ -40,7 +40,7 @@ async function findOrCreateFolder(anagraficaId, folderName, structureId, userUid
 /** @private */
 async function uploadFileItem({ fileItem, anagraficaId, accessId, index, targetFolder, targetFolderId, structureId, userUid, structureIds }) {
   let buffer;
-  let originalName = fileItem.name;
+  let originalName = fileItem.originalName || fileItem.name;
   let mimeType = fileItem.type;
   let size = fileItem.size;
 

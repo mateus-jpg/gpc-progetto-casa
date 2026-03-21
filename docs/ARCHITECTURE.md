@@ -1391,12 +1391,12 @@ gpc/
 - [ ] Implement bulk operations for anagrafica
 - [ ] Add advanced search and filtering
 - [ ] Create admin dashboard for audit log analysis
-- [ ] Implement data export functionality (CSV, PDF)
+- [x] Implement data export functionality (CSV, PDF)
 
 ### Low Priority
 - [ ] Add multi-language support
 - [ ] Implement email notifications
-- [ ] Add calendar integration for reminders
+- [x] Add calendar integration for reminders
 - [ ] Create mobile app
 - [ ] Add GraphQL API layer
 

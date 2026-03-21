@@ -11,6 +11,7 @@ export default function DownloadPdfButton({
   accesses,
   anagraficaId,
   structureId,
+  structureName,
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -36,6 +37,7 @@ export default function DownloadPdfButton({
           anagrafica={anagrafica}
           accesses={accesses}
           historyEntries={historyEntries}
+          structureName={structureName}
         />
       );
 

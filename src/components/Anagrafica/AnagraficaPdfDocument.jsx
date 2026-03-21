@@ -1,6 +1,15 @@
 "use client";
 
-import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
+import {
+  Circle,
+  Document,
+  Page,
+  Path,
+  StyleSheet,
+  Svg,
+  Text,
+  View,
+} from "@react-pdf/renderer";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
 
@@ -41,11 +50,12 @@ function formatFirestoreTimestamp(ts) {
 }
 
 const COLORS = {
-  primary: "#1e40af",
-  text: "#111827",
-  muted: "#6b7280",
+  text: "#000000",
+  muted: "#9ca3af",
   border: "#e5e7eb",
-  sectionBg: "#f9fafb",
+  sectionBg: "#ffffff",
+  white: "#ffffff",
+  black: "#000000",
 };
 
 const styles = StyleSheet.create({
@@ -53,41 +63,95 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica",
     fontSize: 10,
     color: COLORS.text,
-    paddingTop: 40,
+    paddingTop: 0,
     paddingBottom: 50,
+    paddingHorizontal: 0,
+  },
+  // Letterhead
+  letterheadBand: {
     paddingHorizontal: 40,
+    paddingTop: 24,
+    paddingBottom: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    borderBottom: "2px solid #111827",
+    marginBottom: 0,
   },
-  header: {
-    marginBottom: 20,
-    borderBottom: "2px solid #1e40af",
-    paddingBottom: 12,
+  letterheadLeft: {
+    flexDirection: "row",
+    alignItems: "center",
   },
-  headerTitle: {
-    fontSize: 18,
-    fontFamily: "Helvetica-Bold",
-    color: COLORS.primary,
-    marginBottom: 4,
+  logoMark: {
+    width: 52,
+    height: 26,
+    marginRight: 10,
   },
-  headerSubtitle: {
+  structureName: {
     fontSize: 13,
     fontFamily: "Helvetica-Bold",
     color: COLORS.text,
-    marginBottom: 4,
+    marginBottom: 2,
+  },
+  letterheadSubtitle: {
+    fontSize: 8,
+    color: COLORS.muted,
+  },
+  letterheadRight: {
+    alignItems: "flex-end",
+  },
+  docType: {
+    fontSize: 9,
+    color: COLORS.muted,
+    marginBottom: 2,
+  },
+  docDateLabel: {
+    fontSize: 8,
+    color: COLORS.muted,
+  },
+  // Subject strip
+  subjectStrip: {
+    paddingHorizontal: 40,
+    paddingTop: 14,
+    paddingBottom: 14,
+    borderBottom: "1px solid #e5e7eb",
+    marginBottom: 24,
+    backgroundColor: COLORS.sectionBg,
+  },
+  subjectLabel: {
+    fontSize: 7,
+    color: COLORS.muted,
+    marginBottom: 3,
+  },
+  subjectName: {
+    fontSize: 18,
+    fontFamily: "Helvetica-Bold",
+    color: COLORS.text,
+  },
+  contentArea: {
+    paddingHorizontal: 40,
   },
   headerMeta: {
     fontSize: 9,
     color: COLORS.muted,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 22,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
-    color: COLORS.primary,
-    marginBottom: 8,
-    paddingBottom: 4,
-    borderBottom: "1px solid #e5e7eb",
+    color: COLORS.text,
+    marginBottom: 10,
+    paddingBottom: 5,
+    borderBottom: "1px solid #d1d5db",
+  },
+  subSectionTitle: {
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: COLORS.muted,
+    marginTop: 12,
+    marginBottom: 5,
   },
   fieldGrid: {
     flexDirection: "row",
@@ -96,23 +160,22 @@ const styles = StyleSheet.create({
   },
   fieldItem: {
     width: "48%",
-    marginBottom: 6,
+    marginBottom: 7,
   },
   fieldLabel: {
-    fontSize: 8,
+    fontSize: 7,
     color: COLORS.muted,
-    marginBottom: 1,
+    marginBottom: 2,
   },
   fieldValue: {
     fontSize: 10,
     color: COLORS.text,
   },
   accessBlock: {
-    marginBottom: 14,
+    marginBottom: 12,
     padding: 10,
     backgroundColor: COLORS.sectionBg,
-    borderLeft: "3px solid #1e40af",
-    borderRadius: 2,
+    borderLeft: "2px solid #d1d5db",
   },
   accessHeader: {
     flexDirection: "row",
@@ -122,7 +185,7 @@ const styles = StyleSheet.create({
   accessDate: {
     fontSize: 10,
     fontFamily: "Helvetica-Bold",
-    color: COLORS.primary,
+    color: COLORS.text,
   },
   accessOperator: {
     fontSize: 9,
@@ -303,6 +366,141 @@ function AnagraficaSection({ anagrafica }) {
   );
 }
 
+function AnagraficaDataSection({ anagrafica }) {
+  const nucleo = anagrafica.nucleoFamiliare || {};
+  const legale = anagrafica.legaleAbitativa || {};
+  const lavoro = anagrafica.lavoroFormazione || {};
+  const vuln = anagrafica.vulnerabilita || {};
+  const ref = anagrafica.referral || {};
+
+  const isFamiglia = nucleo.nucleo === "famiglia";
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>INFORMAZIONI AGGIUNTIVE</Text>
+
+      {/* Nucleo Familiare */}
+      <Text style={styles.subSectionTitle}>Nucleo Familiare</Text>
+      <View style={styles.fieldGrid}>
+        <View style={styles.fieldItem}>
+          <Text style={styles.fieldLabel}>Composizione</Text>
+          <Text style={styles.fieldValue}>
+            {nucleo.nucleo === "singolo"
+              ? "Persona singola"
+              : nucleo.nucleo === "famiglia"
+                ? "Nucleo familiare"
+                : "-"}
+          </Text>
+        </View>
+        {isFamiglia && (
+          <>
+            <View style={styles.fieldItem}>
+              <Text style={styles.fieldLabel}>Tipologia nucleo</Text>
+              <Text style={styles.fieldValue}>{nucleo.nucleoTipo || "-"}</Text>
+            </View>
+            <View style={styles.fieldItem}>
+              <Text style={styles.fieldLabel}>Numero figli minori</Text>
+              <Text style={styles.fieldValue}>
+                {nucleo.figli?.toString() ?? "0"}
+              </Text>
+            </View>
+          </>
+        )}
+      </View>
+
+      {/* Situazione Legale e Abitativa */}
+      <Text style={styles.subSectionTitle}>Situazione Legale e Abitativa</Text>
+      <View style={styles.fieldGrid}>
+        <View style={styles.fieldItem}>
+          <Text style={styles.fieldLabel}>Situazione legale</Text>
+          <Text style={styles.fieldValue}>
+            {legale.situazioneLegale || "-"}
+          </Text>
+        </View>
+        <View style={styles.fieldItem}>
+          <Text style={styles.fieldLabel}>Situazione abitativa</Text>
+          <Text style={styles.fieldValue}>
+            {Array.isArray(legale.situazioneAbitativa)
+              ? legale.situazioneAbitativa.join(", ") || "-"
+              : legale.situazioneAbitativa || "-"}
+          </Text>
+        </View>
+      </View>
+
+      {/* Lavoro e Formazione */}
+      <Text style={styles.subSectionTitle}>Lavoro e Formazione</Text>
+      <View style={styles.fieldGrid}>
+        <View style={styles.fieldItem}>
+          <Text style={styles.fieldLabel}>Situazione lavorativa</Text>
+          <Text style={styles.fieldValue}>
+            {lavoro.situazioneLavorativa || "-"}
+          </Text>
+        </View>
+        <View style={styles.fieldItem}>
+          <Text style={styles.fieldLabel}>Titolo di studio (paese d'origine)</Text>
+          <Text style={styles.fieldValue}>
+            {lavoro.titoloDiStudioOrigine || "-"}
+          </Text>
+        </View>
+        <View style={styles.fieldItem}>
+          <Text style={styles.fieldLabel}>Titolo di studio (Italia)</Text>
+          <Text style={styles.fieldValue}>
+            {lavoro.titoloDiStudioItalia || "-"}
+          </Text>
+        </View>
+        <View style={styles.fieldItem}>
+          <Text style={styles.fieldLabel}>Conoscenza italiano</Text>
+          <Text style={styles.fieldValue}>
+            {lavoro.conoscenzaItaliano || "-"}
+          </Text>
+        </View>
+      </View>
+
+      {/* Vulnerabilità */}
+      <Text style={styles.subSectionTitle}>Vulnerabilità e Prospettive</Text>
+      <View style={styles.fieldGrid}>
+        <View style={[styles.fieldItem, { width: "98%" }]}>
+          <Text style={styles.fieldLabel}>Vulnerabilità</Text>
+          <Text style={styles.fieldValue}>
+            {Array.isArray(vuln.vulnerabilita) && vuln.vulnerabilita.length > 0
+              ? vuln.vulnerabilita.join(", ")
+              : "Nessuna"}
+          </Text>
+        </View>
+        <View style={styles.fieldItem}>
+          <Text style={styles.fieldLabel}>Intenzione di fermarsi in Italia</Text>
+          <Text style={styles.fieldValue}>
+            {vuln.intenzioneItalia || "-"}
+          </Text>
+        </View>
+        {vuln.intenzioneItalia === "NO" && (
+          <View style={styles.fieldItem}>
+            <Text style={styles.fieldLabel}>Paese di destinazione</Text>
+            <Text style={styles.fieldValue}>
+              {vuln.paeseDestinazione || "-"}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Referral */}
+      <Text style={styles.subSectionTitle}>Come ci ha conosciuto</Text>
+      <View style={styles.fieldGrid}>
+        <View style={styles.fieldItem}>
+          <Text style={styles.fieldLabel}>Fonte</Text>
+          <Text style={styles.fieldValue}>{ref.referral || "-"}</Text>
+        </View>
+        {ref.referralAltro && (
+          <View style={styles.fieldItem}>
+            <Text style={styles.fieldLabel}>Dettaglio</Text>
+            <Text style={styles.fieldValue}>{ref.referralAltro}</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
 function ServiceRow({ label, value }) {
   if (!value || value === "-") return null;
   return (
@@ -452,31 +650,67 @@ export function AnagraficaPdfDocument({
   anagrafica,
   accesses,
   historyEntries,
+  structureName,
 }) {
   const nome = anagrafica?.anagrafica?.nome || "";
   const cognome = anagrafica?.anagrafica?.cognome || "";
   const fullName = `${nome} ${cognome}`.trim();
   const today = format(new Date(), "dd/MM/yyyy", { locale: it });
+  const displayStructure = structureName || "GPC";
 
   return (
     <Document
       title={`Scheda Anagrafica - ${fullName}`}
-      author="GPC"
+      author={displayStructure}
       subject="Scheda Anagrafica"
     >
       <Page size="A4" style={styles.page}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>SCHEDA ANAGRAFICA</Text>
-          <Text style={styles.headerSubtitle}>{fullName}</Text>
-          <Text style={styles.headerMeta}>Generato il: {today}</Text>
+        {/* Letterhead band */}
+        <View style={styles.letterheadBand}>
+          <View style={styles.letterheadLeft}>
+            <Svg
+              viewBox="0 0 345.84 174.76"
+              style={styles.logoMark}
+            >
+              <Path
+                d="m1.09,114.92L114.93,1.08c.69-.69,1.62-1.07,2.59-1.07h107.13c3.27,0,4.9,3.95,2.59,6.26L59.84,173.69c-1.43,1.43-3.75,1.43-5.19,0L1.07,120.11c-1.43-1.43-1.43-3.75,0-5.19h.02Z"
+                fill={COLORS.text}
+              />
+              <Path
+                d="m294.87,56.17l49.89-49.91c2.31-2.31.67-6.26-2.59-6.26h-99.8c-3.27,0-4.9,3.95-2.59,6.26l49.91,49.91c1.43,1.43,3.76,1.43,5.19,0h-.01Z"
+                fill={COLORS.text}
+              />
+              <Circle cx="233.51" cy="58.77" r="18.7" fill={COLORS.text} />
+            </Svg>
+            <View>
+              <Text style={styles.structureName}>{displayStructure}</Text>
+              <Text style={styles.letterheadSubtitle}>
+                Gestione Prese in Carico
+              </Text>
+            </View>
+          </View>
+          <View style={styles.letterheadRight}>
+            <Text style={styles.docType}>Documento</Text>
+            <Text style={styles.docType}>Scheda Anagrafica</Text>
+            <Text style={styles.docDateLabel}>Generato il: {today}</Text>
+          </View>
         </View>
 
-        <AnagraficaSection anagrafica={anagrafica} />
-        <AccessesSection accesses={accesses} />
-        <HistorySection entries={historyEntries} />
+        {/* Subject strip */}
+        <View style={styles.subjectStrip}>
+          <Text style={styles.subjectLabel}>INTESTATARIO</Text>
+          <Text style={styles.subjectName}>{fullName}</Text>
+        </View>
+
+        <View style={styles.contentArea}>
+          <AnagraficaSection anagrafica={anagrafica} />
+          <AnagraficaDataSection anagrafica={anagrafica} />
+          <AccessesSection accesses={accesses} />
+          <HistorySection entries={historyEntries} />
+        </View>
 
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>GPC - Scheda Anagrafica</Text>
+          <Text style={styles.footerText}>{displayStructure} — Scheda Anagrafica</Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) =>

@@ -152,6 +152,7 @@ export function useAccessForm(categories = null, initialData = null) {
                     const base64 = await convertFileToBase64(f.file);
                     return {
                         name: f.name,
+                        originalName: f.file.name,
                         creationDate: f.creationDate instanceof Date ? f.creationDate.toISOString() : f.creationDate,
                         expirationDate: f.expirationDate instanceof Date ? f.expirationDate.toISOString() : f.expirationDate,
                         base64,

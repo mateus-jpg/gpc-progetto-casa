@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAccessAction } from "@/actions/anagrafica/access";
 import { getAnagrafica } from "@/actions/anagrafica/anagrafica";
+import { getStructure } from "@/actions/admin/structure";
 import AccessDialog from "@/components/Anagrafica/AccessDialog/AccessDialog";
 import AccessInfo from "@/components/Anagrafica/AccessInfo";
 import DownloadPdfButton from "@/components/Anagrafica/DownloadPdfButton";
@@ -53,8 +54,12 @@ export default async function AnagraficaViewPage({ params }) {
     return notFound();
   }
 
-  // Fetch accessi (uses caching)
-  const anagraficaAccesses = await getAccessAction(id);
+  // Fetch accessi and structure info in parallel
+  const [anagraficaAccesses, structureData] = await Promise.all([
+    getAccessAction(id),
+    getStructure(structureId).catch(() => null),
+  ]);
+  const structureName = structureData?.name || null;
 
   if (!anagrafica) {
     return notFound();
@@ -179,6 +184,7 @@ export default async function AnagraficaViewPage({ params }) {
             accesses={anagraficaAccesses?.accessi || []}
             anagraficaId={anagrafica.id}
             structureId={structureId}
+            structureName={structureName}
           />
           <ShareAnagraficaDialog
             anagraficaId={anagrafica.id}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,27 @@ import { uploadFiles } from '@/actions/files/files';
 import { toast } from 'sonner';
 import { formatBytes } from '@/lib/utils';
 import DatePicker from '@/components/form/DatePicker';
+
+const MIME_BY_EXTENSION = {
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  doc: 'application/msword',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  xls: 'application/vnd.ms-excel',
+  pdf: 'application/pdf',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  txt: 'text/plain',
+  csv: 'text/csv',
+};
+
+function resolveFileType(file) {
+  if (file.type && file.type !== 'application/octet-stream') return file.type;
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  return MIME_BY_EXTENSION[ext] || file.type;
+}
 
 /**
  * File item display component with metadata fields
@@ -111,10 +132,12 @@ export default function UploadFilesDialog({
   const [selectedFolderId, setSelectedFolderId] = useState(currentFolderId);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Update selected folder when current folder changes
-  useState(() => {
-    setSelectedFolderId(currentFolderId);
-  }, [currentFolderId]);
+  // Sync selected folder to current folder each time dialog opens
+  useEffect(() => {
+    if (open) {
+      setSelectedFolderId(currentFolderId);
+    }
+  }, [open, currentFolderId]);
 
   const handleDrop = useCallback((acceptedFiles) => {
     // Convert files to file data objects with metadata
@@ -162,7 +185,7 @@ export default function UploadFilesDialog({
       const filesWithBuffers = await Promise.all(
         selectedFiles.map(async (fileData) => ({
           name: fileData.file.name,
-          type: fileData.file.type,
+          type: resolveFileType(fileData.file),
           size: fileData.file.size,
           buffer: await fileData.file.arrayBuffer(),
           displayName: fileData.displayName,

@@ -438,9 +438,11 @@ export async function getFileUrl(fileId) {
 
     // 4. GENERATE SIGNED URL
     const bucket = adminStorage.bucket();
+    const originalName = fileData.nomeOriginale || fileData.nome;
     const [url] = await bucket.file(fileData.path).getSignedUrl({
       action: 'read',
-      expires: Date.now() + 3600000 // 1 hour
+      expires: Date.now() + 3600000, // 1 hour
+      responseDisposition: `attachment; filename="${originalName}"`
     });
 
     // 5. UPDATE ACCESS TRACKING
@@ -467,6 +469,7 @@ export async function getFileUrl(fileId) {
       file: {
         id: fileDoc.id,
         nome: fileData.nome,
+        nomeOriginale: fileData.nomeOriginale,
         tipo: fileData.tipo,
         dimensione: fileData.dimensione
       }

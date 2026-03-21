@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { formatBytes } from '@/lib/utils';
+import { cn, formatBytes } from '@/lib/utils';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useFileDownload } from '@/hooks/useFileDownload';
@@ -66,6 +66,41 @@ function FileActionsMenu({ file, onDelete, onRename, onMove }) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/**
+ * Clickable file/folder name cell — uses useFileDownload so must be a real component
+ */
+function FileNameCell({ row, onFolderOpen, draggedItem }) {
+  const isFolder = row.original.isFolder;
+  const { handleDownload } = useFileDownload(isFolder ? null : row.original.id);
+  const canDrop = draggedItem && !draggedItem.isFolder && isFolder;
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-2',
+        !isFolder && 'cursor-pointer hover:text-primary',
+        canDrop && 'bg-accent/50 rounded p-1'
+      )}
+      onClick={() => {
+        if (isFolder) {
+          onFolderOpen?.(row.original.id);
+        } else {
+          handleDownload();
+        }
+      }}
+    >
+      {isFolder ? (
+        <Folder className="h-4 w-4 text-blue-500 flex-shrink-0" />
+      ) : (
+        <File className="h-4 w-4 text-gray-500 flex-shrink-0" />
+      )}
+      <span className="truncate" title={row.original.nome}>
+        {row.original.nome}
+      </span>
+    </div>
   );
 }
 
@@ -156,32 +191,9 @@ export default function FileListTable({
         accessorKey: 'nome',
         header: 'Name',
         size: 300,
-        Cell: ({ row }) => {
-          const isFolder = row.original.isFolder;
-          const canDrop = draggedItem && !draggedItem.isFolder && isFolder;
-
-          return (
-            <div
-              className={`flex items-center gap-2 ${
-                canDrop ? 'bg-accent/50 rounded p-1' : ''
-              }`}
-              onDoubleClick={() => {
-                if (isFolder && onFolderOpen) {
-                  onFolderOpen(row.original.id);
-                }
-              }}
-            >
-              {isFolder ? (
-                <Folder className="h-4 w-4 text-blue-500 flex-shrink-0" />
-              ) : (
-                <File className="h-4 w-4 text-gray-500 flex-shrink-0" />
-              )}
-              <span className="truncate" title={row.original.nome}>
-                {row.original.nome}
-              </span>
-            </div>
-          );
-        },
+        Cell: ({ row }) => (
+          <FileNameCell row={row} onFolderOpen={onFolderOpen} draggedItem={draggedItem} />
+        ),
       },
       {
         accessorKey: 'tipo',

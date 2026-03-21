@@ -1,7 +1,7 @@
 'use server';
 
 import { requireUser, verifySuperAdmin, verifyProjectAdmin, verifyProjectMembership } from '@/utils/server-auth';
-import { collections, serializeFirestoreDoc } from '@/utils/database';
+import { collections, serializeFirestoreDoc, queryDocumentsByIds } from '@/utils/database';
 import { logger } from '@/utils/logger';
 import { logPermissionChange, logAdminAction, logResourceModification } from '@/utils/audit';
 import { serializeFirestoreData } from '@/lib/utils';
@@ -174,32 +174,11 @@ export async function listProjects() {
                 return { success: true, projects: [] };
             }
 
-            // Firestore 'in' queries support up to 30 items, batch if needed
-            const batchSize = 30;
-            const batches = [];
-
-            for (let i = 0; i < userProjectIds.length; i += batchSize) {
-                const batch = userProjectIds.slice(i, i + batchSize);
-                batches.push(batch);
-            }
-
-            // Execute all batch queries in parallel
-            const batchResults = await Promise.all(
-                batches.map(batch =>
-                    collections.projects()
-                        .where('__name__', 'in', batch)
-                        .get()
-                )
-            );
-
-            // Flatten results from all batches
-            for (const snapshot of batchResults) {
-                const batchProjects = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...serializeFirestoreDoc(doc.data()),
-                }));
-                projects.push(...batchProjects);
-            }
+            const docs = await queryDocumentsByIds(collections.projects(), userProjectIds);
+            projects.push(...docs.map(doc => ({
+                id: doc.id,
+                ...serializeFirestoreDoc(doc.data()),
+            })));
         }
 
         logger.info('Listed projects', { count: projects.length, actorUid: userUid, isAdmin });

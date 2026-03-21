@@ -4,8 +4,9 @@ import { MaterialReactTable } from 'material-react-table'
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 import { useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { FileDown, SquareArrowOutUpRight, View, ExternalLink, HousePlus } from "lucide-react";
+import { FileDown, SquareArrowOutUpRight, View, ExternalLink, HousePlus, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { getExportData } from './data';
 
 const csvConfig = mkConfig({
   fieldSeparator: ',',
@@ -54,6 +55,7 @@ const transformDataForExport = (data) => {
     intenzioneItalia: row.vulnerabilita?.intenzioneItalia || '',
     paeseDestinazione: row.vulnerabilita?.paeseDestinazione || '',
     referral: row.referral?.referral || '',
+    note: row.notes || '',
     createdAt: formatTimestamp(row.createdAt, true),
     updatedAt: formatTimestamp(row.updatedAt, true)
   }));
@@ -207,6 +209,7 @@ const columnsDef = [
 
 export function AnagraficaTable({ rows, structureId }) {
   const [globalFilter, setGlobalFilter] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
 
   const columns = useMemo(() => columnsDef, []);
 
@@ -225,21 +228,27 @@ export function AnagraficaTable({ rows, structureId }) {
     });
   }, [rows, globalFilter]);
 
+  const runExport = async (ids) => {
+    setIsExporting(true);
+    try {
+      const fullData = await getExportData(structureId);
+      const filtered = ids ? fullData.filter(r => ids.has(r.id)) : fullData;
+      const exportData = transformDataForExport(filtered);
+      const csv = generateCsv(csvConfig)(exportData);
+      download(csvConfig)(csv);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleExportRows = (tableRows) => {
-
-    const rowData = tableRows.map((row) => row.original);
-
-    const exportData = transformDataForExport(rowData);
-
-    const csv = generateCsv(csvConfig)(exportData);
-    download(csvConfig)(csv);
+    const ids = new Set(tableRows.map(r => r.original.id));
+    runExport(ids);
   };
 
   const handleExportData = () => {
-
-    const exportData = transformDataForExport(filteredRows);
-    const csv = generateCsv(csvConfig)(exportData);
-    download(csvConfig)(csv);
+    const ids = new Set(filteredRows.map(r => r.id));
+    runExport(ids);
   };
 
   return (
@@ -293,10 +302,17 @@ export function AnagraficaTable({ rows, structureId }) {
         muiTablePaperProps={{
           sx: { borderRadius: 3, border: '1px solid gray-300' }
         }}
+        muiTableBodyRowProps={({ row }) => ({
+          sx: {
+            backgroundColor: row.index % 2 !== 0 ? 'rgba(0, 0, 0, 0.035)' : 'inherit',
+          }
+        })}
         renderTopToolbarCustomActions={({ table }) => (
           <div className="flex flex-wrap gap-2 items-center">
+            {isExporting && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
             <Button
               onClick={handleExportData}
+              disabled={isExporting}
               variant="outline"
               size="sm"
               className="flex items-center gap-1"
@@ -305,7 +321,7 @@ export function AnagraficaTable({ rows, structureId }) {
               Esporta Tutto
             </Button>
             <Button
-              disabled={table.getPrePaginationRowModel().rows.length === 0}
+              disabled={isExporting || table.getPrePaginationRowModel().rows.length === 0}
               onClick={() => handleExportRows(table.getPrePaginationRowModel().rows)}
               variant="outline"
               size="sm"
@@ -315,7 +331,7 @@ export function AnagraficaTable({ rows, structureId }) {
               Esporta Tutte le Righe
             </Button>
             <Button
-              disabled={table.getRowModel().rows.length === 0}
+              disabled={isExporting || table.getRowModel().rows.length === 0}
               onClick={() => handleExportRows(table.getRowModel().rows)}
               variant="outline"
               size="sm"
@@ -325,9 +341,7 @@ export function AnagraficaTable({ rows, structureId }) {
               Esporta Pagina
             </Button>
             <Button
-              disabled={
-                !table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()
-              }
+              disabled={isExporting || (!table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected())}
               onClick={() => handleExportRows(table.getSelectedRowModel().rows)}
               variant="outline"
               size="sm"
