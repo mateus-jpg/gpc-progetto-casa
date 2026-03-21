@@ -770,6 +770,8 @@ export async function deleteAnagraficaAsAdmin(anagraficaId, structureId) {
 
     invalidateAnagraficaCaches(anagraficaId, allowedStructures);
 
+    // Note: if logDataDelete throws, the Firestore write is already committed.
+    // This is consistent with the pattern in deleteAnagraficaInternal.
     await logDataDelete({
       actorUid: userUid,
       resourceType: 'anagrafica',
@@ -804,13 +806,19 @@ export async function removeStructureFromAnagrafica(anagraficaId, structureId) {
     await adminDb.runTransaction(async (transaction) => {
       const snap = await transaction.get(anagraficaRef);
 
-      if (!snap.exists || snap.data().deletedAt) {
+      if (!snap.exists) {
         const e = new Error('Anagrafica non trovata');
         e.code = 'NOT_FOUND';
         throw e;
       }
 
       const data = snap.data();
+
+      if (data.deletedAt) {
+        const e = new Error('Anagrafica non trovata');
+        e.code = 'NOT_FOUND';
+        throw e;
+      }
       const canBeAccessedBy = data.canBeAccessedBy || [];
 
       if (!canBeAccessedBy.includes(structureId)) {
@@ -854,6 +862,8 @@ export async function removeStructureFromAnagrafica(anagraficaId, structureId) {
 
     invalidateAnagraficaCaches(anagraficaId, [structureId]);
 
+    // Note: if logDataDelete throws, the Firestore write is already committed.
+    // This is consistent with the pattern in deleteAnagraficaInternal.
     await logDataDelete({
       actorUid: userUid,
       resourceType: 'anagrafica',
