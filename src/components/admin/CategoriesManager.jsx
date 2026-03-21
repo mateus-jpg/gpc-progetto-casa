@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback } from "react"
+import { useState, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -34,7 +34,7 @@ import {
 
 export function CategoriesManager({ structureId, initialCategories }) {
     const [categories, setCategories] = useState(initialCategories || [])
-    const [loading, setSaving] = useState(false)
+    const [saving, setSaving] = useState(false)
     const [openCategories, setOpenCategories] = useState({})
     const [newCategoryLabel, setNewCategoryLabel] = useState("")
     const [hasChanges, setHasChanges] = useState(false)

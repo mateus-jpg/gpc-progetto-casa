@@ -14,182 +14,125 @@ import { createFolderInternal } from '@/actions/files/folders';
 const adminDb = admin.firestore();
 const adminStorage = admin.storage();
 
-// Mapping between Access Types (from AccessTypes.js) and File Categories (from constants.js)
-// ACCESS_TYPE_TO_FILE_CATEGORY removed - using dynamic folder creation instead
+/** @private */
+async function findOrCreateFolder(anagraficaId, folderName, structureId, userUid) {
+  try {
+    const folderQuery = await adminDb.collection('folders')
+      .where('anagraficaId', '==', anagraficaId)
+      .where('nome', '==', folderName)
+      .where('deleted', '==', false)
+      .limit(1)
+      .get();
+    if (!folderQuery.empty) {
+      return { id: folderQuery.docs[0].id, ...folderQuery.docs[0].data() };
+    }
+    const newFolderResult = await createFolderInternal({
+      anagraficaId, nome: folderName, parentFolderId: null,
+      structureId, userUid, userEmail: null
+    });
+    return newFolderResult.success ? newFolderResult.folder : null;
+  } catch (err) {
+    console.error('Error finding/creating folder:', err);
+    return null;
+  }
+}
+
+/** @private */
+async function uploadFileItem({ fileItem, anagraficaId, accessId, index, targetFolder, targetFolderId, structureId, userUid, structureIds }) {
+  let buffer;
+  let originalName = fileItem.name;
+  let mimeType = fileItem.type;
+  let size = fileItem.size;
+
+  if (fileItem.base64) {
+    const matches = fileItem.base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (matches && matches.length === 3) {
+      mimeType = matches[1];
+      buffer = Buffer.from(matches[2], 'base64');
+    } else {
+      buffer = Buffer.from(fileItem.base64, 'base64');
+    }
+  } else if (fileItem.file && typeof fileItem.file.arrayBuffer === 'function') {
+    const arrayBuffer = await fileItem.file.arrayBuffer();
+    buffer = Buffer.from(arrayBuffer);
+    originalName = fileItem.file.name;
+    mimeType = fileItem.file.type;
+    size = fileItem.file.size;
+  } else if (typeof fileItem.arrayBuffer === 'function') {
+    const arrayBuffer = await fileItem.arrayBuffer();
+    buffer = Buffer.from(arrayBuffer);
+    originalName = fileItem.name;
+    mimeType = fileItem.type;
+    size = fileItem.size;
+  }
+
+  if (!buffer) return null;
+
+  if (buffer.length > FILE_SIZE_LIMIT) throw new Error(`File ${originalName} exceeds size limit of ${FILE_SIZE_LIMIT / 1024 / 1024}MB`);
+  if (!ALLOWED_MIME_TYPES.includes(mimeType)) throw new Error(`File type ${mimeType} is not allowed`);
+  if (!validateFileSignature(buffer, mimeType)) throw new Error(`File ${originalName} content does not match claimed type ${mimeType}`);
+
+  const fileExt = path.extname(originalName).toLowerCase().replace(/[^a-z0-9.]/g, '') || '';
+  const storagePath = `files/${anagraficaId}/accessi/${accessId}/${index}_${randomUUID()}${fileExt}`;
+
+  const fileRef = adminStorage.bucket().file(storagePath);
+  await fileRef.save(buffer, { contentType: mimeType, resumable: false });
+
+  const fileMetadata = {
+    nome: fileItem.name || originalName,
+    nomeOriginale: originalName,
+    tipo: mimeType,
+    dimensione: size,
+    path: storagePath,
+    dataCreazione: fileItem.creationDate ? new Date(fileItem.creationDate).toISOString() : new Date().toISOString(),
+    dataScadenza: fileItem.expirationDate ? new Date(fileItem.expirationDate).toISOString() : null,
+  };
+
+  if (targetFolderId) {
+    const fileDocRef = adminDb.collection('files').doc();
+    await fileDocRef.set({
+      nome: fileMetadata.nome,
+      nomeOriginale: fileMetadata.nomeOriginale,
+      tipo: fileMetadata.tipo,
+      dimensione: fileMetadata.dimensione,
+      path: fileMetadata.path,
+      anagraficaId,
+      folderId: targetFolderId,
+      accessoId: accessId,
+      category: targetFolder?.category || null,
+      tags: [],
+      dataDocumento: fileItem.creationDate ? new Date(fileItem.creationDate) : new Date(),
+      dataCreazione: new Date(),
+      dataScadenza: fileItem.expirationDate ? new Date(fileItem.expirationDate) : null,
+      structureIds: structureIds || [],
+      uploadedByStructure: structureId,
+      uploadedBy: userUid,
+      uploadedByEmail: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deleted: false,
+      deletedAt: null,
+      deletedBy: null,
+      lastAccessedAt: null,
+      accessCount: 0
+    });
+  }
+
+  return fileMetadata;
+}
 
 export async function createAccessInternal({ anagraficaId, services, structureId, userUid, structureIds }) {
   const accessRef = adminDb.collection('accessi').doc();
   const accessId = accessRef.id;
 
   const processedServices = await Promise.all(services.map(async (svc, index) => {
-    // Determine target folder based on service type name
-    // e.g. "Legale" -> look for folder named "Legale"
-    let targetFolderName = svc.tipoAccesso || "Documenti";
-    let targetFolder = null;
-
-    try {
-      // Check if folder exists in DB
-      const folderQuery = await adminDb.collection('folders')
-        .where('anagraficaId', '==', anagraficaId)
-        .where('nome', '==', targetFolderName)
-        .where('deleted', '==', false)
-        .limit(1)
-        .get();
-
-      if (!folderQuery.empty) {
-        targetFolder = { id: folderQuery.docs[0].id, ...folderQuery.docs[0].data() };
-      } else {
-        // Create new folder dynamically
-        console.log(`Creating new folder for category: ${targetFolderName}`);
-        const newFolderResult = await createFolderInternal({
-          anagraficaId,
-          nome: targetFolderName,
-          parentFolderId: null,
-          structureId,
-          userUid,
-          userEmail: null
-        });
-
-        if (newFolderResult.success) {
-          targetFolder = newFolderResult.folder;
-        }
-      }
-    } catch (err) {
-      console.error("Error finding/creating folder:", err);
-    }
-
+    const targetFolder = await findOrCreateFolder(anagraficaId, svc.tipoAccesso || 'Documenti', structureId, userUid);
     const targetFolderId = targetFolder?.id || null;
-
-    console.log('--- DEBUG UPLOAD DYNAMIC ---');
-    console.log('Service Type:', svc.tipoAccesso);
-    console.log('Target Folder Name:', targetFolderName);
-    console.log('Target Folder Found/Created:', targetFolder ? `${targetFolder.nome} (${targetFolder.id})` : 'FALLBACK TO DEFAULT');
-    console.log('--------------------');
-
     const uploadedFiles = [];
 
-    if (svc.files && svc.files.length > 0) {
-      for (const fileItem of svc.files) {
-        // Handle both raw File objects (legacy/FormData) and new object structure with metadata/base64
-        let metadata = {
-          nome: fileItem.name,
-          dataCreazione: fileItem.creationDate,
-          dataScadenza: fileItem.expirationDate
-        };
-        let buffer;
-        let originalName = fileItem.name;
-        let mimeType = fileItem.type;
-        let size = fileItem.size;
-
-        if (fileItem.base64) {
-          // Handle Base64
-          const matches = fileItem.base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-          if (matches && matches.length === 3) {
-            mimeType = matches[1];
-            buffer = Buffer.from(matches[2], 'base64');
-          } else {
-            // Fallback if no prefix
-            buffer = Buffer.from(fileItem.base64, 'base64');
-          }
-        } else if (fileItem.file && typeof fileItem.file.arrayBuffer === 'function') {
-          // Handle File object (if supported via FormData or direct access)
-          const arrayBuffer = await fileItem.file.arrayBuffer();
-          buffer = Buffer.from(arrayBuffer);
-          originalName = fileItem.file.name;
-          mimeType = fileItem.file.type;
-          size = fileItem.file.size;
-        } else if (typeof fileItem.arrayBuffer === 'function') {
-          // Direct File object
-          const arrayBuffer = await fileItem.arrayBuffer();
-          buffer = Buffer.from(arrayBuffer);
-          originalName = fileItem.name;
-          mimeType = fileItem.type;
-          size = fileItem.size;
-        }
-
-        if (!buffer) continue;
-
-        // Security: Validate file size
-        if (buffer.length > FILE_SIZE_LIMIT) {
-          throw new Error(`File ${originalName} exceeds size limit of ${FILE_SIZE_LIMIT / 1024 / 1024}MB`);
-        }
-
-        // Security: Validate MIME type
-        if (!ALLOWED_MIME_TYPES.includes(mimeType)) {
-          throw new Error(`File type ${mimeType} is not allowed`);
-        }
-
-        // Security: Validate file content matches claimed MIME type (magic number check)
-        // This prevents MIME type spoofing attacks
-        if (!validateFileSignature(buffer, mimeType)) {
-          throw new Error(`File ${originalName} content does not match claimed type ${mimeType}`);
-        }
-
-        // Security: Extract safe file extension from original name
-        const fileExt = path.extname(originalName).toLowerCase().replace(/[^a-z0-9.]/g, '') || '';
-        // Security: Use UUID-only storage paths to prevent path traversal attacks
-        // Original filename is stored in metadata only, never in the file path
-        const storagePath = `files/${anagraficaId}/accessi/${accessId}/${index}_${randomUUID()}${fileExt}`;
-
-        const fileRef = adminStorage.bucket().file(storagePath);
-        await fileRef.save(buffer, { contentType: mimeType, resumable: false });
-
-        const fileMetadata = {
-          nome: metadata.nome || originalName,
-          nomeOriginale: originalName,
-          tipo: mimeType,
-          dimensione: size,
-          path: storagePath,
-          dataCreazione: metadata.dataCreazione ? new Date(metadata.dataCreazione).toISOString() : new Date().toISOString(),
-          dataScadenza: metadata.dataScadenza ? new Date(metadata.dataScadenza).toISOString() : null,
-        };
-
-        uploadedFiles.push(fileMetadata);
-
-        // ALSO save to files collection so it appears in folder structure
-        if (targetFolderId) {
-          const fileDocRef = adminDb.collection('files').doc();
-          await fileDocRef.set({
-            // File Information
-            nome: fileMetadata.nome,
-            nomeOriginale: fileMetadata.nomeOriginale,
-            tipo: fileMetadata.tipo,
-            dimensione: fileMetadata.dimensione,
-            path: fileMetadata.path,
-
-            // Links
-            anagraficaId,
-            folderId: targetFolderId,
-            accessoId: accessId,
-            category: targetFolder?.category || null,
-            tags: [],
-
-            // Dates
-            dataDocumento: metadata.dataCreazione ? new Date(metadata.dataCreazione) : new Date(),
-            dataCreazione: new Date(),
-            dataScadenza: metadata.dataScadenza ? new Date(metadata.dataScadenza) : null,
-
-            // Access Control
-            structureIds: structureIds || [],
-            uploadedByStructure: structureId,
-
-            // Metadata
-            uploadedBy: userUid,
-            uploadedByEmail: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-
-            // Soft Delete
-            deleted: false,
-            deletedAt: null,
-            deletedBy: null,
-
-            // Access Tracking
-            lastAccessedAt: null,
-            accessCount: 0
-          });
-        }
-      }
+    for (const fileItem of (svc.files || [])) {
+      const fileMeta = await uploadFileItem({ fileItem, anagraficaId, accessId, index, targetFolder, targetFolderId, structureId, userUid, structureIds });
+      if (fileMeta) uploadedFiles.push(fileMeta);
     }
 
     let reminderId = null;
@@ -538,108 +481,17 @@ export async function updateAccessAction({ accessId, anagraficaId, services, str
 
   // Process each service: keep existing files, upload new files
   const processedServices = await Promise.all(services.map(async (svc, index) => {
-    // Find or create target folder (same logic as createAccessInternal)
-    let targetFolderName = svc.tipoAccesso || 'Documenti';
-    let targetFolder = null;
-    try {
-      const folderQuery = await adminDb.collection('folders')
-        .where('anagraficaId', '==', anagraficaId)
-        .where('nome', '==', targetFolderName)
-        .where('deleted', '==', false)
-        .limit(1)
-        .get();
-      if (!folderQuery.empty) {
-        targetFolder = { id: folderQuery.docs[0].id, ...folderQuery.docs[0].data() };
-      } else {
-        const newFolderResult = await createFolderInternal({
-          anagraficaId,
-          nome: targetFolderName,
-          parentFolderId: null,
-          structureId,
-          userUid,
-          userEmail: null
-        });
-        if (newFolderResult.success) targetFolder = newFolderResult.folder;
-      }
-    } catch (err) {
-      console.error('Error finding/creating folder on update:', err);
-    }
+    const targetFolder = await findOrCreateFolder(anagraficaId, svc.tipoAccesso || 'Documenti', structureId, userUid);
     const targetFolderId = targetFolder?.id || null;
 
-    // Kept existing files (not deleted)
     const keptFiles = (svc.existingFiles || []).filter(
       f => !(svc.deletedFilePaths || []).includes(f.path)
     );
 
-    // Upload new files (same validation as createAccessInternal)
     const newlyUploadedFiles = [];
     for (const fileItem of (svc.files || [])) {
-      let buffer;
-      let originalName = fileItem.name;
-      let mimeType = fileItem.type;
-      let size = fileItem.size;
-
-      if (fileItem.base64) {
-        const matches = fileItem.base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (matches && matches.length === 3) {
-          mimeType = matches[1];
-          buffer = Buffer.from(matches[2], 'base64');
-        } else {
-          buffer = Buffer.from(fileItem.base64, 'base64');
-        }
-      }
-      if (!buffer) continue;
-
-      if (buffer.length > FILE_SIZE_LIMIT) throw new Error(`File ${originalName} exceeds size limit`);
-      if (!ALLOWED_MIME_TYPES.includes(mimeType)) throw new Error(`File type ${mimeType} not allowed`);
-      if (!validateFileSignature(buffer, mimeType)) throw new Error(`File ${originalName} content does not match type`);
-
-      const fileExt = path.extname(originalName).toLowerCase().replace(/[^a-z0-9.]/g, '') || '';
-      const storagePath = `files/${anagraficaId}/accessi/${accessId}/${index}_${randomUUID()}${fileExt}`;
-
-      const fileRef = adminStorage.bucket().file(storagePath);
-      await fileRef.save(buffer, { contentType: mimeType, resumable: false });
-
-      const fileMetadata = {
-        nome: fileItem.name || originalName,
-        nomeOriginale: originalName,
-        tipo: mimeType,
-        dimensione: size,
-        path: storagePath,
-        dataCreazione: fileItem.creationDate ? new Date(fileItem.creationDate).toISOString() : new Date().toISOString(),
-        dataScadenza: fileItem.expirationDate ? new Date(fileItem.expirationDate).toISOString() : null,
-      };
-      newlyUploadedFiles.push(fileMetadata);
-
-      if (targetFolderId) {
-        const fileDocRef = adminDb.collection('files').doc();
-        await fileDocRef.set({
-          nome: fileMetadata.nome,
-          nomeOriginale: fileMetadata.nomeOriginale,
-          tipo: fileMetadata.tipo,
-          dimensione: fileMetadata.dimensione,
-          path: fileMetadata.path,
-          anagraficaId,
-          folderId: targetFolderId,
-          accessoId: accessId,
-          category: targetFolder?.category || null,
-          tags: [],
-          dataDocumento: fileItem.creationDate ? new Date(fileItem.creationDate) : new Date(),
-          dataCreazione: new Date(),
-          dataScadenza: fileItem.expirationDate ? new Date(fileItem.expirationDate) : null,
-          structureIds: existingStructureIds,
-          uploadedByStructure: structureId,
-          uploadedBy: userUid,
-          uploadedByEmail: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          deleted: false,
-          deletedAt: null,
-          deletedBy: null,
-          lastAccessedAt: null,
-          accessCount: 0
-        });
-      }
+      const fileMeta = await uploadFileItem({ fileItem, anagraficaId, accessId, index, targetFolder, targetFolderId, structureId, userUid, structureIds: existingStructureIds });
+      if (fileMeta) newlyUploadedFiles.push(fileMeta);
     }
 
     return {

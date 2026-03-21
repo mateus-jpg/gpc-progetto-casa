@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { getAnagraficaHistory } from "@/actions/anagrafica/history"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -214,14 +214,14 @@ export function HistoryTimeline({ anagraficaId, structureId = null }) {
     )
 }
 
+const CHANGE_TYPE_LABELS = {
+    create: "Creazione",
+    update: "Modifica",
+    delete: "Eliminazione"
+}
+
 function HistoryEntry({ entry }) {
     const [isOpen, setIsOpen] = useState(false)
-
-    const changeTypeLabels = {
-        create: "Creazione",
-        update: "Modifica",
-        delete: "Eliminazione"
-    }
 
     return (
         <div className="border rounded-lg">
@@ -238,7 +238,7 @@ function HistoryEntry({ entry }) {
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-medium">
-                                    {changeTypeLabels[entry.changeType] || entry.changeType}
+                                    {CHANGE_TYPE_LABELS[entry.changeType] || entry.changeType}
                                 </span>
                                 <span className="text-muted-foreground">-</span>
                                 <span className="text-sm text-muted-foreground">

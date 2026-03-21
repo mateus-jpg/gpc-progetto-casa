@@ -1,22 +1,10 @@
-import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CreateCombobox } from "@/components/form/Combobox";
-import { useSectionConfig, useFieldConfig, useFieldVisibility } from "@/context/FormConfigContext";
-
-// Field wrapper that handles visibility and configuration
-function ConfiguredField({ sectionId, fieldId, formData, children }) {
-    const fieldConfig = useFieldConfig(sectionId, fieldId);
-    const isVisible = useFieldVisibility(sectionId, fieldId, formData);
-
-    if (!fieldConfig || !isVisible) {
-        return null;
-    }
-
-    return children({ fieldConfig });
-}
+import { useSectionConfig } from "@/context/FormConfigContext";
+import { ConfiguredField } from "./ConfigurableField";
 
 export default function FamilyUnitSection({ formData, handleChange }) {
     const sectionConfig = useSectionConfig('familyUnit');

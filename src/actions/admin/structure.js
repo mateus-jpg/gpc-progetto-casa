@@ -31,9 +31,6 @@ export async function getStructure(structureId) {
             throw new Error('Structure not found');
         }
 
-        const data = docSnap.data();
-        if (data.createdAt) delete data.createdAt; // Temporary safety if serialize fails
-
         return serializeFirestoreData({ id: docSnap.id, ...docSnap.data() });
     } catch (error) {
         logger.error('Error fetching structure', error, { structureId });

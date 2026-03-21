@@ -67,6 +67,25 @@ export function arraysIntersect(a = [], b = []) {
 
 
 /**
+ * Queries a Firestore collection for documents matching a list of IDs.
+ * Handles Firestore's 30-item 'in' query limit by batching automatically.
+ *
+ * @param {FirebaseFirestore.CollectionReference} collectionRef
+ * @param {string[]} ids
+ * @returns {Promise<FirebaseFirestore.QueryDocumentSnapshot[]>}
+ */
+export async function queryDocumentsByIds(collectionRef, ids) {
+    if (!ids || ids.length === 0) return [];
+    const batchSize = 30;
+    const results = await Promise.all(
+        Array.from({ length: Math.ceil(ids.length / batchSize) }, (_, i) =>
+            collectionRef.where('__name__', 'in', ids.slice(i * batchSize, (i + 1) * batchSize)).get()
+        )
+    );
+    return results.flatMap(snapshot => snapshot.docs);
+}
+
+/**
  * Gets a Firestore collection reference
  * Centralizes collection name management
  */

@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/firebase/firebaseAdmin';
 import { requireUser, verifySuperAdmin } from '@/utils/server-auth';
-import { collections, serializeFirestoreDoc } from '@/utils/database';
+import { collections, serializeFirestoreDoc, queryDocumentsByIds } from '@/utils/database';
 import { logger } from '@/utils/logger';
 import { logPermissionChange, logAdminAction } from '@/utils/audit';
 import { serializeFirestoreData } from '@/lib/utils';
@@ -393,33 +393,12 @@ export async function listAllStructures() {
                 return { success: true, structures: [] };
             }
 
-            // Firestore 'in' queries support up to 30 items, batch if needed
-            const batchSize = 30;
-            const batches = [];
-
-            for (let i = 0; i < userStructureIds.length; i += batchSize) {
-                const batch = userStructureIds.slice(i, i + batchSize);
-                batches.push(batch);
-            }
-
-            // Execute all batch queries in parallel for better performance
-            const batchResults = await Promise.all(
-                batches.map(batch =>
-                    collections.structures()
-                        .where('__name__', 'in', batch)
-                        .get()
-                )
-            );
-
-            // Flatten results from all batches
-            for (const snapshot of batchResults) {
-                const batchStructures = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    name: doc.data().name || doc.id,
-                    ...serializeFirestoreDoc(doc.data()),
-                }));
-                structures.push(...batchStructures);
-            }
+            const docs = await queryDocumentsByIds(collections.structures(), userStructureIds);
+            structures.push(...docs.map(doc => ({
+                id: doc.id,
+                name: doc.data().name || doc.id,
+                ...serializeFirestoreDoc(doc.data()),
+            })));
         }
 
         logger.info('Listed structures', { count: structures.length, actorUid: userUid, isAdmin });

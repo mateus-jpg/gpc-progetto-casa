@@ -2,7 +2,7 @@
 
 import { unstable_cache } from 'next/cache';
 import admin from '@/lib/firebase/firebaseAdmin';
-import { requireUser, verifyUserPermissions } from '@/utils/server-auth';
+import { requireUser, verifyUserPermissions, verifyStructureAdmin } from '@/utils/server-auth';
 import { createAccessInternal } from './access';
 import { createHistoryEntry } from './history';
 import { computeGroupChanges } from '@/utils/anagraficaUtils';
@@ -490,9 +490,6 @@ export async function deleteAnagraficaInternal(anagraficaId, userUid) {
 
 /**
  * Crea una nuova anagrafica (con eventuali accessi e file)
- */
-/**
- * Crea una nuova anagrafica (con eventuali accessi e file)
  * Handles splitting data between Global 'anagrafica' and specific 'anagrafica_data'
  */
 export async function createAnagrafica(body, services = []) {
@@ -653,11 +650,11 @@ export async function createAnagrafica(body, services = []) {
           userUid,
           structureIds: globalData.structureIds,
         });
-      } catch (Error) {
-        console.error("Error creating Acesso", Error);
+      } catch (err) {
+        console.error("Error creating Acesso", err);
         return JSON.stringify({
           error: true,
-          message: Error.message
+          message: err.message
         }, null, 2);
       }
     }
@@ -719,6 +716,157 @@ export async function updateAnagrafica(anagraficaId, body, structureId) {
 export async function deleteAnagrafica(anagraficaId) {
   const { userUid } = await requireUser();
   return await deleteAnagraficaInternal(anagraficaId, userUid);
+}
+
+/**
+ * Soft delete anagrafica — admin-only.
+ * Adds verifyStructureAdmin guard on top of the existing internal function.
+ * Includes transaction guard to reject if record became shared after dialog opened.
+ *
+ * @param {string} anagraficaId
+ * @param {string} structureId - The admin's current structure
+ */
+export async function deleteAnagraficaAsAdmin(anagraficaId, structureId) {
+  try {
+    const { userUid } = await requireUser();
+    await verifyStructureAdmin({ userUid, structureId });
+
+    const anagraficaRef = adminDb.collection('anagrafica').doc(anagraficaId);
+
+    const allowedStructures = await adminDb.runTransaction(async (transaction) => {
+      const snap = await transaction.get(anagraficaRef);
+
+      if (!snap.exists) {
+        const e = new Error('Anagrafica non trovata');
+        e.code = 'NOT_FOUND';
+        throw e;
+      }
+
+      const data = snap.data();
+
+      if (data.deletedAt) {
+        const e = new Error('Scheda già eliminata');
+        e.code = 'ALREADY_DELETED';
+        throw e;
+      }
+
+      const canBeAccessedBy = data.canBeAccessedBy || [];
+
+      // Guard: record became shared between dialog open and submit
+      if (canBeAccessedBy.length > 1) {
+        const e = new Error('La scheda è ora condivisa con altre strutture. Ricarica la pagina e usa "Rimuovi dalla struttura".');
+        e.code = 'SHARED_RECORD';
+        throw e;
+      }
+
+      transaction.update(anagraficaRef, {
+        deletedAt: new Date(),
+        deletedBy: userUid,
+        deleted: true,
+      });
+
+      return canBeAccessedBy;
+    });
+
+    invalidateAnagraficaCaches(anagraficaId, allowedStructures);
+
+    await logDataDelete({
+      actorUid: userUid,
+      resourceType: 'anagrafica',
+      resourceId: anagraficaId,
+      softDelete: true,
+      details: { structureId },
+    });
+
+    return { success: true, message: 'Scheda eliminata con successo' };
+  } catch (err) {
+    console.error('[DELETE_ANAGRAFICA_AS_ADMIN]:', err);
+    return { error: true, message: err.message };
+  }
+}
+
+/**
+ * Remove the current structure from a shared anagrafica.
+ * Admin-only. Record stays accessible to other structures.
+ * Also removes structureId from `structureIds` (kept in sync with canBeAccessedBy).
+ * Cleans up anagrafica_data document for this structure.
+ *
+ * @param {string} anagraficaId
+ * @param {string} structureId - Structure to remove
+ */
+export async function removeStructureFromAnagrafica(anagraficaId, structureId) {
+  try {
+    const { userUid } = await requireUser();
+    await verifyStructureAdmin({ userUid, structureId });
+
+    const anagraficaRef = adminDb.collection('anagrafica').doc(anagraficaId);
+
+    await adminDb.runTransaction(async (transaction) => {
+      const snap = await transaction.get(anagraficaRef);
+
+      if (!snap.exists || snap.data().deletedAt) {
+        const e = new Error('Anagrafica non trovata');
+        e.code = 'NOT_FOUND';
+        throw e;
+      }
+
+      const data = snap.data();
+      const canBeAccessedBy = data.canBeAccessedBy || [];
+
+      if (!canBeAccessedBy.includes(structureId)) {
+        throw new Error('Struttura non associata a questa scheda');
+      }
+
+      // Guard: record became sole-owner between dialog open and submit
+      if (canBeAccessedBy.length === 1) {
+        const e = new Error("Sei l'unica struttura associata. Usa elimina definitiva.");
+        e.code = 'LAST_STRUCTURE';
+        throw e;
+      }
+
+      // IMPORTANT: FieldValue.arrayRemove() cannot be used inside a transaction.
+      // Compute the filtered arrays from the transaction read and pass them directly.
+      const updatedCanBeAccessedBy = canBeAccessedBy.filter((id) => id !== structureId);
+      const updatedStructureIds = (data.structureIds || []).filter((id) => id !== structureId);
+
+      transaction.update(anagraficaRef, {
+        canBeAccessedBy: updatedCanBeAccessedBy,
+        structureIds: updatedStructureIds,
+      });
+    });
+
+    // Cleanup anagrafica_data — outside transaction, best-effort
+    try {
+      const dataQuery = await adminDb
+        .collection('anagrafica_data')
+        .where('anagraficaId', '==', anagraficaId)
+        .where('structureId', '==', structureId)
+        .limit(1)
+        .get();
+
+      if (!dataQuery.empty) {
+        await dataQuery.docs[0].ref.delete();
+      }
+    } catch (cleanupErr) {
+      console.error('[REMOVE_STRUCTURE_CLEANUP_ERROR]:', cleanupErr);
+      // Non-fatal — log and continue
+    }
+
+    invalidateAnagraficaCaches(anagraficaId, [structureId]);
+
+    await logDataDelete({
+      actorUid: userUid,
+      resourceType: 'anagrafica',
+      resourceId: anagraficaId,
+      softDelete: false,
+      details: { action: 'removed_from_structure', structureId },
+    });
+
+    return { success: true, message: 'Struttura rimossa con successo' };
+  } catch (err) {
+    console.error('[REMOVE_STRUCTURE_FROM_ANAGRAFICA]:', err);
+    return { error: true, message: err.message };
+  }
 }
 
 /**

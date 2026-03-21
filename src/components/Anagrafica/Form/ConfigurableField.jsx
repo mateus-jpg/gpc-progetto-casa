@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import { cloneElement } from 'react';
 import { useFieldConfig, useFieldVisibility, useSectionConfig } from '@/context/FormConfigContext';
 import { Label } from '@/components/ui/label';
 
@@ -25,7 +25,7 @@ export function ConfigurableField({
   }
 
   // Clone the child element and inject configuration props
-  const enhancedChild = React.cloneElement(children, {
+  const enhancedChild = cloneElement(children, {
     required: fieldConfig.isRequired,
     placeholder: children.props.placeholder || fieldConfig.placeholder,
     // Pass options if the field accepts them and they're configured
@@ -109,6 +109,20 @@ export function useConfigurableFieldProps(sectionId, fieldId, formData) {
     min: fieldConfig.min,
     max: fieldConfig.max
   };
+}
+
+/**
+ * Render-prop field wrapper used by form sections.
+ * Hides the field when it's not configured or not visible.
+ * Usage: <ConfiguredField sectionId="x" fieldId="y" formData={data}>{({ fieldConfig }) => ...}</ConfiguredField>
+ */
+export function ConfiguredField({ sectionId, fieldId, formData, children }) {
+  const fieldConfig = useFieldConfig(sectionId, fieldId);
+  const isVisible = useFieldVisibility(sectionId, fieldId, formData);
+
+  if (!fieldConfig || !isVisible) return null;
+
+  return children({ fieldConfig });
 }
 
 export default ConfigurableField;

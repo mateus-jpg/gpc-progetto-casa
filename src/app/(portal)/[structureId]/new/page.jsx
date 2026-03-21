@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { use, useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 // Action
 import { createAnagrafica } from "@/actions/anagrafica/anagrafica";
@@ -13,7 +13,7 @@ import AccessServicesForm from "@/components/Anagrafica/AccessServicesForm";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 // Form configuration context
-import { FormConfigProvider, useOrderedSections, useSectionConfig } from "@/context/FormConfigContext";
+import { FormConfigProvider } from "@/context/FormConfigContext";
 
 // Form Components
 import PersonalInfoSection from "@/components/Anagrafica/Form/PersonalInfoSection";
@@ -25,7 +25,7 @@ import ReferralSection from "@/components/Anagrafica/Form/ReferralSection";
 import PostAccessDialog from "@/components/Anagrafica/AccessDialog/PostAccessDialog";
 
 export default function AnagraficaForm({ params }) {
-  const { structureId } = React.use(params);
+  const { structureId } = use(params);
   const { user } = useAuth();
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);

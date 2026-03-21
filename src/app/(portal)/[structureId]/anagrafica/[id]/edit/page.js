@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { getAnagrafica, updateAnagrafica } from "@/actions/anagrafica/anagrafica";
+import { toast } from "sonner";
 
 // Form sections - reusable components
 import PersonalInfoSection from "@/components/Anagrafica/Form/PersonalInfoSection";
@@ -257,11 +258,11 @@ export default function EditAnagraficaPage() {
       setIsSaving(true);
       const payload = preparePayloadForSubmission(formData);
       await updateAnagrafica(id, payload, structureId);
-      alert("Dati aggiornati correttamente");
+      toast.success("Dati aggiornati correttamente");
       router.push(`/${structureId}/anagrafica/${id}`);
     } catch (err) {
       console.error("Errore update anagrafica:", err);
-      alert("Errore durante l'aggiornamento: " + err.message);
+      toast.error("Errore durante l'aggiornamento: " + err.message);
     } finally {
       setIsSaving(false);
     }

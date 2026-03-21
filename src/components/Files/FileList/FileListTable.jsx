@@ -14,8 +14,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { formatBytes } from '@/lib/utils';
 import { format } from 'date-fns';
-import { getFileUrl } from '@/actions/files/files';
 import { toast } from 'sonner';
+import { useFileDownload } from '@/hooks/useFileDownload';
+import FolderActionsMenu from '@/components/Files/FolderActionsMenu';
 
 /**
  * Format date for display
@@ -33,27 +34,7 @@ function formatDate(dateString) {
  * File actions dropdown menu
  */
 function FileActionsMenu({ file, onDelete, onRename, onMove }) {
-  const [isDownloading, setIsDownloading] = useState(false);
-
-  const handleDownload = async () => {
-    setIsDownloading(true);
-    try {
-      const result = await getFileUrl(file.id);
-      if (result.error) {
-        toast.error(result.message || 'Failed to get download URL');
-        return;
-      }
-
-      // Open in new tab
-      window.open(result.url, '_blank');
-      toast.success('Opening file...');
-    } catch (error) {
-      console.error('[DOWNLOAD_ERROR]:', error);
-      toast.error('Failed to download file');
-    } finally {
-      setIsDownloading(false);
-    }
-  };
+  const { handleDownload, isDownloading } = useFileDownload(file.id);
 
   return (
     <DropdownMenu>
@@ -82,46 +63,6 @@ function FileActionsMenu({ file, onDelete, onRename, onMove }) {
         >
           <Trash2 className="mr-2 h-4 w-4" />
           Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-/**
- * Folder actions dropdown menu
- */
-function FolderActionsMenu({ folder, onRename, onMove, onDelete }) {
-  const canDelete = !folder.isDefaultCategory;
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreVertical className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {!folder.isDefaultCategory && (
-          <>
-            <DropdownMenuItem onClick={() => onRename?.(folder)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Rename
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onMove?.(folder)}>
-              <Folder className="mr-2 h-4 w-4" />
-              Move
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
-        )}
-        <DropdownMenuItem
-          onClick={() => onDelete?.(folder)}
-          disabled={!canDelete}
-          className="text-destructive focus:text-destructive disabled:opacity-50"
-        >
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete {!canDelete && '(Protected)'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -163,19 +104,13 @@ export default function FileListTable({
     const folderRows = subfolders.map((folder) => ({
       ...folder,
       isFolder: true,
-      nome: folder.nome,
       dimensione: null,
       tipo: 'Folder',
-      createdAt: folder.createdAt,
     }));
 
     const fileRows = files.map((file) => ({
       ...file,
       isFolder: false,
-      nome: file.nome,
-      dimensione: file.dimensione,
-      tipo: file.tipo,
-      createdAt: file.createdAt,
     }));
 
     return [...folderRows, ...fileRows];
@@ -199,7 +134,6 @@ export default function FileListTable({
       return;
     }
 
-    // Find the dragged item and drop target
     const draggedRow = data.find((row) => row.id === active.id);
     const targetRow = data.find((row) => row.id === over.id);
 

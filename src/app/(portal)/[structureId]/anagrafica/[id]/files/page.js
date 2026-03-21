@@ -118,6 +118,37 @@ export default function FilesPage() {
 
   const currentFolderName = currentFolder?.nome || 'Root';
 
+  const handleFileMove = useCallback((fileIdOrObj, targetFolderId) => {
+    if (targetFolderId !== undefined) {
+      fileOps.moveFile(fileIdOrObj, targetFolderId);
+    } else {
+      handleMoveClick({ ...fileIdOrObj, isFolder: false });
+    }
+  }, [fileOps, handleMoveClick]);
+
+  const handleFileDelete = useCallback((file) => {
+    if (confirm(`Are you sure you want to delete "${file.nome}"?`)) {
+      fileOps.removeFile(file.id);
+    }
+  }, [fileOps]);
+
+  const handleFolderDelete = useCallback((folder) => {
+    const hasContents = subfolders.length > 0 || files.length > 0;
+    const message = hasContents
+      ? `"${folder.nome}" is not empty. Delete all contents?`
+      : `Are you sure you want to delete "${folder.nome}"?`;
+    if (confirm(message)) {
+      folderOps.remove(folder.id, hasContents);
+    }
+  }, [subfolders.length, files.length, folderOps]);
+
+  const handleFolderRename = useCallback((folder) => {
+    const newName = prompt('Enter new folder name:', folder.nome);
+    if (newName && newName !== folder.nome) {
+      folderOps.rename(folder.id, newName);
+    }
+  }, [folderOps]);
+
   return (
     <div className="container mx-auto px-4 py-6">
       {/* Header */}
@@ -237,22 +268,8 @@ export default function FilesPage() {
                     subfolders={subfolders}
                     currentFolder={currentFolder}
                     onFolderOpen={handleFolderSelect}
-                    onFileMove={(fileIdOrObj, targetFolderId) => {
-                      if (targetFolderId !== undefined) {
-                        fileOps.moveFile(fileIdOrObj, targetFolderId);
-                      } else {
-                        handleMoveClick({ ...fileIdOrObj, isFolder: false });
-                      }
-                    }}
-                    onFileDelete={(file) => {
-                      if (
-                        confirm(
-                          `Are you sure you want to delete "${file.nome}"?`
-                        )
-                      ) {
-                        fileOps.removeFile(file.id);
-                      }
-                    }}
+                    onFileMove={handleFileMove}
+                    onFileDelete={handleFileDelete}
                     onFolderMove={(folderIdOrObj, targetFolderId) => {
                       if (targetFolderId !== undefined) {
                         folderOps.move(folderIdOrObj, targetFolderId);
@@ -260,29 +277,9 @@ export default function FilesPage() {
                         handleMoveClick({ ...folderIdOrObj, isFolder: true });
                       }
                     }}
-                    onFolderDelete={(folder) => {
-                      const hasContents =
-                        subfolders.length > 0 || files.length > 0;
-                      const message = hasContents
-                        ? `"${folder.nome}" is not empty. Delete all contents?`
-                        : `Are you sure you want to delete "${folder.nome}"?`;
-
-                      if (confirm(message)) {
-                        folderOps.remove(folder.id, hasContents);
-                      }
-                    }}
-                    onFolderRename={(folder) => {
-                      const newName = prompt(
-                        'Enter new folder name:',
-                        folder.nome
-                      );
-                      if (newName && newName !== folder.nome) {
-                        folderOps.rename(folder.id, newName);
-                      }
-                    }}
-                    onFileRename={(file) => {
-                      alert('File rename not yet implemented');
-                    }}
+                    onFolderDelete={handleFolderDelete}
+                    onFolderRename={handleFolderRename}
+                    onFileRename={() => alert('File rename not yet implemented')}
                     isLoading={isLoadingContents}
                   />
                 ) : (
@@ -290,48 +287,12 @@ export default function FilesPage() {
                     files={files}
                     subfolders={subfolders}
                     onFolderOpen={handleFolderSelect}
-                    onFileMove={(fileIdOrObj, targetFolderId) => {
-                      if (targetFolderId !== undefined) {
-                        fileOps.moveFile(fileIdOrObj, targetFolderId);
-                      } else {
-                        handleMoveClick({ ...fileIdOrObj, isFolder: false });
-                      }
-                    }}
-                    onFileDelete={(file) => {
-                      if (
-                        confirm(
-                          `Are you sure you want to delete "${file.nome}"?`
-                        )
-                      ) {
-                        fileOps.removeFile(file.id);
-                      }
-                    }}
-                    onFolderDelete={(folder) => {
-                      const hasContents =
-                        subfolders.length > 0 || files.length > 0;
-                      const message = hasContents
-                        ? `"${folder.nome}" is not empty. Delete all contents?`
-                        : `Are you sure you want to delete "${folder.nome}"?`;
-
-                      if (confirm(message)) {
-                        folderOps.remove(folder.id, hasContents);
-                      }
-                    }}
-                    onFolderMove={(folder) => {
-                      handleMoveClick({ ...folder, isFolder: true });
-                    }}
-                    onFolderRename={(folder) => {
-                      const newName = prompt(
-                        'Enter new folder name:',
-                        folder.nome
-                      );
-                      if (newName && newName !== folder.nome) {
-                        folderOps.rename(folder.id, newName);
-                      }
-                    }}
-                    onFileRename={(file) => {
-                      alert('File rename not yet implemented');
-                    }}
+                    onFileMove={handleFileMove}
+                    onFileDelete={handleFileDelete}
+                    onFolderDelete={handleFolderDelete}
+                    onFolderMove={(folder) => handleMoveClick({ ...folder, isFolder: true })}
+                    onFolderRename={handleFolderRename}
+                    onFileRename={() => alert('File rename not yet implemented')}
                     isLoading={isLoadingContents}
                   />
                 )}

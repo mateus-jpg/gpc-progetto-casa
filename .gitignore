@@ -53,3 +53,4 @@ secret.*
 
 js_scripts/
 *.zip
+firebase-debug.log

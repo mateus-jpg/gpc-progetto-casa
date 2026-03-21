@@ -1,4 +1,4 @@
-import React from "react";
+import { useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { generateICS, downloadICS, generateGoogleCalendarUrl } from "@/utils/icsUtils";
@@ -6,7 +6,7 @@ import { Download, Calendar, ExternalLink } from "lucide-react";
 
 export default function PostAccessDialog({ open, onOpenChange, payload, onDone }) {
     // Extract events
-    const events = React.useMemo(() => {
+    const events = useMemo(() => {
         const list = [];
         if (!payload) return list;
 

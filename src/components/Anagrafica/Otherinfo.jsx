@@ -1,5 +1,4 @@
 "use server"
-import * as React from "react"
 import { ChevronsUpDown, ChevronDown, BriefcaseBusiness, UsersRound, Scale, HandHeart, FileSliders } from "lucide-react"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"

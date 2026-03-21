@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import {
   Accordion,
@@ -28,30 +28,20 @@ export default function AccessInfo({ accesses }) {
   const params = useParams();
   const structureId = params?.structureId;
 
-  // Remove the async/await - accesses is already resolved data
-  const [data, setData] = React.useState([]);
-
-  React.useEffect(() => {
-
-    const flatList = (accesses || []).flatMap((acc) => {
-      if (acc.services && Array.isArray(acc.services)) {
-        return acc.services.map((svc, idx) => ({
-          ...svc,
-          // Merge parent info
-          accessId: acc.id,
-          anagraficaId: acc.anagraficaId,
-          createdAt: acc.createdAt,
-          createdBy: acc.createdBy,
-          createdByEmail: acc.createdByEmail,
-          uniqueKey: `${acc.id}-${idx}`
-        }));
-      }
-      // Fallback if no services array (should not happen with updated backend)
-      return [acc];
-    });
-
-    setData(flatList);
-  }, [accesses]);
+  const data = useMemo(() => (accesses || []).flatMap((acc) => {
+    if (acc.services && Array.isArray(acc.services)) {
+      return acc.services.map((svc, idx) => ({
+        ...svc,
+        accessId: acc.id,
+        anagraficaId: acc.anagraficaId,
+        createdAt: acc.createdAt,
+        createdBy: acc.createdBy,
+        createdByEmail: acc.createdByEmail,
+        uniqueKey: `${acc.id}-${idx}`
+      }));
+    }
+    return [acc];
+  }), [accesses]);
 
   const handleDownloadFile = async (anagraficaId, file) => {
     try {

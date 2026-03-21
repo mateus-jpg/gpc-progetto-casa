@@ -24,12 +24,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
 import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { formatBytes } from '@/lib/utils';
+import { cn, formatBytes } from '@/lib/utils';
 import { format } from 'date-fns';
-import { getFileUrl } from '@/actions/files/files';
 import { toast } from 'sonner';
+import { useFileDownload } from '@/hooks/useFileDownload';
+import FolderActionsMenu from '@/components/Files/FolderActionsMenu';
 import {
   DndContext,
   DragOverlay,
@@ -124,8 +125,6 @@ function getFileIcon(mimeType, className = 'w-12 h-12') {
  * Grid item for a folder (draggable and droppable)
  */
 function FolderGridItem({ folder, onOpen, onRename, onMove, onDelete, isSelected, isDragOverlay = false }) {
-  const canDelete = !folder.isDefaultCategory;
-
   // Make folder draggable
   const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({
     id: `folder-${folder.id}`,
@@ -187,49 +186,12 @@ function FolderGridItem({ folder, onOpen, onRename, onMove, onDelete, isSelected
         {/* Actions Menu */}
         {!isDragOverlay && (
           <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {!folder.isDefaultCategory && (
-                  <>
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRename?.(folder);
-                      }}
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Rename
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onMove?.(folder);
-                      }}
-                    >
-                      <Folder className="mr-2 h-4 w-4" />
-                      Move
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete?.(folder);
-                  }}
-                  disabled={!canDelete}
-                  className="text-destructive focus:text-destructive disabled:opacity-50"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete {!canDelete && '(Protected)'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <FolderActionsMenu
+              folder={folder}
+              onRename={onRename}
+              onMove={onMove}
+              onDelete={onDelete}
+            />
           </div>
         )}
       </CardContent>
@@ -241,7 +203,7 @@ function FolderGridItem({ folder, onOpen, onRename, onMove, onDelete, isSelected
  * Grid item for a file (draggable)
  */
 function FileGridItem({ file, onDelete, onRename, onMove, isSelected, isDragOverlay = false }) {
-  const [isDownloading, setIsDownloading] = useState(false);
+  const { handleDownload, isDownloading } = useFileDownload(file.id);
 
   // Make file draggable
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -251,25 +213,6 @@ function FileGridItem({ file, onDelete, onRename, onMove, isSelected, isDragOver
       file,
     },
   });
-
-  const handleDownload = async (e) => {
-    e.stopPropagation();
-    setIsDownloading(true);
-    try {
-      const result = await getFileUrl(file.id);
-      if (result.error) {
-        toast.error(result.message || 'Failed to get download URL');
-        return;
-      }
-      window.open(result.url, '_blank');
-      toast.success('Opening file...');
-    } catch (error) {
-      console.error('[DOWNLOAD_ERROR]:', error);
-      toast.error('Failed to download file');
-    } finally {
-      setIsDownloading(false);
-    }
-  };
 
   return (
     <Card
