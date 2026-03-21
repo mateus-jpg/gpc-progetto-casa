@@ -4,7 +4,7 @@ import { MaterialReactTable } from 'material-react-table'
 import { mkConfig, generateCsv, download } from 'export-to-csv';
 import { useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { FileDown, SquareArrowOutUpRight, View, ExternalLink, MoreVertical, Trash2, Loader2 } from "lucide-react";
+import { FileDown, View, MoreVertical, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import {
