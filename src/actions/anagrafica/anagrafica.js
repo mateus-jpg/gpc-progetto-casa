@@ -752,6 +752,12 @@ export async function deleteAnagraficaAsAdmin(anagraficaId, structureId) {
 
       const canBeAccessedBy = data.canBeAccessedBy || [];
 
+      if (!canBeAccessedBy.includes(structureId)) {
+        const e = new Error('Struttura non associata a questa scheda');
+        e.code = 'FORBIDDEN';
+        throw e;
+      }
+
       // Guard: record became shared between dialog open and submit
       if (canBeAccessedBy.length > 1) {
         const e = new Error('La scheda è ora condivisa con altre strutture. Ricarica la pagina e usa "Rimuovi dalla struttura".');

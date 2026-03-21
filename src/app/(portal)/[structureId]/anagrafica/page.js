@@ -8,9 +8,10 @@ export default async function AnagraficaPage({ params }) {
   const rows = await getData(structureId);
   const data = JSON.parse(rows);
 
+  const { userUid } = await requireUser();
+
   let isAdmin = false;
   try {
-    const { userUid } = await requireUser();
     await verifyStructureAdmin({ userUid, structureId });
     isAdmin = true;
   } catch (err) {
