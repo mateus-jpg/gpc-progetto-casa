@@ -54,6 +54,11 @@ const data = {
       url: "anagrafica",
       icon: IconUsers,
     },
+    {
+      title: "Documenti Struttura",
+      url: "documenti",
+      icon: IconFolder,
+    },
    /*  {
       title: "Gestione Community",
       url: "#",

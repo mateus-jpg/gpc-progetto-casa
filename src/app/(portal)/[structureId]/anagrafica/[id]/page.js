@@ -11,6 +11,7 @@ import DownloadPdfButton from "@/components/Anagrafica/DownloadPdfButton";
 import HistoryTimeline from "@/components/Anagrafica/HistoryTimeline";
 import Otherinfo from "@/components/Anagrafica/Otherinfo";
 import OtherStructuresInfo from "@/components/Anagrafica/OtherStructuresInfo";
+import AnagraficaReminders from "@/components/Anagrafica/AnagraficaReminders";
 import ReminderDialog from "@/components/Anagrafica/ReminderDialog";
 import { ShareAnagraficaDialog } from "@/components/Anagrafica/ShareAnagraficaDialog";
 import { Badge } from "@/components/ui/badge";
@@ -209,6 +210,8 @@ export default async function AnagraficaViewPage({ params }) {
             otherStructuresData={anagrafica.otherStructuresData}
           />
         )}
+
+      <AnagraficaReminders anagraficaId={anagrafica.id} structureId={structureId} />
 
       {anagraficaAccesses && (
         <AccessInfo accesses={anagraficaAccesses.accessi} />

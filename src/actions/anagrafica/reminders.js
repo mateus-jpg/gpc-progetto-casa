@@ -139,3 +139,34 @@ export async function createReminderAction(payload) {
 
   return { success: true, reminderId: reminderRef.id };
 }
+
+/**
+ * Fetch all reminders for an anagrafica record (both standalone and access-linked).
+ *
+ * @param {string} anagraficaId
+ * @returns {Promise<string>} JSON-serialized { success, reminders }
+ */
+export async function getAnagraficaRemindersAction(anagraficaId) {
+  const { userUid } = await requireUser();
+
+  if (!anagraficaId) throw new Error("Missing anagraficaId");
+
+  const anagraficaRef = adminDb.collection("anagrafica").doc(anagraficaId);
+  const anagraficaSnap = await anagraficaRef.get();
+  if (!anagraficaSnap.exists) throw new Error("Anagrafica not found");
+
+  const anagraficaData = anagraficaSnap.data() || {};
+  const allowedStructures =
+    anagraficaData.canBeAccessedBy || anagraficaData.structureIds || [];
+  await verifyUserPermissions({ userUid, allowedStructures });
+
+  const snapshot = await adminDb
+    .collection("reminders")
+    .where("anagraficaId", "==", anagraficaId)
+    .orderBy("date", "asc")
+    .get();
+
+  const reminders = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+
+  return JSON.stringify({ success: true, reminders });
+}

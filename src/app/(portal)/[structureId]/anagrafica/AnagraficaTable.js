@@ -340,7 +340,9 @@ export function AnagraficaTable({ rows, structureId, isAdmin = false }) {
           sx: { borderRadius: 3, border: '1px solid gray-300' }
         }}
         muiTableBodyRowProps={({ row }) => ({
+          onClick: () => router.push(`/${structureId}/anagrafica/${row.original.id}`),
           sx: {
+            cursor: 'pointer',
             backgroundColor: row.index % 2 !== 0 ? 'rgba(0, 0, 0, 0.035)' : 'inherit',
           }
         })}

@@ -34,6 +34,11 @@ export const CACHE_TAGS = {
   folders: (anagraficaId) => `folders-${anagraficaId}`,
   folder: (folderId) => `folder-${folderId}`,
   folderContents: (folderId) => `folder-contents-${folderId}`,
+
+  // Structure Files
+  structureFiles: (structureId) => `structure-files-${structureId}`,
+  structureFolders: (structureId) => `structure-folders-${structureId}`,
+  structureFolderContents: (folderId) => `structure-folder-contents-${folderId}`,
 };
 
 /**
@@ -133,6 +138,29 @@ export function invalidateFolderCaches(anagraficaId, affectedFolderIds = []) {
 
   // Also invalidate files cache since folder operations may affect file visibility
   invalidateFilesCache(anagraficaId);
+}
+
+/**
+ * Helper to invalidate structure file cache
+ * @param {string} structureId - The structure document ID
+ */
+export function invalidateStructureFilesCache(structureId) {
+  revalidateTag(CACHE_TAGS.structureFiles(structureId));
+}
+
+/**
+ * Helper to invalidate structure folder-related caches
+ * @param {string} structureId - The structure document ID
+ * @param {string[]} affectedFolderIds - Array of folder IDs that were affected
+ */
+export function invalidateStructureFolderCaches(structureId, affectedFolderIds = []) {
+  revalidateTag(CACHE_TAGS.structureFolders(structureId));
+
+  for (const folderId of affectedFolderIds) {
+    revalidateTag(CACHE_TAGS.structureFolderContents(folderId));
+  }
+
+  invalidateStructureFilesCache(structureId);
 }
 
 /**
