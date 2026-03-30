@@ -200,7 +200,7 @@ export function CategoriesManager({ structureId, initialCategories }) {
             <div className="flex justify-between items-center">
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <Button variant="outline" disabled={loading}>
+                        <Button variant="outline" disabled={saving}>
                             <IconRefresh className="mr-2 h-4 w-4" />
                             Ripristina Predefinite
                         </Button>
@@ -222,9 +222,9 @@ export function CategoriesManager({ structureId, initialCategories }) {
                     </AlertDialogContent>
                 </AlertDialog>
 
-                <Button onClick={handleSave} disabled={loading || !hasChanges}>
+                <Button onClick={handleSave} disabled={saving || !hasChanges}>
                     <IconDeviceFloppy className="mr-2 h-4 w-4" />
-                    {loading ? "Salvataggio..." : "Salva Modifiche"}
+                    {saving ? "Salvataggio..." : "Salva Modifiche"}
                 </Button>
             </div>
 

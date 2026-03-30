@@ -21,7 +21,8 @@ import {
   IconUsers,
   IconBell,
   IconInfoCircle,
-  IconAdjustmentsHeart
+  IconAdjustmentsHeart,
+  IconTableExport
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -58,6 +59,11 @@ const data = {
       title: "Documenti Struttura",
       url: "documenti",
       icon: IconFolder,
+    },
+    {
+      title: "Esporta Accessi",
+      url: "export",
+      icon: IconTableExport,
     },
    /*  {
       title: "Gestione Community",
