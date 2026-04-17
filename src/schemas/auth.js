@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { idTokenSchema, emailSchema } from './common';
+import { z } from "zod";
+import { emailSchema, idTokenSchema } from "./common";
 
 /**
  * Authentication validation schemas
@@ -35,7 +35,9 @@ export function validateSessionLogin(data) {
   if (!result.success) {
     return {
       success: false,
-      error: 'Invalid request: ' + result.error.errors.map(e => e.message).join(', '),
+      error:
+        "Invalid request: " +
+        result.error.errors.map((e) => e.message).join(", "),
     };
   }
 

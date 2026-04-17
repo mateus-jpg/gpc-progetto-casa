@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import * as React from "react"
 import {
+  IconBell,
   IconCamera,
   IconChartBar,
   IconDashboard,
@@ -17,13 +17,14 @@ import {
   IconSearch,
   IconSettings,
   IconUsers,
-  IconBell,
-} from "@tabler/icons-react"
-
-import { NavDocuments } from "@/components/nav-documents"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+} from "@tabler/icons-react";
+import Link from "next/link";
+import * as React from "react";
+import { NavDocuments } from "@/components/nav-documents";
+import { NavMain } from "@/components/nav-main";
+import { NavSecondary } from "@/components/nav-secondary";
+import { NavUser } from "@/components/nav-user";
+import { StructureSwitcher } from "@/components/structure-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -32,18 +33,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { StructureSwitcher } from "@/components/structure-switcher"
-import { useAuth } from "@/context/AuthContext"
-import Logo from "../Logo"
-import Link from "next/link"
+} from "@/components/ui/sidebar";
+import { useAuth } from "@/context/AuthContext";
+import Logo from "../Logo";
 
 const data = {
-
-
-  navMain: [
-    
-  ],
+  navMain: [],
   navClouds: [
     /* {
       title: "Notifiche",
@@ -111,20 +106,24 @@ const data = {
       icon: IconFileWord,
     },  */
   ],
-}
+};
 
-export function PortalSideBar({
-  ...props
-}) {
-  const { user, loading, availableStructures, availableProjects, setCurrentStructure, currentStructure } = useAuth();
+export function PortalSideBar({ ...props }) {
+  const {
+    user,
+    loading,
+    availableStructures,
+    availableProjects,
+    setCurrentStructure,
+    currentStructure,
+  } = useAuth();
 
   React.useEffect(() => {
     if (availableStructures && availableStructures.length === 1) {
       setCurrentStructure(availableStructures[0]);
       // If there's only one structure, set it as the current structure
       // push to /[structureId] route
-    }
-    else {
+    } else {
       setCurrentStructure(null);
     }
   }, [availableStructures]);
@@ -134,23 +133,38 @@ export function PortalSideBar({
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
               <Link href="#">
                 <Logo className="!size-8" size={89} />
                 <span className="text-base font-semibold">GPC - OBT</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
-           <SidebarMenuItem>
-            {availableStructures ? <StructureSwitcher structures={availableStructures} projects={availableProjects} selectedStructure={currentStructure} user={user} /> : 
-            <Skeleton variant="rectangular" width={210} height={40} className="rounded-lg" />
-            }
+          <SidebarMenuItem>
+            {availableStructures ? (
+              <StructureSwitcher
+                structures={availableStructures}
+                projects={availableProjects}
+                selectedStructure={currentStructure}
+                user={user}
+              />
+            ) : (
+              <Skeleton
+                variant="rectangular"
+                width={210}
+                height={40}
+                className="rounded-lg"
+              />
+            )}
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         {/* <NavMain items={data.navMain} /> */}
-       {/*  <NavDocuments items={data.documents} /> */}
+        {/*  <NavDocuments items={data.documents} /> */}
         {/*   <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>

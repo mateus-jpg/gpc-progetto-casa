@@ -2,20 +2,20 @@
 "use client";
 
 import { signOut } from "firebase/auth";
-import { clientAuth } from "@/lib/firebase/firebaseClient";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useSWRConfig } from "swr";
+import { clientAuth } from "@/lib/firebase/firebaseClient";
 import { clearSwrCache } from "@/lib/swr-config";
 
 // Auth cache key (must match AuthContext.js)
-const AUTH_CACHE_KEY = 'gpc_auth_cache';
+const AUTH_CACHE_KEY = "gpc_auth_cache";
 
 /**
  * Clear auth data from localStorage cache
  */
 function clearCachedAuthData() {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   localStorage.removeItem(AUTH_CACHE_KEY);
 }
 
@@ -45,8 +45,8 @@ export function useLogout() {
 
       // 3. Call server logout to clear session cookie
       const response = await fetch("/api/auth/sessionLogout", {
-        method: 'POST',
-        credentials: 'same-origin' // Ensure cookies are sent
+        method: "POST",
+        credentials: "same-origin", // Ensure cookies are sent
       });
 
       if (response.ok) {
@@ -58,7 +58,6 @@ export function useLogout() {
       // 4. Navigate to login page
       console.log("✓ Redirecting to login...");
       router.push("/login");
-
     } catch (error) {
       console.error("Logout error:", error);
 
@@ -75,7 +74,7 @@ export function useLogout() {
 
 // Usage in your component:
 // import { useLogout } from "@/hooks/useLogout";
-// 
+//
 // const { logout, isLoggingOut } = useLogout();
 //
 // <DropdownMenuItem onClick={logout} disabled={isLoggingOut}>

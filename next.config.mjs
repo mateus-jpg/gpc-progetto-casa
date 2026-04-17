@@ -2,15 +2,15 @@
 const nextConfig = {
   experimental: {
     serverActions: {
-      bodySizeLimit: '30mb',
+      bodySizeLimit: "30mb",
     },
     useCache: true,
   },
   redirects: async () => {
     return [
       {
-        source: '/',
-        destination: '/dashboard',
+        source: "/",
+        destination: "/dashboard",
         permanent: true,
       },
     ];

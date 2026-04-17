@@ -1,5 +1,5 @@
-import { notFound } from "next/navigation";
 import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import { getAccessByIdAction } from "@/actions/anagrafica/access";
 import { getAnagrafica } from "@/actions/anagrafica/anagrafica";
 import AccessDetailClient from "@/components/Anagrafica/AccessDetailClient";
@@ -33,7 +33,8 @@ export default async function AccessDetailPage({ params }) {
 
   if (!anagrafica) return notFound();
 
-  const anagraficaName = `${anagrafica.anagrafica?.nome || ""} ${anagrafica.anagrafica?.cognome || ""}`.trim();
+  const anagraficaName =
+    `${anagrafica.anagrafica?.nome || ""} ${anagrafica.anagrafica?.cognome || ""}`.trim();
 
   return (
     <AccessDetailClient

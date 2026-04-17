@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-GPC (Gestione Presenze e Contatti) is a Next.js 15 multi-tenant portal for managing personal records ("anagrafica") for social service organizations. Built with React 19, Firebase (Auth, Firestore, Storage), and Tailwind CSS 4.
+GPC (Gestione Presa in Carico) is a Next.js 15 multi-tenant portal for managing personal records ("anagrafica") for social service organizations. Built with React 19, Firebase (Auth, Firestore, Storage), and Tailwind CSS 4.
 
 ## Commands
 

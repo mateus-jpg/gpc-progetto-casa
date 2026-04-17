@@ -4,17 +4,17 @@
  */
 
 import {
-  GENDER_OPTIONS,
-  FAMILY_ROLES_OPTIONS,
-  LEGAL_STATUS_OPTIONS,
-  HOUSING_STATUS_OPTIONS,
-  JOB_STATUS_OPTIONS,
-  EDUCATION_LEVEL_OPTIONS,
   EDUCATION_LEVEL_IT_OPTIONS,
+  EDUCATION_LEVEL_OPTIONS,
+  FAMILY_ROLES_OPTIONS,
+  GENDER_OPTIONS,
+  HOUSING_STATUS_OPTIONS,
   ITALIAN_LEVEL_OPTIONS,
-  VULNERABILITY_OPTIONS,
+  JOB_STATUS_OPTIONS,
+  LEGAL_STATUS_OPTIONS,
   REFERRAL_OPTIONS,
-} from '@/data/formOptions';
+  VULNERABILITY_OPTIONS,
+} from "@/data/formOptions";
 
 /**
  * Section definitions with all fields and their metadata
@@ -22,226 +22,226 @@ import {
  */
 export const SECTION_DEFINITIONS = {
   personalInfo: {
-    id: 'personalInfo',
-    dataKey: 'anagrafica', // Key in formData where this section's data is stored
-    defaultLabel: 'Informazioni Anagrafiche',
+    id: "personalInfo",
+    dataKey: "anagrafica", // Key in formData where this section's data is stored
+    defaultLabel: "Informazioni Anagrafiche",
     defaultOrder: 1,
-    color: 'blue',
+    color: "blue",
     fields: {
       cognome: {
-        type: 'text',
-        defaultLabel: 'Cognome',
-        defaultVisibility: 'required',
-        placeholder: 'Inserisci cognome'
+        type: "text",
+        defaultLabel: "Cognome",
+        defaultVisibility: "required",
+        placeholder: "Inserisci cognome",
       },
       nome: {
-        type: 'text',
-        defaultLabel: 'Nome',
-        defaultVisibility: 'required',
-        placeholder: 'Inserisci nome'
+        type: "text",
+        defaultLabel: "Nome",
+        defaultVisibility: "required",
+        placeholder: "Inserisci nome",
       },
       sesso: {
-        type: 'select',
-        defaultLabel: 'Sesso',
-        defaultVisibility: 'required',
+        type: "select",
+        defaultLabel: "Sesso",
+        defaultVisibility: "required",
         defaultOptions: GENDER_OPTIONS,
-        placeholder: 'Seleziona sesso'
+        placeholder: "Seleziona sesso",
       },
       dataDiNascita: {
-        type: 'date',
-        defaultLabel: 'Data di nascita',
-        defaultVisibility: 'required'
+        type: "date",
+        defaultLabel: "Data di nascita",
+        defaultVisibility: "required",
       },
       luogoDiNascita: {
-        type: 'countrySelect',
-        defaultLabel: 'Luogo di nascita',
-        defaultVisibility: 'required',
-        placeholder: 'Seleziona paese'
+        type: "countrySelect",
+        defaultLabel: "Luogo di nascita",
+        defaultVisibility: "required",
+        placeholder: "Seleziona paese",
       },
       cittadinanza: {
-        type: 'multiCountrySelect',
-        defaultLabel: 'Paese di provenienza / Cittadinanza',
-        defaultVisibility: 'required',
-        placeholder: 'Seleziona paesi'
+        type: "multiCountrySelect",
+        defaultLabel: "Paese di provenienza / Cittadinanza",
+        defaultVisibility: "required",
+        placeholder: "Seleziona paesi",
       },
       comuneDiDomicilio: {
-        type: 'text',
-        defaultLabel: 'Comune di domicilio',
-        defaultVisibility: 'optional',
-        placeholder: 'Inserisci comune'
+        type: "text",
+        defaultLabel: "Comune di domicilio",
+        defaultVisibility: "optional",
+        placeholder: "Inserisci comune",
       },
       telefono: {
-        type: 'tel',
-        defaultLabel: 'Numero di cellulare',
-        defaultVisibility: 'optional',
-        placeholder: 'Inserisci numero'
+        type: "tel",
+        defaultLabel: "Numero di cellulare",
+        defaultVisibility: "optional",
+        placeholder: "Inserisci numero",
       },
       email: {
-        type: 'email',
-        defaultLabel: 'Email',
-        defaultVisibility: 'optional',
-        placeholder: 'Inserisci email'
-      }
-    }
+        type: "email",
+        defaultLabel: "Email",
+        defaultVisibility: "optional",
+        placeholder: "Inserisci email",
+      },
+    },
   },
 
   legalStatus: {
-    id: 'legalStatus',
-    dataKey: 'legaleAbitativa',
-    defaultLabel: 'Situazione Legale e Abitativa',
+    id: "legalStatus",
+    dataKey: "legaleAbitativa",
+    defaultLabel: "Situazione Legale e Abitativa",
     defaultOrder: 2,
-    color: 'purple',
+    color: "purple",
     fields: {
       situazioneLegale: {
-        type: 'select',
-        defaultLabel: 'Situazione Legale',
-        defaultVisibility: 'required',
+        type: "select",
+        defaultLabel: "Situazione Legale",
+        defaultVisibility: "required",
         defaultOptions: LEGAL_STATUS_OPTIONS,
-        placeholder: 'Seleziona situazione legale'
+        placeholder: "Seleziona situazione legale",
       },
       situazioneAbitativa: {
-        type: 'multiSelect',
-        defaultLabel: 'Situazione Abitativa',
-        defaultVisibility: 'required',
+        type: "multiSelect",
+        defaultLabel: "Situazione Abitativa",
+        defaultVisibility: "required",
         defaultOptions: HOUSING_STATUS_OPTIONS,
-        placeholder: 'Seleziona situazione abitativa'
-      }
-    }
+        placeholder: "Seleziona situazione abitativa",
+      },
+    },
   },
 
   familyUnit: {
-    id: 'familyUnit',
-    dataKey: 'nucleoFamiliare',
-    defaultLabel: 'Nucleo Familiare',
+    id: "familyUnit",
+    dataKey: "nucleoFamiliare",
+    defaultLabel: "Nucleo Familiare",
     defaultOrder: 3,
-    color: 'green',
+    color: "green",
     fields: {
       nucleo: {
-        type: 'radio',
-        defaultLabel: 'Tipo Nucleo',
-        defaultVisibility: 'required',
-        defaultOptions: ['singolo', 'famiglia']
+        type: "radio",
+        defaultLabel: "Tipo Nucleo",
+        defaultVisibility: "required",
+        defaultOptions: ["singolo", "famiglia"],
       },
       nucleoTipo: {
-        type: 'select',
-        defaultLabel: 'Composizione Nucleo',
-        defaultVisibility: 'conditional',
-        condition: { field: 'nucleo', value: 'famiglia' },
+        type: "select",
+        defaultLabel: "Composizione Nucleo",
+        defaultVisibility: "conditional",
+        condition: { field: "nucleo", value: "famiglia" },
         defaultOptions: FAMILY_ROLES_OPTIONS,
-        placeholder: 'Seleziona composizione'
+        placeholder: "Seleziona composizione",
       },
       figli: {
-        type: 'number',
-        defaultLabel: 'Numero figli minorenni',
-        defaultVisibility: 'conditional',
-        condition: { field: 'nucleo', value: 'famiglia' },
+        type: "number",
+        defaultLabel: "Numero figli minorenni",
+        defaultVisibility: "conditional",
+        condition: { field: "nucleo", value: "famiglia" },
         min: 0,
-        max: 10
-      }
-    }
+        max: 10,
+      },
+    },
   },
 
   workEducation: {
-    id: 'workEducation',
-    dataKey: 'lavoroFormazione',
-    defaultLabel: 'Lavoro e Formazione',
+    id: "workEducation",
+    dataKey: "lavoroFormazione",
+    defaultLabel: "Lavoro e Formazione",
     defaultOrder: 4,
-    color: 'orange',
+    color: "orange",
     fields: {
       situazioneLavorativa: {
-        type: 'select',
-        defaultLabel: 'Situazione Lavorativa',
-        defaultVisibility: 'required',
+        type: "select",
+        defaultLabel: "Situazione Lavorativa",
+        defaultVisibility: "required",
         defaultOptions: JOB_STATUS_OPTIONS,
-        placeholder: 'Seleziona situazione'
+        placeholder: "Seleziona situazione",
       },
       titoloDiStudioOrigine: {
-        type: 'select',
-        defaultLabel: 'Titolo di Studio (Paese di Origine)',
-        defaultVisibility: 'required',
+        type: "select",
+        defaultLabel: "Titolo di Studio (Paese di Origine)",
+        defaultVisibility: "required",
         defaultOptions: EDUCATION_LEVEL_OPTIONS,
-        placeholder: 'Seleziona titolo'
+        placeholder: "Seleziona titolo",
       },
       titoloDiStudioItalia: {
-        type: 'select',
-        defaultLabel: 'Titolo di Studio (Italia)',
-        defaultVisibility: 'required',
+        type: "select",
+        defaultLabel: "Titolo di Studio (Italia)",
+        defaultVisibility: "required",
         defaultOptions: EDUCATION_LEVEL_IT_OPTIONS,
-        placeholder: 'Seleziona titolo'
+        placeholder: "Seleziona titolo",
       },
       conoscenzaItaliano: {
-        type: 'select',
-        defaultLabel: 'Conoscenza Italiano',
-        defaultVisibility: 'required',
+        type: "select",
+        defaultLabel: "Conoscenza Italiano",
+        defaultVisibility: "required",
         defaultOptions: ITALIAN_LEVEL_OPTIONS,
-        placeholder: 'Seleziona livello'
-      }
-    }
+        placeholder: "Seleziona livello",
+      },
+    },
   },
 
   vulnerability: {
-    id: 'vulnerability',
-    dataKey: 'vulnerabilita',
-    defaultLabel: 'Vulnerabilità e Prospettive',
+    id: "vulnerability",
+    dataKey: "vulnerabilita",
+    defaultLabel: "Vulnerabilità e Prospettive",
     defaultOrder: 5,
-    color: 'red',
+    color: "red",
     fields: {
       vulnerabilita: {
-        type: 'multiSelect',
-        defaultLabel: 'Vulnerabilità',
-        defaultVisibility: 'required',
+        type: "multiSelect",
+        defaultLabel: "Vulnerabilità",
+        defaultVisibility: "required",
         defaultOptions: VULNERABILITY_OPTIONS,
-        placeholder: 'Seleziona vulnerabilità'
+        placeholder: "Seleziona vulnerabilità",
       },
       intenzioneItalia: {
-        type: 'radio',
-        defaultLabel: 'Intenzione di rimanere in Italia?',
-        defaultVisibility: 'required',
-        defaultOptions: ['SI', 'NO']
+        type: "radio",
+        defaultLabel: "Intenzione di rimanere in Italia?",
+        defaultVisibility: "required",
+        defaultOptions: ["SI", "NO"],
       },
       paeseDestinazione: {
-        type: 'text',
-        defaultLabel: 'Paese di Destinazione',
-        defaultVisibility: 'conditional',
-        condition: { field: 'intenzioneItalia', value: 'NO' },
-        placeholder: 'Inserisci paese'
-      }
-    }
+        type: "text",
+        defaultLabel: "Paese di Destinazione",
+        defaultVisibility: "conditional",
+        condition: { field: "intenzioneItalia", value: "NO" },
+        placeholder: "Inserisci paese",
+      },
+    },
   },
 
   referral: {
-    id: 'referral',
-    dataKey: 'referral',
-    defaultLabel: 'Come ci hai conosciuto?',
+    id: "referral",
+    dataKey: "referral",
+    defaultLabel: "Come ci hai conosciuto?",
     defaultOrder: 6,
-    color: 'cyan',
+    color: "cyan",
     fields: {
       referral: {
-        type: 'select',
-        defaultLabel: 'Fonte',
-        defaultVisibility: 'required',
+        type: "select",
+        defaultLabel: "Fonte",
+        defaultVisibility: "required",
         defaultOptions: REFERRAL_OPTIONS,
-        placeholder: 'Seleziona fonte'
+        placeholder: "Seleziona fonte",
       },
       referralAltro: {
-        type: 'text',
-        defaultLabel: 'Specifica',
-        defaultVisibility: 'conditional',
-        condition: { field: 'referral', values: ['Altro', 'Ente partner'] },
-        placeholder: 'Specifica la fonte'
-      }
-    }
+        type: "text",
+        defaultLabel: "Specifica",
+        defaultVisibility: "conditional",
+        condition: { field: "referral", values: ["Altro", "Ente partner"] },
+        placeholder: "Specifica la fonte",
+      },
+    },
   },
 
   accessServices: {
-    id: 'accessServices',
-    dataKey: 'services', // Special handling - uses accessCategories
-    defaultLabel: 'Registra Primo Accesso & Documenti (Opzionale)',
+    id: "accessServices",
+    dataKey: "services", // Special handling - uses accessCategories
+    defaultLabel: "Registra Primo Accesso & Documenti (Opzionale)",
     defaultOrder: 7,
-    color: 'gray',
+    color: "gray",
     isServiceSection: true, // Flag for special handling
-    fields: {} // Fields are dynamic based on accessCategories
-  }
+    fields: {}, // Fields are dynamic based on accessCategories
+  },
 };
 
 /**
@@ -258,7 +258,7 @@ export function generateDefaultFormConfiguration() {
       fields[fieldId] = {
         visibility: fieldDef.defaultVisibility,
         label: null, // null means use default
-        options: null // null means use default options
+        options: null, // null means use default options
       };
 
       // Include condition if field is conditional
@@ -271,13 +271,13 @@ export function generateDefaultFormConfiguration() {
       enabled: true,
       order: sectionDef.defaultOrder,
       label: null, // null means use default
-      fields
+      fields,
     };
   }
 
   return {
     version: 1,
-    sections
+    sections,
   };
 }
 
@@ -297,7 +297,7 @@ export function mergeWithDefaults(structureConfig) {
 
   const merged = {
     version: structureConfig.version || 1,
-    sections: {}
+    sections: {},
   };
 
   for (const [sectionId, sectionDef] of Object.entries(SECTION_DEFINITIONS)) {
@@ -308,7 +308,7 @@ export function mergeWithDefaults(structureConfig) {
       enabled: structureSection.enabled ?? defaultSection.enabled,
       order: structureSection.order ?? defaultSection.order,
       label: structureSection.label, // Can be null (use default) or custom string
-      fields: {}
+      fields: {},
     };
 
     for (const [fieldId, fieldDef] of Object.entries(sectionDef.fields)) {
@@ -319,7 +319,7 @@ export function mergeWithDefaults(structureConfig) {
         visibility: structureField.visibility ?? defaultField.visibility,
         label: structureField.label, // Can be null (use default) or custom string
         options: structureField.options, // Can be null (use default) or custom array
-        condition: fieldDef.condition // Always use definition condition
+        condition: fieldDef.condition, // Always use definition condition
       };
     }
   }
@@ -375,12 +375,12 @@ export function isFieldVisible(sectionId, fieldId, config, formData) {
   const visibility = fieldConfig?.visibility ?? fieldDef?.defaultVisibility;
 
   // Hidden fields are never visible
-  if (visibility === 'hidden') {
+  if (visibility === "hidden") {
     return false;
   }
 
   // Conditional fields depend on another field's value AND the parent field's visibility
-  if (visibility === 'conditional') {
+  if (visibility === "conditional") {
     const condition = fieldConfig?.condition || fieldDef?.condition;
     if (!condition) {
       return true; // No condition defined, show the field
@@ -389,11 +389,13 @@ export function isFieldVisible(sectionId, fieldId, config, formData) {
     // Parent-linked: Check if the parent/trigger field is visible
     const parentFieldId = condition.field;
     const parentFieldConfig = sectionConfig?.fields?.[parentFieldId];
-    const parentFieldDef = SECTION_DEFINITIONS[sectionId]?.fields?.[parentFieldId];
-    const parentVisibility = parentFieldConfig?.visibility ?? parentFieldDef?.defaultVisibility;
+    const parentFieldDef =
+      SECTION_DEFINITIONS[sectionId]?.fields?.[parentFieldId];
+    const parentVisibility =
+      parentFieldConfig?.visibility ?? parentFieldDef?.defaultVisibility;
 
     // If parent field is hidden, conditional field is also hidden
-    if (parentVisibility === 'hidden') {
+    if (parentVisibility === "hidden") {
       return false;
     }
 
@@ -423,7 +425,7 @@ export function isFieldVisible(sectionId, fieldId, config, formData) {
  */
 export function getParentFieldId(sectionId, fieldId) {
   const fieldDef = SECTION_DEFINITIONS[sectionId]?.fields?.[fieldId];
-  if (fieldDef?.defaultVisibility === 'conditional' && fieldDef?.condition) {
+  if (fieldDef?.defaultVisibility === "conditional" && fieldDef?.condition) {
     return fieldDef.condition.field;
   }
   return null;
@@ -438,8 +440,10 @@ export function getChildFields(sectionId, parentFieldId) {
 
   return Object.entries(sectionDef.fields)
     .filter(([_, fieldDef]) => {
-      return fieldDef.defaultVisibility === 'conditional' &&
-        fieldDef.condition?.field === parentFieldId;
+      return (
+        fieldDef.defaultVisibility === "conditional" &&
+        fieldDef.condition?.field === parentFieldId
+      );
     })
     .map(([fieldId]) => fieldId);
 }
@@ -452,7 +456,7 @@ export function isFieldRequired(sectionId, fieldId, config) {
   const fieldDef = SECTION_DEFINITIONS[sectionId]?.fields?.[fieldId];
 
   const visibility = fieldConfig?.visibility ?? fieldDef?.defaultVisibility;
-  return visibility === 'required';
+  return visibility === "required";
 }
 
 /**

@@ -1,7 +1,7 @@
-'use server';
+"use server";
 
-import { unstable_cache } from 'next/cache';
-import { CACHE_TAGS, REVALIDATE } from '@/lib/cache';
+import { unstable_cache } from "next/cache";
+import { CACHE_TAGS, REVALIDATE } from "@/lib/cache";
 
 /**
  * Fetches anagrafica list for a structure with caching
@@ -16,7 +16,7 @@ async function fetchAnagraficaListFromDb(structureId) {
     .where("deleted", "!=", true)
     .get();
 
-  return snap.docs.map(doc => ({
+  return snap.docs.map((doc) => ({
     id: doc.id,
     ...JSON.parse(JSON.stringify(doc.data())),
   }));
@@ -34,7 +34,7 @@ export async function getData(structure) {
     {
       tags: [CACHE_TAGS.anagraficaList(structure)],
       revalidate: REVALIDATE.anagraficaList,
-    }
+    },
   );
 
   const data = await getCachedData();
@@ -52,11 +52,13 @@ export async function getExportData(structureId) {
   const db = admin.firestore();
 
   const [anagraficaSnap, dataSnap] = await Promise.all([
-    db.collection("anagrafica")
+    db
+      .collection("anagrafica")
       .where("canBeAccessedBy", "array-contains", structureId)
       .where("deleted", "!=", true)
       .get(),
-    db.collection("anagrafica_data")
+    db
+      .collection("anagrafica_data")
       .where("structureId", "==", structureId)
       .get(),
   ]);
@@ -67,9 +69,17 @@ export async function getExportData(structureId) {
     if (d.anagraficaId) structureDataMap[d.anagraficaId] = d;
   }
 
-  return anagraficaSnap.docs.map(doc => {
+  return anagraficaSnap.docs.map((doc) => {
     const sd = structureDataMap[doc.id] || {};
-    const { anagraficaId: _aid, structureId: _sid, updatedAt: _upd, updatedBy: _upBy, createdAt: _cr, status: _st, ...structureGroups } = sd;
+    const {
+      anagraficaId: _aid,
+      structureId: _sid,
+      updatedAt: _upd,
+      updatedBy: _upBy,
+      createdAt: _cr,
+      status: _st,
+      ...structureGroups
+    } = sd;
     return {
       id: doc.id,
       ...JSON.parse(JSON.stringify({ ...doc.data(), ...structureGroups })),

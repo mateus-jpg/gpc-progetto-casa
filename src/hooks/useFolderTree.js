@@ -3,8 +3,8 @@
  * Uses SWR for client-side caching and automatic revalidation
  */
 
-import useSWR from 'swr';
-import { getFolderTree, getFolderContents } from '@/actions/files/folders';
+import useSWR from "swr";
+import { getFolderContents, getFolderTree } from "@/actions/files/folders";
 
 /**
  * Fetch folder tree for an anagrafica
@@ -13,7 +13,7 @@ import { getFolderTree, getFolderContents } from '@/actions/files/folders';
  */
 export function useFolderTree(anagraficaId) {
   const { data, error, isLoading, mutate } = useSWR(
-    anagraficaId ? ['folder-tree', anagraficaId] : null,
+    anagraficaId ? ["folder-tree", anagraficaId] : null,
     async ([_, id]) => {
       const result = await getFolderTree(id);
       if (result.error) {
@@ -25,7 +25,7 @@ export function useFolderTree(anagraficaId) {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 30000, // 30 seconds
-    }
+    },
   );
 
   return {
@@ -46,15 +46,24 @@ export function useFolderTree(anagraficaId) {
  * @param {boolean} includeSubfolders - Whether to include subfolders
  * @returns {Object} SWR response with folder contents
  */
-export function useFolderContents(folderId, anagraficaId = null, includeSubfolders = true) {
+export function useFolderContents(
+  folderId,
+  anagraficaId = null,
+  includeSubfolders = true,
+) {
   // Use 'root' as key when folderId is null to enable root fetching
-  const key = ['folder-contents', folderId || 'root', anagraficaId, includeSubfolders];
+  const key = [
+    "folder-contents",
+    folderId || "root",
+    anagraficaId,
+    includeSubfolders,
+  ];
 
   const { data, error, isLoading, mutate } = useSWR(
     key,
     async ([_, id, anagId, includeSub]) => {
       const result = await getFolderContents({
-        folderId: id === 'root' ? null : id,
+        folderId: id === "root" ? null : id,
         anagraficaId: anagId,
         includeSubfolders: includeSub,
       });
@@ -67,7 +76,7 @@ export function useFolderContents(folderId, anagraficaId = null, includeSubfolde
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 10000, // 10 seconds
-    }
+    },
   );
 
   return {
@@ -96,11 +105,11 @@ export function invalidateFolderTreeCache(mutate, anagraficaId) {
       if (!Array.isArray(key)) return false;
       const [type, id] = key;
       return (
-        (type === 'folder-tree' && id === anagraficaId) ||
-        type === 'folder-contents'
+        (type === "folder-tree" && id === anagraficaId) ||
+        type === "folder-contents"
       );
     },
     undefined,
-    { revalidate: true }
+    { revalidate: true },
   );
 }

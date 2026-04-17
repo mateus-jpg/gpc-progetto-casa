@@ -1,46 +1,46 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
 import {
-  Folder,
-  File,
-  FileText,
-  FileImage,
-  FileVideo,
-  FileAudio,
-  FileArchive,
-  MoreVertical,
-  Download,
-  Trash2,
-  Edit,
-  FileCode,
+  closestCenter,
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { format } from "date-fns";
+import {
   ArrowUp,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+  Download,
+  Edit,
+  File,
+  FileArchive,
+  FileAudio,
+  FileCode,
+  FileImage,
+  FileText,
+  FileVideo,
+  Folder,
+  MoreVertical,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import FolderActionsMenu from "@/components/Files/FolderActionsMenu";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-
-import { Card, CardContent } from '@/components/ui/card';
-import { cn, formatBytes } from '@/lib/utils';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
-import { useFileDownload } from '@/hooks/useFileDownload';
-import FolderActionsMenu from '@/components/Files/FolderActionsMenu';
-import {
-  DndContext,
-  DragOverlay,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import { useDraggable, useDroppable } from '@dnd-kit/core';
+} from "@/components/ui/dropdown-menu";
+import { useFileDownload } from "@/hooks/useFileDownload";
+import { cn, formatBytes } from "@/lib/utils";
 
 /**
  * Parent folder ".." item for navigation (also droppable)
@@ -48,9 +48,9 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 function ParentFolderItem({ onNavigateUp, parentFolderId }) {
   // Make parent folder droppable
   const { setNodeRef, isOver } = useDroppable({
-    id: 'drop-parent-folder',
+    id: "drop-parent-folder",
     data: {
-      type: 'folder',
+      type: "folder",
       folderId: parentFolderId,
     },
   });
@@ -59,8 +59,8 @@ function ParentFolderItem({ onNavigateUp, parentFolderId }) {
     <Card
       ref={setNodeRef}
       className={cn(
-        'relative group cursor-pointer hover:shadow-md transition-all border-dashed',
-        isOver && 'ring-2 ring-blue-500 bg-blue-50'
+        "relative group cursor-pointer hover:shadow-md transition-all border-dashed",
+        isOver && "ring-2 ring-blue-500 bg-blue-50",
       )}
       onClick={onNavigateUp}
     >
@@ -75,9 +75,7 @@ function ParentFolderItem({ onNavigateUp, parentFolderId }) {
           </div>
 
           {/* Name */}
-          <p className="text-sm font-medium text-center text-gray-600">
-            ..
-          </p>
+          <p className="text-sm font-medium text-center text-gray-600">..</p>
           <p className="text-xs text-muted-foreground mt-1">Parent Folder</p>
         </div>
       </CardContent>
@@ -88,48 +86,61 @@ function ParentFolderItem({ onNavigateUp, parentFolderId }) {
 /**
  * Get appropriate icon for file type
  */
-function getFileIcon(mimeType, className = 'w-12 h-12') {
+function getFileIcon(mimeType, className = "w-12 h-12") {
   if (!mimeType) return <File className={className} />;
 
-  if (mimeType.startsWith('image/')) {
-    return <FileImage className={cn(className, 'text-green-500')} />;
+  if (mimeType.startsWith("image/")) {
+    return <FileImage className={cn(className, "text-green-500")} />;
   }
-  if (mimeType.startsWith('video/')) {
-    return <FileVideo className={cn(className, 'text-purple-500')} />;
+  if (mimeType.startsWith("video/")) {
+    return <FileVideo className={cn(className, "text-purple-500")} />;
   }
-  if (mimeType.startsWith('audio/')) {
-    return <FileAudio className={cn(className, 'text-pink-500')} />;
+  if (mimeType.startsWith("audio/")) {
+    return <FileAudio className={cn(className, "text-pink-500")} />;
   }
-  if (mimeType === 'application/pdf') {
-    return <FileText className={cn(className, 'text-red-500')} />;
-  }
-  if (
-    mimeType.includes('zip') ||
-    mimeType.includes('rar') ||
-    mimeType.includes('7z')
-  ) {
-    return <FileArchive className={cn(className, 'text-orange-500')} />;
+  if (mimeType === "application/pdf") {
+    return <FileText className={cn(className, "text-red-500")} />;
   }
   if (
-    mimeType.includes('javascript') ||
-    mimeType.includes('json') ||
-    mimeType.includes('html')
+    mimeType.includes("zip") ||
+    mimeType.includes("rar") ||
+    mimeType.includes("7z")
   ) {
-    return <FileCode className={cn(className, 'text-blue-500')} />;
+    return <FileArchive className={cn(className, "text-orange-500")} />;
+  }
+  if (
+    mimeType.includes("javascript") ||
+    mimeType.includes("json") ||
+    mimeType.includes("html")
+  ) {
+    return <FileCode className={cn(className, "text-blue-500")} />;
   }
 
-  return <FileText className={cn(className, 'text-gray-500')} />;
+  return <FileText className={cn(className, "text-gray-500")} />;
 }
 
 /**
  * Grid item for a folder (draggable and droppable)
  */
-function FolderGridItem({ folder, onOpen, onRename, onMove, onDelete, isSelected, isDragOverlay = false }) {
+function FolderGridItem({
+  folder,
+  onOpen,
+  onRename,
+  onMove,
+  onDelete,
+  isSelected,
+  isDragOverlay = false,
+}) {
   // Make folder draggable
-  const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    isDragging,
+  } = useDraggable({
     id: `folder-${folder.id}`,
     data: {
-      type: 'folder',
+      type: "folder",
       folder,
     },
   });
@@ -138,7 +149,7 @@ function FolderGridItem({ folder, onOpen, onRename, onMove, onDelete, isSelected
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `drop-folder-${folder.id}`,
     data: {
-      type: 'folder',
+      type: "folder",
       folderId: folder.id,
     },
   });
@@ -155,10 +166,10 @@ function FolderGridItem({ folder, onOpen, onRename, onMove, onDelete, isSelected
       {...(isDragOverlay ? {} : attributes)}
       {...(isDragOverlay ? {} : listeners)}
       className={cn(
-        'relative group cursor-pointer hover:shadow-md transition-all',
-        isSelected && 'ring-2 ring-primary',
-        isDragging && 'opacity-50',
-        isOver && 'ring-2 ring-blue-500 bg-blue-50'
+        "relative group cursor-pointer hover:shadow-md transition-all",
+        isSelected && "ring-2 ring-primary",
+        isDragging && "opacity-50",
+        isOver && "ring-2 ring-blue-500 bg-blue-50",
       )}
       onClick={() => !isDragging && onOpen(folder.id)}
     >
@@ -202,14 +213,21 @@ function FolderGridItem({ folder, onOpen, onRename, onMove, onDelete, isSelected
 /**
  * Grid item for a file (draggable)
  */
-function FileGridItem({ file, onDelete, onRename, onMove, isSelected, isDragOverlay = false }) {
+function FileGridItem({
+  file,
+  onDelete,
+  onRename,
+  onMove,
+  isSelected,
+  isDragOverlay = false,
+}) {
   const { handleDownload, isDownloading } = useFileDownload(file.id);
 
   // Make file draggable
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `file-${file.id}`,
     data: {
-      type: 'file',
+      type: "file",
       file,
     },
   });
@@ -220,16 +238,16 @@ function FileGridItem({ file, onDelete, onRename, onMove, isSelected, isDragOver
       {...(isDragOverlay ? {} : attributes)}
       {...(isDragOverlay ? {} : listeners)}
       className={cn(
-        'relative group cursor-pointer hover:shadow-md transition-all',
-        isSelected && 'ring-2 ring-primary',
-        isDragging && 'opacity-50'
+        "relative group cursor-pointer hover:shadow-md transition-all",
+        isSelected && "ring-2 ring-primary",
+        isDragging && "opacity-50",
       )}
       onClick={!isDragging ? handleDownload : undefined}
     >
       <CardContent className="p-4">
         <div className="flex flex-col items-center">
           {/* Icon */}
-          <div className="mb-3">{getFileIcon(file.tipo, 'w-16 h-16')}</div>
+          <div className="mb-3">{getFileIcon(file.tipo, "w-16 h-16")}</div>
 
           {/* Name */}
           <p
@@ -247,7 +265,7 @@ function FileGridItem({ file, onDelete, onRename, onMove, isSelected, isDragOver
           {/* Modified date */}
           {file.updatedAt && (
             <p className="text-xs text-muted-foreground">
-              {format(new Date(file.updatedAt), 'dd/MM/yyyy')}
+              {format(new Date(file.updatedAt), "dd/MM/yyyy")}
             </p>
           )}
         </div>
@@ -333,7 +351,7 @@ export default function FileGridView({
         distance: 8, // Require 8px movement before drag starts
       },
     }),
-    useSensor(KeyboardSensor)
+    useSensor(KeyboardSensor),
   );
 
   const handleDragStart = (event) => {
@@ -350,21 +368,24 @@ export default function FileGridView({
     const targetFolder = over.data.current;
 
     // Only handle drops on folders
-    if (targetFolder?.type !== 'folder') return;
+    if (targetFolder?.type !== "folder") return;
 
     // Don't allow dropping folder into itself
-    if (draggedItem.type === 'folder' && draggedItem.folder.id === targetFolder.folderId) {
+    if (
+      draggedItem.type === "folder" &&
+      draggedItem.folder.id === targetFolder.folderId
+    ) {
       return;
     }
 
     // Handle file move
-    if (draggedItem.type === 'file') {
+    if (draggedItem.type === "file") {
       onFileMove?.(draggedItem.file.id, targetFolder.folderId);
       toast.success(`Moved "${draggedItem.file.nome}" to folder`);
     }
 
     // Handle folder move
-    if (draggedItem.type === 'folder') {
+    if (draggedItem.type === "folder") {
       onFolderMove?.(draggedItem.folder.id, targetFolder.folderId);
       toast.success(`Moved folder "${draggedItem.folder.nome}"`);
     }
@@ -462,14 +483,14 @@ export default function FileGridView({
 
       {/* Drag Overlay */}
       <DragOverlay>
-        {activeItem?.type === 'folder' && (
+        {activeItem?.type === "folder" && (
           <FolderGridItem
             folder={activeItem.folder}
             onOpen={() => {}}
             isDragOverlay
           />
         )}
-        {activeItem?.type === 'file' && (
+        {activeItem?.type === "file" && (
           <FileGridItem
             file={activeItem.file}
             onDelete={() => {}}

@@ -1,8 +1,8 @@
-'use server';
+"use server";
 
-import { unstable_cache } from 'next/cache';
-import admin from '@/lib/firebase/firebaseAdmin';
-import { requireUser, verifyUserPermissions } from '@/utils/server-auth';
+import { unstable_cache } from "next/cache";
+import admin from "@/lib/firebase/firebaseAdmin";
+import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
 
 const adminDb = admin.firestore();
 
@@ -12,7 +12,7 @@ const adminDb = admin.firestore();
  * @returns {Object} The statistics data
  */
 async function fetchStatisticsFromDb(structureId) {
-  const statsRef = adminDb.collection('statistics').doc(structureId);
+  const statsRef = adminDb.collection("statistics").doc(structureId);
   const statsSnap = await statsRef.get();
 
   if (!statsSnap.exists) {
@@ -31,10 +31,10 @@ async function fetchStatisticsFromDb(structureId) {
  */
 async function fetchMonthlyStatsFromDb(structureId, months = 6) {
   const monthlyRef = adminDb
-    .collection('statistics')
+    .collection("statistics")
     .doc(structureId)
-    .collection('monthly')
-    .orderBy('__name__', 'desc')
+    .collection("monthly")
+    .orderBy("__name__", "desc")
     .limit(months);
 
   const monthlySnap = await monthlyRef.get();
@@ -43,10 +43,12 @@ async function fetchMonthlyStatsFromDb(structureId, months = 6) {
     return [];
   }
 
-  return monthlySnap.docs.map(doc => ({
-    id: doc.id,
-    ...JSON.parse(JSON.stringify(doc.data()))
-  })).reverse(); // Chronological order
+  return monthlySnap.docs
+    .map((doc) => ({
+      id: doc.id,
+      ...JSON.parse(JSON.stringify(doc.data())),
+    }))
+    .reverse(); // Chronological order
 }
 
 /**
@@ -61,7 +63,7 @@ export async function getStatistics(structureId) {
     // Verify user has access to this structure
     await verifyUserPermissions({
       userUid,
-      structureId
+      structureId,
     });
 
     // Use cached fetcher for better performance
@@ -71,21 +73,21 @@ export async function getStatistics(structureId) {
       {
         tags: [`statistics-${structureId}`],
         revalidate: 60, // Revalidate every minute
-      }
+      },
     );
 
     const stats = await getCachedStats();
 
     return JSON.stringify({
       success: true,
-      data: stats || getEmptyStats()
+      data: stats || getEmptyStats(),
     });
   } catch (error) {
-    console.error('[GET_STATISTICS ERROR]:', error);
+    console.error("[GET_STATISTICS ERROR]:", error);
     return JSON.stringify({
       success: false,
       error: error.message,
-      data: getEmptyStats()
+      data: getEmptyStats(),
     });
   }
 }
@@ -102,7 +104,7 @@ export async function getMonthlyStatistics(structureId, months = 6) {
 
     await verifyUserPermissions({
       userUid,
-      structureId
+      structureId,
     });
 
     const getCachedMonthlyStats = unstable_cache(
@@ -111,21 +113,21 @@ export async function getMonthlyStatistics(structureId, months = 6) {
       {
         tags: [`statistics-monthly-${structureId}`],
         revalidate: 300, // Revalidate every 5 minutes
-      }
+      },
     );
 
     const monthlyStats = await getCachedMonthlyStats();
 
     return JSON.stringify({
       success: true,
-      data: monthlyStats
+      data: monthlyStats,
     });
   } catch (error) {
-    console.error('[GET_MONTHLY_STATISTICS ERROR]:', error);
+    console.error("[GET_MONTHLY_STATISTICS ERROR]:", error);
     return JSON.stringify({
       success: false,
       error: error.message,
-      data: []
+      data: [],
     });
   }
 }

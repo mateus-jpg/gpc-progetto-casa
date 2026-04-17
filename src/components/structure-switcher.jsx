@@ -1,77 +1,87 @@
-"use client"
-import * as React from "react"
-import { ChevronsUpDown, Plus, Settings, FolderOpen, Building2 } from "lucide-react"
+"use client";
+import {
+  Building2,
+  ChevronsUpDown,
+  FolderOpen,
+  Plus,
+  Settings,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import * as React from "react";
+import { useSWRConfig } from "swr";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-} from "@/components/ui/dropdown-menu"
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
-import { useSWRConfig } from "swr"
-import { clearStructureCache } from "@/lib/swr-config"
+} from "@/components/ui/sidebar";
+import { clearStructureCache } from "@/lib/swr-config";
 
-import { useRouter } from "next/navigation"
-
-export function StructureSwitcher({ structures, projects = [], selectedStructure, user }) {
-  const { isMobile } = useSidebar()
-  const router = useRouter()
-  const { mutate } = useSWRConfig()
+export function StructureSwitcher({
+  structures,
+  projects = [],
+  selectedStructure,
+  user,
+}) {
+  const { isMobile } = useSidebar();
+  const router = useRouter();
+  const { mutate } = useSWRConfig();
 
   const handleStructureChange = async (structureId) => {
     // Clear structure-specific cache before navigating
-    await clearStructureCache(mutate)
-    router.push(`/${structureId}`)
-  }
+    await clearStructureCache(mutate);
+    router.push(`/${structureId}`);
+  };
 
-  const isAdmin = user?.role === 'admin'
-  const isProjectAdmin = projects.some(p => p.admins?.includes(user?.uid))
+  const isAdmin = user?.role === "admin";
+  const isProjectAdmin = projects.some((p) => p.admins?.includes(user?.uid));
 
   // Group structures by project
   const groupedStructures = React.useMemo(() => {
-    const groups = new Map()
-    const noProjectStructures = []
+    const groups = new Map();
+    const noProjectStructures = [];
 
-    structures.forEach(structure => {
+    structures.forEach((structure) => {
       if (structure.projectId) {
-        const project = projects.find(p => p.id === structure.projectId)
+        const project = projects.find((p) => p.id === structure.projectId);
         if (project) {
           if (!groups.has(project.id)) {
             groups.set(project.id, {
               project,
-              structures: []
-            })
+              structures: [],
+            });
           }
-          groups.get(project.id).structures.push(structure)
+          groups.get(project.id).structures.push(structure);
         } else {
-          noProjectStructures.push(structure)
+          noProjectStructures.push(structure);
         }
       } else {
-        noProjectStructures.push(structure)
+        noProjectStructures.push(structure);
       }
-    })
+    });
 
     return {
       byProject: Array.from(groups.values()),
-      noProject: noProjectStructures
-    }
-  }, [structures, projects])
+      noProject: noProjectStructures,
+    };
+  }, [structures, projects]);
 
-  const hasProjects = groupedStructures.byProject.length > 0
+  const hasProjects = groupedStructures.byProject.length > 0;
 
-  let activeStructure = selectedStructure
+  let activeStructure = selectedStructure;
   if (!selectedStructure) {
-    activeStructure = { name: "seleziona struttura" }
+    activeStructure = { name: "seleziona struttura" };
   }
 
   return (
@@ -84,10 +94,15 @@ export function StructureSwitcher({ structures, projects = [], selectedStructure
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{activeStructure.name}</span>
+                <span className="truncate font-medium">
+                  {activeStructure.name}
+                </span>
                 {selectedStructure?.projectId && (
                   <span className="truncate text-xs text-muted-foreground">
-                    {projects.find(p => p.id === selectedStructure.projectId)?.name}
+                    {
+                      projects.find((p) => p.id === selectedStructure.projectId)
+                        ?.name
+                    }
                   </span>
                 )}
               </div>
@@ -105,29 +120,32 @@ export function StructureSwitcher({ structures, projects = [], selectedStructure
             </DropdownMenuLabel>
 
             {/* Structures grouped by project */}
-            {hasProjects && groupedStructures.byProject.map(({ project, structures: projectStructures }) => (
-              <DropdownMenuSub key={project.id}>
-                <DropdownMenuSubTrigger className="gap-2 p-2">
-                  <FolderOpen className="size-4 text-muted-foreground" />
-                  <span className="font-medium">{project.name}</span>
-                  <span className="ml-auto text-xs text-muted-foreground">
-                    {projectStructures.length}
-                  </span>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  {projectStructures.map((structure) => (
-                    <DropdownMenuItem
-                      key={structure.id}
-                      onClick={() => handleStructureChange(structure.id)}
-                      className="gap-2 p-2"
-                    >
-                      <Building2 className="size-4 text-muted-foreground" />
-                      {structure.name}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-            ))}
+            {hasProjects &&
+              groupedStructures.byProject.map(
+                ({ project, structures: projectStructures }) => (
+                  <DropdownMenuSub key={project.id}>
+                    <DropdownMenuSubTrigger className="gap-2 p-2">
+                      <FolderOpen className="size-4 text-muted-foreground" />
+                      <span className="font-medium">{project.name}</span>
+                      <span className="ml-auto text-xs text-muted-foreground">
+                        {projectStructures.length}
+                      </span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {projectStructures.map((structure) => (
+                        <DropdownMenuItem
+                          key={structure.id}
+                          onClick={() => handleStructureChange(structure.id)}
+                          className="gap-2 p-2"
+                        >
+                          <Building2 className="size-4 text-muted-foreground" />
+                          {structure.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                ),
+              )}
 
             {/* Structures without project */}
             {groupedStructures.noProject.length > 0 && (
@@ -187,5 +205,5 @@ export function StructureSwitcher({ structures, projects = [], selectedStructure
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

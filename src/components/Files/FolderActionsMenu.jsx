@@ -1,20 +1,25 @@
-'use client';
+"use client";
 
-import { Folder, MoreVertical, Trash2, Edit } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Edit, Folder, MoreVertical, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 
 /**
  * Shared folder actions dropdown (Rename, Move, Delete).
  * Always stops propagation to support both table and grid view contexts.
  */
-export default function FolderActionsMenu({ folder, onRename, onMove, onDelete }) {
+export default function FolderActionsMenu({
+  folder,
+  onRename,
+  onMove,
+  onDelete,
+}) {
   const canDelete = !folder.isDefaultCategory;
 
   const handle = (fn) => (e) => {
@@ -49,7 +54,7 @@ export default function FolderActionsMenu({ folder, onRename, onMove, onDelete }
           className="text-destructive focus:text-destructive disabled:opacity-50"
         >
           <Trash2 className="mr-2 h-4 w-4" />
-          Delete {!canDelete && '(Protected)'}
+          Delete {!canDelete && "(Protected)"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

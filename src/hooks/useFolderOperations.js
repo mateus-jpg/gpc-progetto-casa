@@ -2,14 +2,14 @@
  * Custom hook for folder CRUD operations
  */
 
-import { useState, useCallback } from 'react';
-import { toast } from 'sonner';
+import { useCallback, useState } from "react";
+import { toast } from "sonner";
 import {
   createFolder,
-  renameFolder,
   deleteFolder,
   moveFolder,
-} from '@/actions/files/folders';
+  renameFolder,
+} from "@/actions/files/folders";
 
 /**
  * Hook for managing folder operations
@@ -30,17 +30,17 @@ export function useFolderOperations(anagraficaId, structureId, onSuccess) {
   const create = useCallback(
     async (folderName, parentFolderId = null) => {
       if (!anagraficaId || !structureId) {
-        toast.error('Required parameters missing');
+        toast.error("Required parameters missing");
         return { success: false };
       }
 
       if (!folderName || folderName.trim().length === 0) {
-        toast.error('Folder name is required');
+        toast.error("Folder name is required");
         return { success: false };
       }
 
       if (folderName.length > 100) {
-        toast.error('Folder name must be 100 characters or less');
+        toast.error("Folder name must be 100 characters or less");
         return { success: false };
       }
 
@@ -54,22 +54,22 @@ export function useFolderOperations(anagraficaId, structureId, onSuccess) {
         });
 
         if (result.error) {
-          toast.error(result.message || 'Failed to create folder');
+          toast.error(result.message || "Failed to create folder");
           return { success: false };
         }
 
-        toast.success('Folder created successfully');
+        toast.success("Folder created successfully");
         if (onSuccess) onSuccess();
         return { success: true, folder: result.folder };
       } catch (error) {
-        console.error('[CREATE_FOLDER_ERROR]:', error);
-        toast.error('An error occurred while creating the folder');
+        console.error("[CREATE_FOLDER_ERROR]:", error);
+        toast.error("An error occurred while creating the folder");
         return { success: false };
       } finally {
         setIsCreating(false);
       }
     },
-    [anagraficaId, structureId, onSuccess]
+    [anagraficaId, structureId, onSuccess],
   );
 
   /**
@@ -78,17 +78,17 @@ export function useFolderOperations(anagraficaId, structureId, onSuccess) {
   const rename = useCallback(
     async (folderId, newName) => {
       if (!structureId) {
-        toast.error('Structure ID is required');
+        toast.error("Structure ID is required");
         return { success: false };
       }
 
       if (!newName || newName.trim().length === 0) {
-        toast.error('Folder name is required');
+        toast.error("Folder name is required");
         return { success: false };
       }
 
       if (newName.length > 100) {
-        toast.error('Folder name must be 100 characters or less');
+        toast.error("Folder name must be 100 characters or less");
         return { success: false };
       }
 
@@ -101,22 +101,22 @@ export function useFolderOperations(anagraficaId, structureId, onSuccess) {
         });
 
         if (result.error) {
-          toast.error(result.message || 'Failed to rename folder');
+          toast.error(result.message || "Failed to rename folder");
           return { success: false };
         }
 
-        toast.success(result.message || 'Folder renamed successfully');
+        toast.success(result.message || "Folder renamed successfully");
         if (onSuccess) onSuccess();
         return { success: true };
       } catch (error) {
-        console.error('[RENAME_FOLDER_ERROR]:', error);
-        toast.error('An error occurred while renaming the folder');
+        console.error("[RENAME_FOLDER_ERROR]:", error);
+        toast.error("An error occurred while renaming the folder");
         return { success: false };
       } finally {
         setIsRenaming(false);
       }
     },
-    [structureId, onSuccess]
+    [structureId, onSuccess],
   );
 
   /**
@@ -125,7 +125,7 @@ export function useFolderOperations(anagraficaId, structureId, onSuccess) {
   const remove = useCallback(
     async (folderId, cascade = false) => {
       if (!structureId) {
-        toast.error('Structure ID is required');
+        toast.error("Structure ID is required");
         return { success: false };
       }
 
@@ -138,24 +138,24 @@ export function useFolderOperations(anagraficaId, structureId, onSuccess) {
         });
 
         if (result.error) {
-          toast.error(result.message || 'Failed to delete folder');
+          toast.error(result.message || "Failed to delete folder");
           return { success: false };
         }
 
         toast.success(
-          result.message || `Folder deleted (${result.deletedCount} items)`
+          result.message || `Folder deleted (${result.deletedCount} items)`,
         );
         if (onSuccess) onSuccess();
         return { success: true, deletedCount: result.deletedCount };
       } catch (error) {
-        console.error('[DELETE_FOLDER_ERROR]:', error);
-        toast.error('An error occurred while deleting the folder');
+        console.error("[DELETE_FOLDER_ERROR]:", error);
+        toast.error("An error occurred while deleting the folder");
         return { success: false };
       } finally {
         setIsDeleting(false);
       }
     },
-    [structureId, onSuccess]
+    [structureId, onSuccess],
   );
 
   /**
@@ -164,7 +164,7 @@ export function useFolderOperations(anagraficaId, structureId, onSuccess) {
   const move = useCallback(
     async (folderId, newParentFolderId) => {
       if (!structureId) {
-        toast.error('Structure ID is required');
+        toast.error("Structure ID is required");
         return { success: false };
       }
 
@@ -177,22 +177,22 @@ export function useFolderOperations(anagraficaId, structureId, onSuccess) {
         });
 
         if (result.error) {
-          toast.error(result.message || 'Failed to move folder');
+          toast.error(result.message || "Failed to move folder");
           return { success: false };
         }
 
-        toast.success(result.message || 'Folder moved successfully');
+        toast.success(result.message || "Folder moved successfully");
         if (onSuccess) onSuccess();
         return { success: true };
       } catch (error) {
-        console.error('[MOVE_FOLDER_ERROR]:', error);
-        toast.error('An error occurred while moving the folder');
+        console.error("[MOVE_FOLDER_ERROR]:", error);
+        toast.error("An error occurred while moving the folder");
         return { success: false };
       } finally {
         setIsMoving(false);
       }
     },
-    [structureId, onSuccess]
+    [structureId, onSuccess],
   );
 
   return {

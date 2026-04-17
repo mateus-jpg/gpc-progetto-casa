@@ -2,15 +2,16 @@ import { NextResponse } from "next/server";
 import { getCachedSession, setCachedSession } from "@/utils/session-cache";
 
 function sanitizeHeader(value) {
-  return (value || '').replace(/[\r\n]/g, '');
+  return (value || "").replace(/[\r\n]/g, "");
 }
 
 function createResponseWithUserHeaders(req, user) {
   const headers = new Headers(req.headers);
-  headers.set('x-user-uid', sanitizeHeader(user.uid));
-  headers.set('x-user-email', sanitizeHeader(user.email));
-  if (user.role) headers.set('x-user-role', sanitizeHeader(user.role));
-  if (user.structureIds) headers.set('x-user-structures', JSON.stringify(user.structureIds));
+  headers.set("x-user-uid", sanitizeHeader(user.uid));
+  headers.set("x-user-email", sanitizeHeader(user.email));
+  if (user.role) headers.set("x-user-role", sanitizeHeader(user.role));
+  if (user.structureIds)
+    headers.set("x-user-structures", JSON.stringify(user.structureIds));
   return NextResponse.next({ request: { headers } });
 }
 
@@ -19,10 +20,16 @@ export async function middleware(req) {
   const sessionCookie = req.cookies.get(cookieName)?.value;
 
   const { pathname } = req.nextUrl;
-  const publicPaths = ["/login", "/api/auth/sessionLogin", "/_next", "/static", "/favicon.ico"];
+  const publicPaths = [
+    "/login",
+    "/api/auth/sessionLogin",
+    "/_next",
+    "/static",
+    "/favicon.ico",
+  ];
 
   // Allow public paths to pass through
-  if (publicPaths.some(p => pathname.startsWith(p))) {
+  if (publicPaths.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
@@ -40,8 +47,8 @@ export async function middleware(req) {
   }
 
   // Cache miss - verify session via API
-  const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
-  const protocol = req.headers.get('x-forwarded-proto') || 'http';
+  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+  const protocol = req.headers.get("x-forwarded-proto") || "http";
   const absoluteUrl = `${protocol}://${host}/api/auth/verify`;
 
   // Create AbortController for timeout
@@ -52,7 +59,7 @@ export async function middleware(req) {
     const verifyRes = await fetch(absoluteUrl, {
       headers: {
         cookie: req.headers.get("cookie") || "",
-        'cache-control': 'no-cache',
+        "cache-control": "no-cache",
       },
       signal: controller.signal,
     });
@@ -69,11 +76,13 @@ export async function middleware(req) {
     setCachedSession(sessionCookie, user);
 
     return createResponseWithUserHeaders(req, user);
-
   } catch (error) {
     // Session verification failed - redirect to login
-    if (process.env.NODE_ENV !== 'production') {
-      console.error(`Session verification error for ${pathname}:`, error.message);
+    if (process.env.NODE_ENV !== "production") {
+      console.error(
+        `Session verification error for ${pathname}:`,
+        error.message,
+      );
     }
 
     // If verification fails, clear the invalid cookie and redirect
@@ -87,5 +96,7 @@ export async function middleware(req) {
 }
 
 export const config = {
-  matcher: ['/((?!api/auth/sessionLogin|api/auth/|api/auth/verify|_next/static|_next/image|favicon.ico|.*\\.css).*)'],
+  matcher: [
+    "/((?!api/auth/sessionLogin|api/auth/|api/auth/verify|_next/static|_next/image|favicon.ico|.*\\.css).*)",
+  ],
 };

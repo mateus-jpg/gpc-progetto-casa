@@ -1,6 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useEffect } from 'react';
+import { File as FileIcon, Upload, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { uploadStructureFiles } from "@/actions/files/structure-files";
+import DatePicker from "@/components/form/DatePicker";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,42 +14,37 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Dropzone, DropzoneContent } from '@/components/ui/shadcn-io/dropzone';
-import { Upload, File as FileIcon, X } from 'lucide-react';
-import { uploadStructureFiles } from '@/actions/files/structure-files';
-import { toast } from 'sonner';
-import { formatBytes } from '@/lib/utils';
-import DatePicker from '@/components/form/DatePicker';
+} from "@/components/ui/select";
+import { Dropzone, DropzoneContent } from "@/components/ui/shadcn-io/dropzone";
+import { formatBytes } from "@/lib/utils";
 
 const MIME_BY_EXTENSION = {
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  doc: 'application/msword',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  xls: 'application/vnd.ms-excel',
-  pdf: 'application/pdf',
-  png: 'image/png',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  gif: 'image/gif',
-  webp: 'image/webp',
-  txt: 'text/plain',
-  csv: 'text/csv',
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  doc: "application/msword",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  xls: "application/vnd.ms-excel",
+  pdf: "application/pdf",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  txt: "text/plain",
+  csv: "text/csv",
 };
 
 function resolveFileType(file) {
-  if (file.type && file.type !== 'application/octet-stream') return file.type;
-  const ext = file.name.split('.').pop()?.toLowerCase();
+  if (file.type && file.type !== "application/octet-stream") return file.type;
+  const ext = file.name.split(".").pop()?.toLowerCase();
   return MIME_BY_EXTENSION[ext] || file.type;
 }
 
@@ -75,7 +75,9 @@ function FileItem({ fileData, onUpdate, onRemove }) {
         <Label className="text-xs">Nome Documento *</Label>
         <Input
           value={fileData.displayName}
-          onChange={e => onUpdate({ ...fileData, displayName: e.target.value })}
+          onChange={(e) =>
+            onUpdate({ ...fileData, displayName: e.target.value })
+          }
           placeholder="Nome documento"
           className="h-7 text-xs"
         />
@@ -86,7 +88,7 @@ function FileItem({ fileData, onUpdate, onRemove }) {
         <Label className="text-xs">Data Documento</Label>
         <DatePicker
           value={fileData.documentDate}
-          onChange={date => onUpdate({ ...fileData, documentDate: date })}
+          onChange={(date) => onUpdate({ ...fileData, documentDate: date })}
           placeholder="Data del documento"
           className="h-7 text-xs"
         />
@@ -97,7 +99,7 @@ function FileItem({ fileData, onUpdate, onRemove }) {
         <Label className="text-xs">Data Scadenza (opzionale)</Label>
         <DatePicker
           value={fileData.expirationDate}
-          onChange={date => onUpdate({ ...fileData, expirationDate: date })}
+          onChange={(date) => onUpdate({ ...fileData, expirationDate: date })}
           placeholder="Data di scadenza"
           className="h-7 text-xs"
         />
@@ -135,45 +137,47 @@ export default function UploadStructureFilesDialog({
   }, [open, currentFolderId]);
 
   const handleDrop = useCallback((acceptedFiles) => {
-    const newFileData = acceptedFiles.map(file => ({
+    const newFileData = acceptedFiles.map((file) => ({
       id: `${file.name}-${Date.now()}-${Math.random()}`,
       file,
       displayName: file.name,
       documentDate: new Date(),
       expirationDate: null,
     }));
-    setSelectedFiles(prev => [...prev, ...newFileData]);
+    setSelectedFiles((prev) => [...prev, ...newFileData]);
   }, []);
 
-  const handleRemoveFile = useCallback(index => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  const handleRemoveFile = useCallback((index) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   const handleUpdateFile = useCallback((index, updatedFileData) => {
-    setSelectedFiles(prev => prev.map((item, i) => (i === index ? updatedFileData : item)));
+    setSelectedFiles((prev) =>
+      prev.map((item, i) => (i === index ? updatedFileData : item)),
+    );
   }, []);
 
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
-      toast.error('Please select at least one file');
+      toast.error("Please select at least one file");
       return;
     }
 
     if (!selectedFolderId) {
-      toast.error('Please select a folder');
+      toast.error("Please select a folder");
       return;
     }
 
-    const missingNames = selectedFiles.filter(f => !f.displayName.trim());
+    const missingNames = selectedFiles.filter((f) => !f.displayName.trim());
     if (missingNames.length > 0) {
-      toast.error('Please provide a document name for all files');
+      toast.error("Please provide a document name for all files");
       return;
     }
 
     setIsUploading(true);
     try {
       const filesWithBuffers = await Promise.all(
-        selectedFiles.map(async fileData => ({
+        selectedFiles.map(async (fileData) => ({
           name: fileData.file.name,
           type: resolveFileType(fileData.file),
           size: fileData.file.size,
@@ -181,7 +185,7 @@ export default function UploadStructureFilesDialog({
           displayName: fileData.displayName,
           documentDate: fileData.documentDate,
           expirationDate: fileData.expirationDate,
-        }))
+        })),
       );
 
       const result = await uploadStructureFiles({
@@ -192,22 +196,22 @@ export default function UploadStructureFilesDialog({
       });
 
       if (result.error) {
-        toast.error(result.message || 'Failed to upload files');
+        toast.error(result.message || "Failed to upload files");
         return;
       }
 
       toast.success(
         `Uploaded ${result.uploadedCount} file(s) successfully${
-          result.errorCount > 0 ? ` (${result.errorCount} failed)` : ''
-        }`
+          result.errorCount > 0 ? ` (${result.errorCount} failed)` : ""
+        }`,
       );
 
       setSelectedFiles([]);
       setOpen(false);
       onSuccess?.();
     } catch (err) {
-      console.error('[UPLOAD_STRUCTURE_ERROR]:', err);
-      toast.error('An error occurred while uploading files');
+      console.error("[UPLOAD_STRUCTURE_ERROR]:", err);
+      toast.error("An error occurred while uploading files");
     } finally {
       setIsUploading(false);
     }
@@ -244,7 +248,7 @@ export default function UploadStructureFilesDialog({
           <div className="space-y-2">
             <Label htmlFor="folder">Upload to Folder</Label>
             <Select
-              value={selectedFolderId || ''}
+              value={selectedFolderId || ""}
               onValueChange={setSelectedFolderId}
               disabled={isUploading}
             >
@@ -252,7 +256,7 @@ export default function UploadStructureFilesDialog({
                 <SelectValue placeholder="Select a folder" />
               </SelectTrigger>
               <SelectContent>
-                {folders.map(folder => (
+                {folders.map((folder) => (
                   <SelectItem key={folder.id} value={folder.id}>
                     {folder.path || `/${folder.nome}`}
                   </SelectItem>
@@ -267,14 +271,16 @@ export default function UploadStructureFilesDialog({
             <Dropzone
               onDrop={handleDrop}
               accept={{
-                'application/pdf': ['.pdf'],
-                'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
-                'application/msword': ['.doc'],
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-                'application/vnd.ms-excel': ['.xls'],
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-                'text/plain': ['.txt'],
-                'text/csv': ['.csv'],
+                "application/pdf": [".pdf"],
+                "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
+                "application/msword": [".doc"],
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                  [".docx"],
+                "application/vnd.ms-excel": [".xls"],
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                  [".xlsx"],
+                "text/plain": [".txt"],
+                "text/csv": [".csv"],
               }}
               maxSize={10 * 1024 * 1024}
               maxFiles={10}
@@ -303,7 +309,7 @@ export default function UploadStructureFilesDialog({
                   <FileItem
                     key={fileData.id}
                     fileData={fileData}
-                    onUpdate={updated => handleUpdateFile(index, updated)}
+                    onUpdate={(updated) => handleUpdateFile(index, updated)}
                     onRemove={() => handleRemoveFile(index)}
                   />
                 ))}
@@ -313,11 +319,21 @@ export default function UploadStructureFilesDialog({
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={handleCancel} disabled={isUploading}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancel}
+            disabled={isUploading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleUpload} disabled={isUploading || selectedFiles.length === 0}>
-            {isUploading ? 'Uploading...' : `Upload ${selectedFiles.length} file(s)`}
+          <Button
+            onClick={handleUpload}
+            disabled={isUploading || selectedFiles.length === 0}
+          >
+            {isUploading
+              ? "Uploading..."
+              : `Upload ${selectedFiles.length} file(s)`}
           </Button>
         </DialogFooter>
       </DialogContent>

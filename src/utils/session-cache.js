@@ -10,7 +10,7 @@
  * @see config/constants.js for centralized configuration
  */
 
-import { AUTH } from '@/config/constants';
+import { AUTH } from "@/config/constants";
 
 // Session cache configuration (from centralized config)
 const SESSION_CACHE_TTL = AUTH.SESSION_CACHE_TTL;

@@ -45,18 +45,18 @@
  *     node -r dotenv/config src/scripts/migrateAccessiFiles.js --execute --limit=50
  */
 
-import admin from '../lib/firebase/firebaseAdmin.js';
+import admin from "../lib/firebase/firebaseAdmin.js";
 
 const db = admin.firestore();
 
 // Parse CLI args
 const args = process.argv.slice(2);
-const DRY_RUN = !args.includes('--execute');
-const limitArg = args.find(a => a.startsWith('--limit='));
-const LIMIT = limitArg ? parseInt(limitArg.split('=')[1], 10) : 0;
+const DRY_RUN = !args.includes("--execute");
+const limitArg = args.find((a) => a.startsWith("--limit="));
+const LIMIT = limitArg ? parseInt(limitArg.split("=")[1], 10) : 0;
 
 // Default folder name when tipoAccesso is missing
-const DEFAULT_FOLDER_NAME = 'Documenti';
+const DEFAULT_FOLDER_NAME = "Documenti";
 
 // Cache: anagraficaId -> { folderName -> folderId }
 // Avoids repeated Firestore queries for the same anagrafica/folder combo
@@ -76,10 +76,11 @@ async function getOrCreateFolder(anagraficaId, folderName, structureIds) {
   }
 
   // Query Firestore
-  const q = await db.collection('folders')
-    .where('anagraficaId', '==', anagraficaId)
-    .where('nome', '==', folderName)
-    .where('deleted', '==', false)
+  const q = await db
+    .collection("folders")
+    .where("anagraficaId", "==", anagraficaId)
+    .where("nome", "==", folderName)
+    .where("deleted", "==", false)
     .limit(1)
     .get();
 
@@ -96,7 +97,7 @@ async function getOrCreateFolder(anagraficaId, folderName, structureIds) {
     return mockId;
   }
 
-  const folderRef = db.collection('folders').doc();
+  const folderRef = db.collection("folders").doc();
   await folderRef.set({
     nome: folderName,
     anagraficaId,
@@ -107,7 +108,7 @@ async function getOrCreateFolder(anagraficaId, folderName, structureIds) {
     category: null,
     structureIds: structureIds || [],
     createdAt: new Date(),
-    createdBy: 'migration-script',
+    createdBy: "migration-script",
     createdByEmail: null,
     updatedAt: new Date(),
     deleted: false,
@@ -124,14 +125,16 @@ async function getOrCreateFolder(anagraficaId, folderName, structureIds) {
  * Used for idempotency: skip files that were already migrated.
  */
 async function buildMigratedPathsSet() {
-  console.log('Building index of already-migrated file paths...');
-  const snap = await db.collection('files').get();
+  console.log("Building index of already-migrated file paths...");
+  const snap = await db.collection("files").get();
   const paths = new Set();
-  snap.forEach(doc => {
+  snap.forEach((doc) => {
     const p = doc.data().path;
     if (p) paths.add(p);
   });
-  console.log(`  Found ${paths.size} existing file(s) in 'files' collection.\n`);
+  console.log(
+    `  Found ${paths.size} existing file(s) in 'files' collection.\n`,
+  );
   return paths;
 }
 
@@ -145,22 +148,26 @@ function normalizeServices(data) {
   }
 
   // Old flat format: tipoAccesso + files at root level
-  return [{
-    tipoAccesso: data.tipoAccesso || null,
-    files: data.files || [],
-    sottoCategorie: data.sottoCategorie || null,
-    note: data.note || null,
-    classificazione: data.classificazione || null,
-  }];
+  return [
+    {
+      tipoAccesso: data.tipoAccesso || null,
+      files: data.files || [],
+      sottoCategorie: data.sottoCategorie || null,
+      note: data.note || null,
+      classificazione: data.classificazione || null,
+    },
+  ];
 }
 
 async function migrateAccessiFiles() {
-  console.log('='.repeat(60));
-  console.log('  Accessi Files Migration');
-  console.log('='.repeat(60));
-  console.log(`  Mode:  ${DRY_RUN ? 'DRY RUN (no changes)' : 'EXECUTE (writing to Firestore)'}`);
-  console.log(`  Limit: ${LIMIT || 'none (all documents)'}`);
-  console.log('='.repeat(60));
+  console.log("=".repeat(60));
+  console.log("  Accessi Files Migration");
+  console.log("=".repeat(60));
+  console.log(
+    `  Mode:  ${DRY_RUN ? "DRY RUN (no changes)" : "EXECUTE (writing to Firestore)"}`,
+  );
+  console.log(`  Limit: ${LIMIT || "none (all documents)"}`);
+  console.log("=".repeat(60));
   console.log();
 
   const stats = {
@@ -177,16 +184,18 @@ async function migrateAccessiFiles() {
   const migratedPaths = await buildMigratedPathsSet();
 
   try {
-    let query = db.collection('accessi');
+    let query = db.collection("accessi");
     if (LIMIT > 0) query = query.limit(LIMIT);
 
     const snapshot = await query.get();
     stats.accessiTotal = snapshot.size;
 
-    console.log(`Found ${stats.accessiTotal} accessi document(s) to inspect.\n`);
+    console.log(
+      `Found ${stats.accessiTotal} accessi document(s) to inspect.\n`,
+    );
 
     if (snapshot.empty) {
-      console.log('No accessi found. Nothing to do.');
+      console.log("No accessi found. Nothing to do.");
       return stats;
     }
 
@@ -202,13 +211,17 @@ async function migrateAccessiFiles() {
       }
 
       const services = normalizeServices(data);
-      const structureIds = data.structureIds || (data.createdByStructure ? [data.createdByStructure] : []);
-      const createdBy = data.createdBy || 'migration-script';
+      const structureIds =
+        data.structureIds ||
+        (data.createdByStructure ? [data.createdByStructure] : []);
+      const createdBy = data.createdBy || "migration-script";
       const uploadedByStructure = data.createdByStructure || null;
       const createdAt = data.createdAt ? new Date(data.createdAt) : new Date();
 
       // Collect all files across all services
-      const allFiles = services.flatMap(svc => (svc.files || []).map(f => ({ ...f, _svc: svc })));
+      const allFiles = services.flatMap((svc) =>
+        (svc.files || []).map((f) => ({ ...f, _svc: svc })),
+      );
 
       if (allFiles.length === 0) {
         continue; // accesso has no files, nothing to migrate
@@ -217,16 +230,22 @@ async function migrateAccessiFiles() {
       stats.accessiWithFiles++;
 
       // Check if ALL files in this accesso are already migrated
-      const allAlreadyMigrated = allFiles.every(f => migratedPaths.has(f.path));
+      const allAlreadyMigrated = allFiles.every((f) =>
+        migratedPaths.has(f.path),
+      );
       if (allAlreadyMigrated) {
         stats.accessiAlreadyMigrated++;
         stats.filesSkipped += allFiles.length;
-        console.log(`[${accessoId}] All ${allFiles.length} file(s) already migrated -> skip\n`);
+        console.log(
+          `[${accessoId}] All ${allFiles.length} file(s) already migrated -> skip\n`,
+        );
         continue;
       }
 
       console.log(`[${accessoId}] anagraficaId: ${anagraficaId}`);
-      console.log(`  ${services.length} service(s), ${allFiles.length} file(s)`);
+      console.log(
+        `  ${services.length} service(s), ${allFiles.length} file(s)`,
+      );
 
       for (const svc of services) {
         const files = svc.files || [];
@@ -237,15 +256,21 @@ async function migrateAccessiFiles() {
         // Find or create folder for this service type
         let folderId;
         try {
-          folderId = await getOrCreateFolder(anagraficaId, folderName, structureIds);
-          const isNew = !folderCache[anagraficaId]?.[folderName] || DRY_RUN
-            ? false
-            : true; // approximate
+          folderId = await getOrCreateFolder(
+            anagraficaId,
+            folderName,
+            structureIds,
+          );
+          const isNew =
+            !folderCache[anagraficaId]?.[folderName] || DRY_RUN ? false : true; // approximate
           console.log(`  Folder "${folderName}": ${folderId}`);
 
           if (!DRY_RUN) stats.foldersCreated++; // will over-count but cache prevents real duplicates
         } catch (err) {
-          console.error(`  ERROR finding/creating folder "${folderName}":`, err.message);
+          console.error(
+            `  ERROR finding/creating folder "${folderName}":`,
+            err.message,
+          );
           stats.errors++;
           continue;
         }
@@ -265,9 +290,9 @@ async function migrateAccessiFiles() {
 
           const fileDoc = {
             // File info
-            nome: file.nome || file.nomeOriginale || 'unnamed',
-            nomeOriginale: file.nomeOriginale || file.nome || 'unnamed',
-            tipo: file.tipo || 'application/octet-stream',
+            nome: file.nome || file.nomeOriginale || "unnamed",
+            nomeOriginale: file.nomeOriginale || file.nome || "unnamed",
+            tipo: file.tipo || "application/octet-stream",
             dimensione: file.dimensione || 0,
             path: file.path,
 
@@ -275,13 +300,19 @@ async function migrateAccessiFiles() {
             anagraficaId,
             folderId,
             accessoId,
-            category: 'OTHER',
+            category: "OTHER",
             tags: [],
 
             // Dates
-            dataDocumento: file.dataCreazione ? new Date(file.dataCreazione) : null,
-            dataCreazione: file.dataCreazione ? new Date(file.dataCreazione) : createdAt,
-            dataScadenza: file.dataScadenza ? new Date(file.dataScadenza) : null,
+            dataDocumento: file.dataCreazione
+              ? new Date(file.dataCreazione)
+              : null,
+            dataCreazione: file.dataCreazione
+              ? new Date(file.dataCreazione)
+              : createdAt,
+            dataScadenza: file.dataScadenza
+              ? new Date(file.dataScadenza)
+              : null,
 
             // Access Control
             structureIds,
@@ -303,22 +334,29 @@ async function migrateAccessiFiles() {
             accessCount: 0,
 
             // Migration marker
-            migratedFrom: 'accessi',
+            migratedFrom: "accessi",
             migratedAt: new Date(),
           };
 
           if (!DRY_RUN) {
             try {
-              await db.collection('files').add(fileDoc);
+              await db.collection("files").add(fileDoc);
               migratedPaths.add(file.path); // update in-memory set
-              console.log(`    Created file: ${file.nome} -> folder "${folderName}"`);
+              console.log(
+                `    Created file: ${file.nome} -> folder "${folderName}"`,
+              );
             } catch (err) {
-              console.error(`    ERROR creating file doc for ${file.nome}:`, err.message);
+              console.error(
+                `    ERROR creating file doc for ${file.nome}:`,
+                err.message,
+              );
               stats.errors++;
               continue;
             }
           } else {
-            console.log(`    Would create file: ${file.nome} -> folder "${folderName}"`);
+            console.log(
+              `    Would create file: ${file.nome} -> folder "${folderName}"`,
+            );
           }
           stats.filesCreated++;
         }
@@ -326,9 +364,8 @@ async function migrateAccessiFiles() {
 
       console.log();
     }
-
   } catch (error) {
-    console.error('Fatal error during migration:', error);
+    console.error("Fatal error during migration:", error);
     stats.errors++;
   }
 
@@ -338,26 +375,30 @@ async function migrateAccessiFiles() {
 // Run
 migrateAccessiFiles()
   .then((stats) => {
-    console.log('='.repeat(60));
-    console.log('  Migration Summary');
-    console.log('='.repeat(60));
+    console.log("=".repeat(60));
+    console.log("  Migration Summary");
+    console.log("=".repeat(60));
     console.log(`  Accessi inspected:             ${stats.accessiTotal}`);
     console.log(`  Accessi with files:            ${stats.accessiWithFiles}`);
-    console.log(`  Accessi already migrated:      ${stats.accessiAlreadyMigrated}`);
+    console.log(
+      `  Accessi already migrated:      ${stats.accessiAlreadyMigrated}`,
+    );
     console.log(`  Folders found/created:         ${stats.foldersCreated}`);
     console.log(`  Files created in 'files':      ${stats.filesCreated}`);
     console.log(`  Files skipped (already done):  ${stats.filesSkipped}`);
     console.log(`  Errors:                        ${stats.errors}`);
-    console.log('='.repeat(60));
+    console.log("=".repeat(60));
 
-    if (DRY_RUN && (stats.filesCreated > 0)) {
-      console.log('\n  This was a DRY RUN. To execute:');
-      console.log('  node -r dotenv/config src/scripts/migrateAccessiFiles.js --execute\n');
+    if (DRY_RUN && stats.filesCreated > 0) {
+      console.log("\n  This was a DRY RUN. To execute:");
+      console.log(
+        "  node -r dotenv/config src/scripts/migrateAccessiFiles.js --execute\n",
+      );
     }
 
     process.exit(stats.errors > 0 ? 1 : 0);
   })
   .catch((error) => {
-    console.error('Unhandled error:', error);
+    console.error("Unhandled error:", error);
     process.exit(1);
   });

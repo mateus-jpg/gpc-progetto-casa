@@ -1,6 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { Folder } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,11 +10,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Folder } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 /**
  * Dialog for creating a new folder
@@ -28,23 +28,23 @@ export default function CreateFolderDialog({
   open,
   onOpenChange,
   onSubmit,
-  parentFolderName = 'Root',
+  parentFolderName = "Root",
   isCreating = false,
 }) {
-  const [folderName, setFolderName] = useState('');
-  const [error, setError] = useState('');
+  const [folderName, setFolderName] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
     // Validation
     if (!folderName || folderName.trim().length === 0) {
-      setError('Folder name is required');
+      setError("Folder name is required");
       return;
     }
 
     if (folderName.length > 100) {
-      setError('Folder name must be 100 characters or less');
+      setError("Folder name must be 100 characters or less");
       return;
     }
 
@@ -52,13 +52,13 @@ export default function CreateFolderDialog({
     onSubmit(folderName.trim());
 
     // Reset form
-    setFolderName('');
-    setError('');
+    setFolderName("");
+    setError("");
   };
 
   const handleCancel = () => {
-    setFolderName('');
-    setError('');
+    setFolderName("");
+    setError("");
     onOpenChange(false);
   };
 
@@ -85,7 +85,7 @@ export default function CreateFolderDialog({
                 value={folderName}
                 onChange={(e) => {
                   setFolderName(e.target.value);
-                  setError('');
+                  setError("");
                 }}
                 disabled={isCreating}
                 maxLength={100}
@@ -108,7 +108,7 @@ export default function CreateFolderDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isCreating}>
-              {isCreating ? 'Creating...' : 'Create Folder'}
+              {isCreating ? "Creating..." : "Create Folder"}
             </Button>
           </DialogFooter>
         </form>

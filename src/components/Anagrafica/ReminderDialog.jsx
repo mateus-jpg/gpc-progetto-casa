@@ -65,11 +65,13 @@ export default function ReminderDialog({ anagraficaId, structureId }) {
         note: form.note || null,
       });
 
-      setLastPayload([{
-        tipoAccesso: form.serviceType,
-        reminderDate: dateTime,
-        note: form.note || null,
-      }]);
+      setLastPayload([
+        {
+          tipoAccesso: form.serviceType,
+          reminderDate: dateTime,
+          note: form.note || null,
+        },
+      ]);
       setOpen(false);
       handleReset();
       setShowPostDialog(true);
@@ -83,98 +85,98 @@ export default function ReminderDialog({ anagraficaId, structureId }) {
 
   return (
     <>
-    <PostAccessDialog
-      open={showPostDialog}
-      onDone={() => {
-        setShowPostDialog(false);
-      }}
-      payload={lastPayload}
-    />
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        if (loading) return;
-        setOpen(v);
-        if (!v) handleReset();
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <Bell className="w-4 h-4 mr-2" />
-          Promemoria
-        </Button>
-      </DialogTrigger>
+      <PostAccessDialog
+        open={showPostDialog}
+        onDone={() => {
+          setShowPostDialog(false);
+        }}
+        payload={lastPayload}
+      />
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (loading) return;
+          setOpen(v);
+          if (!v) handleReset();
+        }}
+      >
+        <DialogTrigger asChild>
+          <Button variant="outline">
+            <Bell className="w-4 h-4 mr-2" />
+            Promemoria
+          </Button>
+        </DialogTrigger>
 
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Nuovo Promemoria</DialogTitle>
-        </DialogHeader>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nuovo Promemoria</DialogTitle>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Tipo */}
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Tipo *</label>
-            <select
-              className="border rounded-md px-3 py-2 text-sm bg-background"
-              value={form.serviceType}
-              onChange={(e) => handleChange("serviceType", e.target.value)}
-              required
-            >
-              {AccessTypes.map((t) => (
-                <option key={t.value} value={t.label}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Data + Ora */}
-          <div className="grid grid-cols-2 gap-3">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Tipo */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium">Data *</label>
-              <input
-                type="date"
+              <label className="text-sm font-medium">Tipo *</label>
+              <select
                 className="border rounded-md px-3 py-2 text-sm bg-background"
-                value={form.date}
-                onChange={(e) => handleChange("date", e.target.value)}
+                value={form.serviceType}
+                onChange={(e) => handleChange("serviceType", e.target.value)}
                 required
-              />
+              >
+                {AccessTypes.map((t) => (
+                  <option key={t.value} value={t.label}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
             </div>
+
+            {/* Data + Ora */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium">Data *</label>
+                <input
+                  type="date"
+                  className="border rounded-md px-3 py-2 text-sm bg-background"
+                  value={form.date}
+                  onChange={(e) => handleChange("date", e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium">Ora</label>
+                <input
+                  type="time"
+                  className="border rounded-md px-3 py-2 text-sm bg-background"
+                  value={form.time}
+                  onChange={(e) => handleChange("time", e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Note */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium">Ora</label>
-              <input
-                type="time"
-                className="border rounded-md px-3 py-2 text-sm bg-background"
-                value={form.time}
-                onChange={(e) => handleChange("time", e.target.value)}
+              <label className="text-sm font-medium">Note</label>
+              <textarea
+                className="border rounded-md px-3 py-2 text-sm bg-background min-h-[80px] resize-y"
+                value={form.note}
+                onChange={(e) => handleChange("note", e.target.value)}
+                placeholder="Note aggiuntive..."
               />
             </div>
-          </div>
 
-          {/* Note */}
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Note</label>
-            <textarea
-              className="border rounded-md px-3 py-2 text-sm bg-background min-h-[80px] resize-y"
-              value={form.note}
-              onChange={(e) => handleChange("note", e.target.value)}
-              placeholder="Note aggiuntive..."
-            />
-          </div>
-
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={loading}>
-                Annulla
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline" disabled={loading}>
+                  Annulla
+                </Button>
+              </DialogClose>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Salvataggio..." : "Salva Promemoria"}
               </Button>
-            </DialogClose>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Salvataggio..." : "Salva Promemoria"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

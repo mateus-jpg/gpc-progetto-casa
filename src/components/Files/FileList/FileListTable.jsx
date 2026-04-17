@@ -1,32 +1,45 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { MaterialReactTable } from 'material-react-table';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { Folder, File, MoreVertical, Download, Trash2, Edit } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import {
+  closestCenter,
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { format } from "date-fns";
+import {
+  Download,
+  Edit,
+  File,
+  Folder,
+  MoreVertical,
+  Trash2,
+} from "lucide-react";
+import { MaterialReactTable } from "material-react-table";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+import FolderActionsMenu from "@/components/Files/FolderActionsMenu";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { cn, formatBytes } from '@/lib/utils';
-import { format } from 'date-fns';
-import { toast } from 'sonner';
-import { useFileDownload } from '@/hooks/useFileDownload';
-import FolderActionsMenu from '@/components/Files/FolderActionsMenu';
+} from "@/components/ui/dropdown-menu";
+import { useFileDownload } from "@/hooks/useFileDownload";
+import { cn, formatBytes } from "@/lib/utils";
 
 /**
  * Format date for display
  */
 function formatDate(dateString) {
-  if (!dateString) return '-';
+  if (!dateString) return "-";
   try {
-    return format(new Date(dateString), 'dd/MM/yyyy HH:mm');
+    return format(new Date(dateString), "dd/MM/yyyy HH:mm");
   } catch {
-    return '-';
+    return "-";
   }
 }
 
@@ -80,9 +93,9 @@ function FileNameCell({ row, onFolderOpen, draggedItem }) {
   return (
     <div
       className={cn(
-        'flex items-center gap-2',
-        !isFolder && 'cursor-pointer hover:text-primary',
-        canDrop && 'bg-accent/50 rounded p-1'
+        "flex items-center gap-2",
+        !isFolder && "cursor-pointer hover:text-primary",
+        canDrop && "bg-accent/50 rounded p-1",
       )}
       onClick={() => {
         if (isFolder) {
@@ -140,7 +153,7 @@ export default function FileListTable({
       ...folder,
       isFolder: true,
       dimensione: null,
-      tipo: 'Folder',
+      tipo: "Folder",
     }));
 
     const fileRows = files.map((file) => ({
@@ -157,7 +170,7 @@ export default function FileListTable({
       activationConstraint: {
         distance: 8, // 8px of movement required to start drag
       },
-    })
+    }),
   );
 
   // Handle drag end
@@ -188,23 +201,27 @@ export default function FileListTable({
   const columns = useMemo(
     () => [
       {
-        accessorKey: 'nome',
-        header: 'Name',
+        accessorKey: "nome",
+        header: "Name",
         size: 300,
         Cell: ({ row }) => (
-          <FileNameCell row={row} onFolderOpen={onFolderOpen} draggedItem={draggedItem} />
+          <FileNameCell
+            row={row}
+            onFolderOpen={onFolderOpen}
+            draggedItem={draggedItem}
+          />
         ),
       },
       {
-        accessorKey: 'tipo',
-        header: 'Type',
+        accessorKey: "tipo",
+        header: "Type",
         size: 150,
         Cell: ({ row }) => {
           if (row.original.isFolder) {
             return <span className="text-muted-foreground">Folder</span>;
           }
-          const type = row.original.tipo || '';
-          const shortType = type.split('/').pop() || type;
+          const type = row.original.tipo || "";
+          const shortType = type.split("/").pop() || type;
           return (
             <span className="text-muted-foreground text-sm" title={type}>
               {shortType}
@@ -213,8 +230,8 @@ export default function FileListTable({
         },
       },
       {
-        accessorKey: 'dimensione',
-        header: 'Size',
+        accessorKey: "dimensione",
+        header: "Size",
         size: 100,
         Cell: ({ row }) => {
           if (row.original.isFolder) {
@@ -228,8 +245,8 @@ export default function FileListTable({
         },
       },
       {
-        accessorKey: 'createdAt',
-        header: 'Modified',
+        accessorKey: "createdAt",
+        header: "Modified",
         size: 150,
         Cell: ({ row }) => (
           <span className="text-muted-foreground text-sm">
@@ -238,8 +255,8 @@ export default function FileListTable({
         ),
       },
       {
-        id: 'actions',
-        header: '',
+        id: "actions",
+        header: "",
         size: 50,
         enableSorting: false,
         Cell: ({ row }) => {
@@ -273,7 +290,7 @@ export default function FileListTable({
       onFolderDelete,
       onFolderRename,
       onFolderMove,
-    ]
+    ],
   );
 
   return (
@@ -296,8 +313,8 @@ export default function FileListTable({
         initialState={{
           pagination: { pageSize: 20, pageIndex: 0 },
           sorting: [
-            { id: 'isFolder', desc: true }, // Folders first
-            { id: 'nome', desc: false }, // Then by name
+            { id: "isFolder", desc: true }, // Folders first
+            { id: "nome", desc: false }, // Then by name
           ],
         }}
         state={{
@@ -305,27 +322,27 @@ export default function FileListTable({
         }}
         muiTablePaperProps={{
           elevation: 0,
-          sx: { border: '1px solid', borderColor: 'divider' },
+          sx: { border: "1px solid", borderColor: "divider" },
         }}
         muiTableHeadCellProps={{
           sx: {
             fontWeight: 600,
-            fontSize: '0.875rem',
+            fontSize: "0.875rem",
           },
         }}
         muiTableBodyRowProps={({ row }) => ({
           sx: {
-            cursor: row.original.isFolder ? 'pointer' : 'default',
-            '&:hover': {
-              backgroundColor: 'action.hover',
+            cursor: row.original.isFolder ? "pointer" : "default",
+            "&:hover": {
+              backgroundColor: "action.hover",
             },
           },
         })}
         muiRowDragHandleProps={{
           sx: {
-            cursor: 'grab',
-            '&:active': {
-              cursor: 'grabbing',
+            cursor: "grab",
+            "&:active": {
+              cursor: "grabbing",
             },
           },
         }}

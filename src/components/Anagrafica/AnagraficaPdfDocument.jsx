@@ -279,6 +279,7 @@ const styles = StyleSheet.create({
 
 const GROUP_LABELS = {
   anagrafica: "Dati Personali",
+  privacy: "Privacy e Informativa",
   nucleoFamiliare: "Nucleo Familiare",
   legaleAbitativa: "Situazione Legale e Abitativa",
   lavoroFormazione: "Lavoro e Formazione",
@@ -310,12 +311,28 @@ const FIELD_LABELS = {
   paeseDestinazione: "Paese di Destinazione",
   referral: "Referral",
   referralAltro: "Referral (Altro)",
+  paperNoticeCollected: "Informativa cartacea raccolta",
+  paperNoticeSignedAt: "Data firma informativa",
+  paperNoticeReference: "Riferimento documento",
+  paperNoticeNotes: "Note privacy",
+  paperNoticeFileId: "Documento firmato",
+  paperNoticeFileName: "Nome documento firmato",
+  paperNoticeUploadedAt: "Data caricamento documento firmato",
 };
 
 function formatFieldValue(value) {
   if (value === null || value === undefined) return "-";
   if (Array.isArray(value)) return value.join(", ") || "-";
   if (typeof value === "boolean") return value ? "Sì" : "No";
+  if (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}(T.*)?$/.test(value.trim())
+  ) {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return format(parsed, "dd/MM/yyyy", { locale: it });
+    }
+  }
   if (typeof value === "object") {
     if (value.seconds || value._seconds) return formatFirestoreTimestamp(value);
     return JSON.stringify(value);
@@ -437,7 +454,9 @@ function AnagraficaDataSection({ anagrafica }) {
           </Text>
         </View>
         <View style={styles.fieldItem}>
-          <Text style={styles.fieldLabel}>Titolo di studio (paese d'origine)</Text>
+          <Text style={styles.fieldLabel}>
+            Titolo di studio (paese d'origine)
+          </Text>
           <Text style={styles.fieldValue}>
             {lavoro.titoloDiStudioOrigine || "-"}
           </Text>
@@ -468,10 +487,10 @@ function AnagraficaDataSection({ anagrafica }) {
           </Text>
         </View>
         <View style={styles.fieldItem}>
-          <Text style={styles.fieldLabel}>Intenzione di fermarsi in Italia</Text>
-          <Text style={styles.fieldValue}>
-            {vuln.intenzioneItalia || "-"}
+          <Text style={styles.fieldLabel}>
+            Intenzione di fermarsi in Italia
           </Text>
+          <Text style={styles.fieldValue}>{vuln.intenzioneItalia || "-"}</Text>
         </View>
         {vuln.intenzioneItalia === "NO" && (
           <View style={styles.fieldItem}>
@@ -668,10 +687,7 @@ export function AnagraficaPdfDocument({
         {/* Letterhead band */}
         <View style={styles.letterheadBand}>
           <View style={styles.letterheadLeft}>
-            <Svg
-              viewBox="0 0 345.84 174.76"
-              style={styles.logoMark}
-            >
+            <Svg viewBox="0 0 345.84 174.76" style={styles.logoMark}>
               <Path
                 d="m1.09,114.92L114.93,1.08c.69-.69,1.62-1.07,2.59-1.07h107.13c3.27,0,4.9,3.95,2.59,6.26L59.84,173.69c-1.43,1.43-3.75,1.43-5.19,0L1.07,120.11c-1.43-1.43-1.43-3.75,0-5.19h.02Z"
                 fill={COLORS.text}
@@ -710,7 +726,9 @@ export function AnagraficaPdfDocument({
         </View>
 
         <View style={styles.footer} fixed>
-          <Text style={styles.footerText}>{displayStructure} — Scheda Anagrafica</Text>
+          <Text style={styles.footerText}>
+            {displayStructure} — Scheda Anagrafica
+          </Text>
           <Text
             style={styles.footerText}
             render={({ pageNumber, totalPages }) =>

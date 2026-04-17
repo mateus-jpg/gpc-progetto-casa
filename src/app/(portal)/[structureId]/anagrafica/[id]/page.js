@@ -2,37 +2,23 @@ import { ArrowLeft, FolderOpen, PencilIcon } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getStructure } from "@/actions/admin/structure";
 import { getAccessAction } from "@/actions/anagrafica/access";
 import { getAnagrafica } from "@/actions/anagrafica/anagrafica";
-import { getStructure } from "@/actions/admin/structure";
 import AccessDialog from "@/components/Anagrafica/AccessDialog/AccessDialog";
 import AccessInfo from "@/components/Anagrafica/AccessInfo";
+import AnagraficaReminders from "@/components/Anagrafica/AnagraficaReminders";
 import DownloadPdfButton from "@/components/Anagrafica/DownloadPdfButton";
 import HistoryTimeline from "@/components/Anagrafica/HistoryTimeline";
 import Otherinfo from "@/components/Anagrafica/Otherinfo";
 import OtherStructuresInfo from "@/components/Anagrafica/OtherStructuresInfo";
-import AnagraficaReminders from "@/components/Anagrafica/AnagraficaReminders";
 import ReminderDialog from "@/components/Anagrafica/ReminderDialog";
 import { ShareAnagraficaDialog } from "@/components/Anagrafica/ShareAnagraficaDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Status, StatusIndicator } from "@/components/ui/shadcn-io/status";
-import admin from "@/lib/firebase/firebaseAdmin";
-
-async function canUserAccess(anagrafica, userID) {
-  const db = admin.firestore();
-  const userRef = db.collection("operators").doc(userID);
-  const userDoc = await userRef.get();
-  const userData = userDoc.data();
-  const userStructureIds = userData?.structureIds || [];
-  const canBeAccessedBy = anagrafica?.canBeAccessedBy;
-  if (!canBeAccessedBy || !userStructureIds) {
-    return false;
-  }
-
-  return canBeAccessedBy.some((id) => userStructureIds.includes(id));
-}
+import { verifyStructureAdmin } from "@/utils/server-auth";
 
 export default async function AnagraficaViewPage({ params }) {
   const { id, structureId } = await params;
@@ -61,27 +47,21 @@ export default async function AnagraficaViewPage({ params }) {
     getStructure(structureId).catch(() => null),
   ]);
   const structureName = structureData?.name || null;
+  let canManageSharing = false;
+
+  try {
+    await verifyStructureAdmin({ userUid, structureId });
+    canManageSharing = true;
+  } catch {
+    canManageSharing = false;
+  }
 
   if (!anagrafica) {
     return notFound();
   }
 
-  if (!(await canUserAccess(anagrafica, userUid))) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="pt-6">
-            <h2 className="text-xl font-semibold text-red-600 mb-2">
-              Accesso Negato
-            </h2>
-            <p className="text-gray-600">
-              Non hai i permessi per visualizzare questa scheda anagrafica.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const isRegistrationPending =
+    anagrafica.registrationStatus === "draft_signature_pending";
 
   return (
     <div className="w-full mx-auto px-4">
@@ -106,9 +86,16 @@ export default async function AnagraficaViewPage({ params }) {
                 Scheda Anagrafica - ID: {id}
               </p> */}
           </div>
-          <Badge variant="outline" className="text-sm">
-            Visualizzazione Autorizzata
-          </Badge>
+          <div className="flex items-center gap-2">
+            {isRegistrationPending && (
+              <Badge className="border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-50">
+                Registrazione da completare
+              </Badge>
+            )}
+            <Badge variant="outline" className="text-sm">
+              Visualizzazione Autorizzata
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -176,42 +163,52 @@ export default async function AnagraficaViewPage({ params }) {
               Files & Documents
             </Link>
           </Button>
-          <ReminderDialog
-            anagraficaId={anagrafica.id}
-            structureId={structureId}
-          />
-          <DownloadPdfButton
-            anagrafica={anagrafica}
-            accesses={anagraficaAccesses?.accessi || []}
-            anagraficaId={anagrafica.id}
-            structureId={structureId}
-            structureName={structureName}
-          />
-          <ShareAnagraficaDialog
-            anagraficaId={anagrafica.id}
-            structureId={structureId}
-            anagraficaName={`${anagrafica.anagrafica?.nome || ""} ${anagrafica.anagrafica?.cognome || ""}`.trim()}
-          />
-          {/* <EventDialog anagraficaId={anagrafica.id} structureId={structureId} /> */}
-          <AccessDialog
-            anagraficaId={anagrafica.id}
-            structureId={structureId}
-          />
+          {isRegistrationPending ? (
+            <Button asChild>
+              <Link href={`/${structureId}/anagrafica/${anagrafica.id}/registrazione`}>
+                Completa Registrazione
+              </Link>
+            </Button>
+          ) : (
+            <>
+              <ReminderDialog
+                anagraficaId={anagrafica.id}
+                structureId={structureId}
+              />
+              <DownloadPdfButton
+                anagrafica={anagrafica}
+                accesses={anagraficaAccesses?.accessi || []}
+                anagraficaId={anagrafica.id}
+                structureId={structureId}
+                structureName={structureName}
+              />
+              {canManageSharing && (
+                <ShareAnagraficaDialog
+                  anagraficaId={anagrafica.id}
+                  structureId={structureId}
+                  anagraficaName={`${anagrafica.anagrafica?.nome || ""} ${anagrafica.anagrafica?.cognome || ""}`.trim()}
+                />
+              )}
+              {/* <EventDialog anagraficaId={anagrafica.id} structureId={structureId} /> */}
+              <AccessDialog
+                anagraficaId={anagrafica.id}
+                structureId={structureId}
+              />
+            </>
+          )}
         </div>
       </div>
 
       {/* Other Info Section */}
       <Otherinfo anagrafica={anagrafica} />
+      <OtherStructuresInfo
+        otherStructuresData={anagrafica.otherStructuresData}
+      />
 
-      {/* Cross-Structure Data Display */}
-      {anagrafica.otherStructuresData &&
-        anagrafica.otherStructuresData.length > 0 && (
-          <OtherStructuresInfo
-            otherStructuresData={anagrafica.otherStructuresData}
-          />
-        )}
-
-      <AnagraficaReminders anagraficaId={anagrafica.id} structureId={structureId} />
+      <AnagraficaReminders
+        anagraficaId={anagrafica.id}
+        structureId={structureId}
+      />
 
       {anagraficaAccesses && (
         <AccessInfo accesses={anagraficaAccesses.accessi} />
@@ -233,7 +230,7 @@ export default async function AnagraficaViewPage({ params }) {
 const formatTimestamp = (ts, includeTime = false) => {
   if (!ts?._seconds) return "";
   const date = new Date(ts._seconds * 1000);
-  const tz = { timeZone: 'Europe/Rome' };
+  const tz = { timeZone: "Europe/Rome" };
   return includeTime
     ? date.toLocaleString("it-IT", tz)
     : date.toLocaleDateString("it-IT", tz);

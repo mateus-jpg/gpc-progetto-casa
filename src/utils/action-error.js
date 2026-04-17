@@ -3,22 +3,22 @@
  * Provides consistent error response format and logging
  */
 
-import { logger } from './logger';
+import { logger } from "./logger";
 
 /**
  * Error codes for server actions
  */
 export const ActionErrorCode = {
-  NOT_FOUND: 'NOT_FOUND',
-  UNAUTHORIZED: 'UNAUTHORIZED',
-  FORBIDDEN: 'FORBIDDEN',
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
-  ALREADY_EXISTS: 'ALREADY_EXISTS',
-  ALREADY_DELETED: 'ALREADY_DELETED',
-  DATABASE_ERROR: 'DATABASE_ERROR',
-  STORAGE_ERROR: 'STORAGE_ERROR',
-  RATE_LIMITED: 'RATE_LIMITED',
-  INTERNAL_ERROR: 'INTERNAL_ERROR',
+  NOT_FOUND: "NOT_FOUND",
+  UNAUTHORIZED: "UNAUTHORIZED",
+  FORBIDDEN: "FORBIDDEN",
+  VALIDATION_ERROR: "VALIDATION_ERROR",
+  ALREADY_EXISTS: "ALREADY_EXISTS",
+  ALREADY_DELETED: "ALREADY_DELETED",
+  DATABASE_ERROR: "DATABASE_ERROR",
+  STORAGE_ERROR: "STORAGE_ERROR",
+  RATE_LIMITED: "RATE_LIMITED",
+  INTERNAL_ERROR: "INTERNAL_ERROR",
 };
 
 /**
@@ -27,7 +27,7 @@ export const ActionErrorCode = {
 export class ActionError extends Error {
   constructor(message, code = ActionErrorCode.INTERNAL_ERROR, details = null) {
     super(message);
-    this.name = 'ActionError';
+    this.name = "ActionError";
     this.code = code;
     this.details = details;
   }
@@ -77,7 +77,7 @@ export function getStatusForError(error) {
  * @param {string} actionName - Name for logging purposes
  * @returns {Function} Wrapped action function
  */
-export function withErrorHandling(actionFn, actionName = 'action') {
+export function withErrorHandling(actionFn, actionName = "action") {
   return async (...args) => {
     try {
       const result = await actionFn(...args);
@@ -99,7 +99,7 @@ export function withErrorHandling(actionFn, actionName = 'action') {
       }
 
       // Handle known Firebase errors
-      if (error.code?.startsWith('auth/')) {
+      if (error.code?.startsWith("auth/")) {
         return {
           success: false,
           error: {
@@ -116,9 +116,10 @@ export function withErrorHandling(actionFn, actionName = 'action') {
         error: {
           error: true,
           code: ActionErrorCode.INTERNAL_ERROR,
-          message: process.env.NODE_ENV === 'development'
-            ? error.message
-            : 'An unexpected error occurred',
+          message:
+            process.env.NODE_ENV === "development"
+              ? error.message
+              : "An unexpected error occurred",
         },
       };
     }
@@ -129,34 +130,40 @@ export function withErrorHandling(actionFn, actionName = 'action') {
  * Helper to create common errors
  */
 export const createError = {
-  notFound: (resource = 'Resource') =>
+  notFound: (resource = "Resource") =>
     new ActionError(`${resource} not found`, ActionErrorCode.NOT_FOUND),
 
-  unauthorized: (message = 'Authentication required') =>
+  unauthorized: (message = "Authentication required") =>
     new ActionError(message, ActionErrorCode.UNAUTHORIZED),
 
-  forbidden: (message = 'Access denied') =>
+  forbidden: (message = "Access denied") =>
     new ActionError(message, ActionErrorCode.FORBIDDEN),
 
   validation: (message, details = null) =>
     new ActionError(message, ActionErrorCode.VALIDATION_ERROR, details),
 
-  alreadyExists: (resource = 'Resource') =>
-    new ActionError(`${resource} already exists`, ActionErrorCode.ALREADY_EXISTS),
+  alreadyExists: (resource = "Resource") =>
+    new ActionError(
+      `${resource} already exists`,
+      ActionErrorCode.ALREADY_EXISTS,
+    ),
 
-  alreadyDeleted: (resource = 'Resource') =>
-    new ActionError(`${resource} already deleted`, ActionErrorCode.ALREADY_DELETED),
+  alreadyDeleted: (resource = "Resource") =>
+    new ActionError(
+      `${resource} already deleted`,
+      ActionErrorCode.ALREADY_DELETED,
+    ),
 
-  database: (message = 'Database operation failed') =>
+  database: (message = "Database operation failed") =>
     new ActionError(message, ActionErrorCode.DATABASE_ERROR),
 
-  storage: (message = 'File storage operation failed') =>
+  storage: (message = "File storage operation failed") =>
     new ActionError(message, ActionErrorCode.STORAGE_ERROR),
 
-  rateLimited: (message = 'Too many requests') =>
+  rateLimited: (message = "Too many requests") =>
     new ActionError(message, ActionErrorCode.RATE_LIMITED),
 
-  internal: (message = 'Internal server error') =>
+  internal: (message = "Internal server error") =>
     new ActionError(message, ActionErrorCode.INTERNAL_ERROR),
 };
 
@@ -165,17 +172,17 @@ export const createError = {
  */
 function getFirebaseAuthMessage(code) {
   const messages = {
-    'auth/invalid-credential': 'Invalid credentials',
-    'auth/user-disabled': 'Account has been disabled',
-    'auth/user-not-found': 'User not found',
-    'auth/wrong-password': 'Invalid password',
-    'auth/email-already-in-use': 'Email already in use',
-    'auth/weak-password': 'Password is too weak',
-    'auth/invalid-email': 'Invalid email address',
-    'auth/id-token-expired': 'Session expired, please log in again',
-    'auth/session-cookie-expired': 'Session expired, please log in again',
+    "auth/invalid-credential": "Invalid credentials",
+    "auth/user-disabled": "Account has been disabled",
+    "auth/user-not-found": "User not found",
+    "auth/wrong-password": "Invalid password",
+    "auth/email-already-in-use": "Email already in use",
+    "auth/weak-password": "Password is too weak",
+    "auth/invalid-email": "Invalid email address",
+    "auth/id-token-expired": "Session expired, please log in again",
+    "auth/session-cookie-expired": "Session expired, please log in again",
   };
-  return messages[code] || 'Authentication error';
+  return messages[code] || "Authentication error";
 }
 
 /**
@@ -190,7 +197,7 @@ export function assertCondition(condition, error) {
 /**
  * Assert that a value exists or throw not found error
  */
-export function assertExists(value, resource = 'Resource') {
+export function assertExists(value, resource = "Resource") {
   if (!value) {
     throw createError.notFound(resource);
   }

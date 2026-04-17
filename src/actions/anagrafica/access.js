@@ -1,64 +1,166 @@
-'use server';
+"use server";
 
-import { unstable_cache } from 'next/cache';
-import admin from '@/lib/firebase/firebaseAdmin';
-import { randomUUID } from 'crypto';
-import path from 'path';
-import { stripHtml } from '@/utils/htmlSanitizer';
-import { requireUser, verifyUserPermissions } from '@/utils/server-auth';
-import { FILE_SIZE_LIMIT, ALLOWED_MIME_TYPES, validateFileSignature } from '@/utils/fileValidation';
-import { CACHE_TAGS, REVALIDATE, invalidateAccessiCache, invalidateFilesCache } from '@/lib/cache';
-import { logDataCreate, logDataAccess, logFileAccess, logDataUpdate } from '@/utils/audit';
-import { createFolderInternal } from '@/actions/files/folders';
+import { randomUUID } from "crypto";
+import { unstable_cache } from "next/cache";
+import path from "path";
+import { createFolderInternal } from "@/actions/files/folders";
+import {
+  CACHE_TAGS,
+  invalidateAccessiCache,
+  invalidateFilesCache,
+  REVALIDATE,
+} from "@/lib/cache";
+import admin from "@/lib/firebase/firebaseAdmin";
+import {
+  logDataAccess,
+  logDataCreate,
+  logDataUpdate,
+  logFileAccess,
+} from "@/utils/audit";
+import {
+  ALLOWED_MIME_TYPES,
+  FILE_SIZE_LIMIT,
+  validateFileSignature,
+} from "@/utils/fileValidation";
+import { stripHtml } from "@/utils/htmlSanitizer";
+import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
 
 const adminDb = admin.firestore();
 const adminStorage = admin.storage();
 
-/** @private */
-async function findOrCreateFolder(anagraficaId, folderName, structureId, userUid) {
+async function getAuthorizedAnagraficaRecord(
+  anagraficaId,
+  userUid,
+  structureId = null,
+) {
+  const anagraficaRef = adminDb.collection("anagrafica").doc(anagraficaId);
+  const anagraficaSnap = await anagraficaRef.get();
+
+  if (!anagraficaSnap.exists) {
+    throw new Error("Anagrafica not found");
+  }
+
+  const anagraficaData = anagraficaSnap.data() || {};
+  if (anagraficaData.deletedAt) {
+    throw new Error("Anagrafica not found");
+  }
+
+  const allowedStructures =
+    anagraficaData.canBeAccessedBy || anagraficaData.structureIds || [];
+
+  await verifyUserPermissions({ userUid, allowedStructures });
+
+  if (structureId) {
+    await verifyUserPermissions({ userUid, structureId });
+
+    if (!allowedStructures.includes(structureId)) {
+      throw new Error("Forbidden: structureId not allowed for this anagrafica");
+    }
+  }
+
+  return { anagraficaData, allowedStructures };
+}
+
+async function deleteStorageObject(filePath) {
+  if (!filePath) return;
+
   try {
-    const folderQuery = await adminDb.collection('folders')
-      .where('anagraficaId', '==', anagraficaId)
-      .where('nome', '==', folderName)
-      .where('deleted', '==', false)
+    await adminStorage.bucket().file(filePath).delete();
+  } catch (error) {
+    const notFound =
+      error?.code === 404 ||
+      error?.details === "No such object" ||
+      error?.message?.includes("No such object");
+
+    if (!notFound) {
+      console.error("[DELETE_STORAGE_OBJECT_ERROR]:", error);
+    }
+  }
+}
+
+function normalizeAnagraficaFilePath(anagraficaId, filePath) {
+  if (!anagraficaId || !filePath || typeof filePath !== "string") {
+    return null;
+  }
+
+  const normalizedPath = path.posix.normalize(filePath);
+  const expectedPrefix = `files/${anagraficaId}/`;
+
+  if (
+    !normalizedPath.startsWith(expectedPrefix) ||
+    normalizedPath.includes("..")
+  ) {
+    return null;
+  }
+
+  return normalizedPath;
+}
+
+/** @private */
+async function findOrCreateFolder(
+  anagraficaId,
+  folderName,
+  structureId,
+  userUid,
+) {
+  try {
+    const folderQuery = await adminDb
+      .collection("folders")
+      .where("anagraficaId", "==", anagraficaId)
+      .where("nome", "==", folderName)
+      .where("deleted", "==", false)
       .limit(1)
       .get();
     if (!folderQuery.empty) {
       return { id: folderQuery.docs[0].id, ...folderQuery.docs[0].data() };
     }
     const newFolderResult = await createFolderInternal({
-      anagraficaId, nome: folderName, parentFolderId: null,
-      structureId, userUid, userEmail: null
+      anagraficaId,
+      nome: folderName,
+      parentFolderId: null,
+      structureId,
+      userUid,
+      userEmail: null,
     });
     return newFolderResult.success ? newFolderResult.folder : null;
   } catch (err) {
-    console.error('Error finding/creating folder:', err);
+    console.error("Error finding/creating folder:", err);
     return null;
   }
 }
 
 /** @private */
-async function uploadFileItem({ fileItem, anagraficaId, accessId, index, targetFolder, targetFolderId, structureId, userUid, structureIds }) {
+async function uploadFileItem({
+  fileItem,
+  anagraficaId,
+  accessId,
+  index,
+  targetFolder,
+  targetFolderId,
+  structureId,
+  userUid,
+  structureIds,
+}) {
   let buffer;
   let originalName = fileItem.originalName || fileItem.name;
   let mimeType = fileItem.type;
   let size = fileItem.size;
 
   if (fileItem.base64) {
-    const matches = fileItem.base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    const matches = fileItem.base64.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
     if (matches && matches.length === 3) {
       mimeType = matches[1];
-      buffer = Buffer.from(matches[2], 'base64');
+      buffer = Buffer.from(matches[2], "base64");
     } else {
-      buffer = Buffer.from(fileItem.base64, 'base64');
+      buffer = Buffer.from(fileItem.base64, "base64");
     }
-  } else if (fileItem.file && typeof fileItem.file.arrayBuffer === 'function') {
+  } else if (fileItem.file && typeof fileItem.file.arrayBuffer === "function") {
     const arrayBuffer = await fileItem.file.arrayBuffer();
     buffer = Buffer.from(arrayBuffer);
     originalName = fileItem.file.name;
     mimeType = fileItem.file.type;
     size = fileItem.file.size;
-  } else if (typeof fileItem.arrayBuffer === 'function') {
+  } else if (typeof fileItem.arrayBuffer === "function") {
     const arrayBuffer = await fileItem.arrayBuffer();
     buffer = Buffer.from(arrayBuffer);
     originalName = fileItem.name;
@@ -68,11 +170,22 @@ async function uploadFileItem({ fileItem, anagraficaId, accessId, index, targetF
 
   if (!buffer) return null;
 
-  if (buffer.length > FILE_SIZE_LIMIT) throw new Error(`File ${originalName} exceeds size limit of ${FILE_SIZE_LIMIT / 1024 / 1024}MB`);
-  if (!ALLOWED_MIME_TYPES.includes(mimeType)) throw new Error(`File type ${mimeType} is not allowed`);
-  if (!validateFileSignature(buffer, mimeType)) throw new Error(`File ${originalName} content does not match claimed type ${mimeType}`);
+  if (buffer.length > FILE_SIZE_LIMIT)
+    throw new Error(
+      `File ${originalName} exceeds size limit of ${FILE_SIZE_LIMIT / 1024 / 1024}MB`,
+    );
+  if (!ALLOWED_MIME_TYPES.includes(mimeType))
+    throw new Error(`File type ${mimeType} is not allowed`);
+  if (!validateFileSignature(buffer, mimeType))
+    throw new Error(
+      `File ${originalName} content does not match claimed type ${mimeType}`,
+    );
 
-  const fileExt = path.extname(originalName).toLowerCase().replace(/[^a-z0-9.]/g, '') || '';
+  const fileExt =
+    path
+      .extname(originalName)
+      .toLowerCase()
+      .replace(/[^a-z0-9.]/g, "") || "";
   const storagePath = `files/${anagraficaId}/accessi/${accessId}/${index}_${randomUUID()}${fileExt}`;
 
   const fileRef = adminStorage.bucket().file(storagePath);
@@ -84,12 +197,16 @@ async function uploadFileItem({ fileItem, anagraficaId, accessId, index, targetF
     tipo: mimeType,
     dimensione: size,
     path: storagePath,
-    dataCreazione: fileItem.creationDate ? new Date(fileItem.creationDate).toISOString() : new Date().toISOString(),
-    dataScadenza: fileItem.expirationDate ? new Date(fileItem.expirationDate).toISOString() : null,
+    dataCreazione: fileItem.creationDate
+      ? new Date(fileItem.creationDate).toISOString()
+      : new Date().toISOString(),
+    dataScadenza: fileItem.expirationDate
+      ? new Date(fileItem.expirationDate).toISOString()
+      : null,
   };
 
   if (targetFolderId) {
-    const fileDocRef = adminDb.collection('files').doc();
+    const fileDocRef = adminDb.collection("files").doc();
     await fileDocRef.set({
       nome: fileMetadata.nome,
       nomeOriginale: fileMetadata.nomeOriginale,
@@ -101,9 +218,13 @@ async function uploadFileItem({ fileItem, anagraficaId, accessId, index, targetF
       accessoId: accessId,
       category: targetFolder?.category || null,
       tags: [],
-      dataDocumento: fileItem.creationDate ? new Date(fileItem.creationDate) : new Date(),
+      dataDocumento: fileItem.creationDate
+        ? new Date(fileItem.creationDate)
+        : new Date(),
       dataCreazione: new Date(),
-      dataScadenza: fileItem.expirationDate ? new Date(fileItem.expirationDate) : null,
+      dataScadenza: fileItem.expirationDate
+        ? new Date(fileItem.expirationDate)
+        : null,
       structureIds: structureIds || [],
       uploadedByStructure: structureId,
       uploadedBy: userUid,
@@ -114,58 +235,81 @@ async function uploadFileItem({ fileItem, anagraficaId, accessId, index, targetF
       deletedAt: null,
       deletedBy: null,
       lastAccessedAt: null,
-      accessCount: 0
+      accessCount: 0,
     });
   }
 
   return fileMetadata;
 }
 
-export async function createAccessInternal({ anagraficaId, services, structureId, userUid, structureIds }) {
-  const accessRef = adminDb.collection('accessi').doc();
+export async function createAccessInternal({
+  anagraficaId,
+  services,
+  structureId,
+  userUid,
+  structureIds,
+}) {
+  const accessRef = adminDb.collection("accessi").doc();
   const accessId = accessRef.id;
 
-  const processedServices = await Promise.all(services.map(async (svc, index) => {
-    const targetFolder = await findOrCreateFolder(anagraficaId, svc.tipoAccesso || 'Documenti', structureId, userUid);
-    const targetFolderId = targetFolder?.id || null;
-    const uploadedFiles = [];
-
-    for (const fileItem of (svc.files || [])) {
-      const fileMeta = await uploadFileItem({ fileItem, anagraficaId, accessId, index, targetFolder, targetFolderId, structureId, userUid, structureIds });
-      if (fileMeta) uploadedFiles.push(fileMeta);
-    }
-
-    let reminderId = null;
-    if (svc.reminderDate) {
-      const reminderRef = adminDb.collection('reminders').doc();
-      reminderId = reminderRef.id;
-
-      await reminderRef.set({
+  const processedServices = await Promise.all(
+    services.map(async (svc, index) => {
+      const targetFolder = await findOrCreateFolder(
         anagraficaId,
+        svc.tipoAccesso || "Documenti",
         structureId,
-        accessId,
-        serviceType: svc.tipoAccesso,
-        date: svc.reminderDate,
-        note: svc.note || '',
-        createdBy: userUid,
-        createdAt: new Date().toISOString(),
-        status: 'pending',
-        linkedToAccess: true
-      });
-    }
+        userUid,
+      );
+      const targetFolderId = targetFolder?.id || null;
+      const uploadedFiles = [];
 
-    return {
-      tipoAccesso: svc.tipoAccesso || null,
-      sottoCategorie: svc.sottoCategorie ?? null,
-      altro: svc.altro ?? null,
-      note: svc.note?.trim() || null,
-      classificazione: svc.classificazione ?? null,
-      enteRiferimento: svc.enteRiferimento ?? null,
-      files: uploadedFiles || [],
-      reminderDate: svc.reminderDate ?? null,
-      reminderId: reminderId ?? null,
-    };
-  }));
+      for (const fileItem of svc.files || []) {
+        const fileMeta = await uploadFileItem({
+          fileItem,
+          anagraficaId,
+          accessId,
+          index,
+          targetFolder,
+          targetFolderId,
+          structureId,
+          userUid,
+          structureIds,
+        });
+        if (fileMeta) uploadedFiles.push(fileMeta);
+      }
+
+      let reminderId = null;
+      if (svc.reminderDate) {
+        const reminderRef = adminDb.collection("reminders").doc();
+        reminderId = reminderRef.id;
+
+        await reminderRef.set({
+          anagraficaId,
+          structureId,
+          accessId,
+          serviceType: svc.tipoAccesso,
+          date: svc.reminderDate,
+          note: svc.note || "",
+          createdBy: userUid,
+          createdAt: new Date().toISOString(),
+          status: "pending",
+          linkedToAccess: true,
+        });
+      }
+
+      return {
+        tipoAccesso: svc.tipoAccesso || null,
+        sottoCategorie: svc.sottoCategorie ?? null,
+        altro: svc.altro ?? null,
+        note: svc.note?.trim() || null,
+        classificazione: svc.classificazione ?? null,
+        enteRiferimento: svc.enteRiferimento ?? null,
+        files: uploadedFiles || [],
+        reminderDate: svc.reminderDate ?? null,
+        reminderId: reminderId ?? null,
+      };
+    }),
+  );
 
   const accessData = {
     anagraficaId,
@@ -180,20 +324,24 @@ export async function createAccessInternal({ anagraficaId, services, structureId
 
   // Write history entry for creation (graceful failure — does not break main flow)
   try {
-    await adminDb.collection('accessi').doc(accessId).collection('history').add({
-      anagraficaId,
-      changedAt: new Date(),
-      changedBy: userUid,
-      changedByMail: null,
-      changedByStructure: structureId,
-      changeType: 'create',
-      changedGroups: ['services'],
-      changes: {
-        services: { before: null, after: processedServices }
-      }
-    });
+    await adminDb
+      .collection("accessi")
+      .doc(accessId)
+      .collection("history")
+      .add({
+        anagraficaId,
+        changedAt: new Date(),
+        changedBy: userUid,
+        changedByMail: null,
+        changedByStructure: structureId,
+        changeType: "create",
+        changedGroups: ["services"],
+        changes: {
+          services: { before: null, after: processedServices },
+        },
+      });
   } catch (histErr) {
-    console.error('Failed to write accesso history (create):', histErr);
+    console.error("Failed to write accesso history (create):", histErr);
   }
 
   // Invalidate caches after creating new access
@@ -206,28 +354,16 @@ export async function createAccessInternal({ anagraficaId, services, structureId
 export async function createAccessAction(payload) {
   const { userUid } = await requireUser();
 
-  const {
+  const { anagraficaId, services = [], structureId } = payload;
+
+  if (!anagraficaId || services.length === 0)
+    throw new Error("Missing required fields");
+
+  const { allowedStructures } = await getAuthorizedAnagraficaRecord(
     anagraficaId,
-    services = [],
+    userUid,
     structureId,
-  } = payload;
-
-  if (!anagraficaId || services.length === 0) throw new Error('Missing required fields');
-
-  const anagraficaRef = adminDb.collection('anagrafica').doc(anagraficaId);
-  const anagraficaSnap = await anagraficaRef.get();
-  if (!anagraficaSnap.exists) throw new Error('Anagrafica not found');
-
-  const anagraficaData = anagraficaSnap.data() || {};
-  const allowedStructures = anagraficaData.canBeAccessedBy || anagraficaData.structureIds || [];
-
-  // Check if User has access to Anagrafica
-  await verifyUserPermissions({ userUid, allowedStructures });
-
-  // Additional check: The structureId used for creation must be one of the allowed structures
-  if (structureId && !allowedStructures.includes(structureId)) {
-    throw new Error('Forbidden: structureId not allowed for this anagrafica');
-  }
+  );
 
   const { accessId, accessData } = await createAccessInternal({
     anagraficaId,
@@ -240,14 +376,14 @@ export async function createAccessAction(payload) {
   // Audit log: access record creation
   await logDataCreate({
     actorUid: userUid,
-    resourceType: 'accessi',
+    resourceType: "accessi",
     resourceId: accessId,
     structureId,
     details: {
       anagraficaId,
       servicesCount: services.length,
-      serviceTypes: services.map(s => s.tipoAccesso).filter(Boolean)
-    }
+      serviceTypes: services.map((s) => s.tipoAccesso).filter(Boolean),
+    },
   });
 
   return { success: true, accessId, accessData };
@@ -259,23 +395,23 @@ export async function createAccessAction(payload) {
  */
 async function fetchAccessiFromDb(anagraficaId) {
   const snap = await adminDb
-    .collection('accessi')
-    .where('anagraficaId', '==', anagraficaId)
-    .orderBy('createdAt', 'desc')
+    .collection("accessi")
+    .where("anagraficaId", "==", anagraficaId)
+    .orderBy("createdAt", "desc")
     .get();
 
   const accessi = [];
-  snap.forEach(doc => {
+  snap.forEach((doc) => {
     const data = doc.data();
 
     if (data.services && Array.isArray(data.services)) {
       accessi.push({
         id: doc.id,
         ...data,
-        services: data.services.map(s => ({
+        services: data.services.map((s) => ({
           ...s,
-          sanitizedNote: stripHtml(s.note || '')
-        }))
+          sanitizedNote: stripHtml(s.note || ""),
+        })),
       });
     } else {
       // Compatibility with old structure
@@ -284,16 +420,18 @@ async function fetchAccessiFromDb(anagraficaId) {
         createdAt: data.createdAt,
         createdBy: data.createdBy,
         createdByEmail: data.createdByEmail,
-        services: [{
-          tipoAccesso: data.tipoAccesso,
-          sottoCategorie: data.sottoCategorie,
-          altro: data.altro,
-          note: data.note,
-          sanitizedNote: stripHtml(data.note || ''),
-          classificazione: data.classificazione,
-          enteRiferimento: data.enteRiferimento,
-          files: data.files
-        }]
+        services: [
+          {
+            tipoAccesso: data.tipoAccesso,
+            sottoCategorie: data.sottoCategorie,
+            altro: data.altro,
+            note: data.note,
+            sanitizedNote: stripHtml(data.note || ""),
+            classificazione: data.classificazione,
+            enteRiferimento: data.enteRiferimento,
+            files: data.files,
+          },
+        ],
       });
     }
   });
@@ -307,17 +445,9 @@ async function fetchAccessiFromDb(anagraficaId) {
  */
 export async function getAccessAction(anagraficaId) {
   const { userUid } = await requireUser();
-  if (!anagraficaId) throw new Error('Missing anagraficaId');
+  if (!anagraficaId) throw new Error("Missing anagraficaId");
 
-  const anagraficaRef = adminDb.collection('anagrafica').doc(anagraficaId);
-  const anagraficaSnap = await anagraficaRef.get();
-  if (!anagraficaSnap.exists) throw new Error('Anagrafica not found');
-
-  const anagraficaData = anagraficaSnap.data() || {};
-  const allowedStructures = anagraficaData.canBeAccessedBy || anagraficaData.structureIds || [];
-
-  // Permission check is NOT cached - always runs fresh for security
-  await verifyUserPermissions({ userUid, allowedStructures });
+  await getAuthorizedAnagraficaRecord(anagraficaId, userUid);
 
   // Get cached accessi data
   const getCachedAccessi = unstable_cache(
@@ -326,7 +456,7 @@ export async function getAccessAction(anagraficaId) {
     {
       tags: [CACHE_TAGS.accessi(anagraficaId)],
       revalidate: REVALIDATE.accessi,
-    }
+    },
   );
 
   const accessi = await getCachedAccessi();
@@ -334,11 +464,11 @@ export async function getAccessAction(anagraficaId) {
   // Audit log: access records read
   await logDataAccess({
     actorUid: userUid,
-    resourceType: 'accessi',
+    resourceType: "accessi",
     resourceId: anagraficaId,
     details: {
-      accessCount: accessi.length
-    }
+      accessCount: accessi.length,
+    },
   });
 
   return {
@@ -351,11 +481,11 @@ export async function getAccessAction(anagraficaId) {
 export async function getAccessFileUrl({ anagraficaId, filePath }) {
   const { userUid } = await requireUser();
 
-  if (!anagraficaId || !filePath) throw new Error('Missing parameters');
+  if (!anagraficaId || !filePath) throw new Error("Missing parameters");
 
   // Security: Validate anagraficaId format (should be alphanumeric Firebase ID)
   if (!/^[a-zA-Z0-9]+$/.test(anagraficaId)) {
-    throw new Error('Invalid anagraficaId format');
+    throw new Error("Invalid anagraficaId format");
   }
 
   // Security: Normalize path to prevent path traversal attacks (../ sequences)
@@ -364,19 +494,14 @@ export async function getAccessFileUrl({ anagraficaId, filePath }) {
 
   // Security: Check that normalized path starts with expected prefix
   // and doesn't contain dangerous sequences after normalization
-  if (!normalizedPath.startsWith(expectedPrefix) || normalizedPath.includes('..')) {
-    throw new Error('Invalid file path for this anagrafica');
+  if (
+    !normalizedPath.startsWith(expectedPrefix) ||
+    normalizedPath.includes("..")
+  ) {
+    throw new Error("Invalid file path for this anagrafica");
   }
 
-  const anagraficaRef = adminDb.collection('anagrafica').doc(anagraficaId);
-  const anagraficaSnap = await anagraficaRef.get();
-  if (!anagraficaSnap.exists) throw new Error('Anagrafica not found');
-
-  const anagraficaData = anagraficaSnap.data() || {};
-  const allowedStructures = anagraficaData.canBeAccessedBy || anagraficaData.structureIds || [];
-
-  // Check permissions
-  await verifyUserPermissions({ userUid, allowedStructures });
+  await getAuthorizedAnagraficaRecord(anagraficaId, userUid);
 
   // Generate Signed URL
   // Valid for 1 hour
@@ -385,7 +510,7 @@ export async function getAccessFileUrl({ anagraficaId, filePath }) {
     .bucket()
     .file(normalizedPath)
     .getSignedUrl({
-      action: 'read',
+      action: "read",
       expires: Date.now() + 1000 * 60 * 60, // 1 hour
     });
 
@@ -393,7 +518,7 @@ export async function getAccessFileUrl({ anagraficaId, filePath }) {
   await logFileAccess({
     actorUid: userUid,
     resourceId: anagraficaId,
-    filePath: normalizedPath
+    filePath: normalizedPath,
   });
 
   return { success: true, url };
@@ -406,106 +531,132 @@ export async function getAccessFileUrl({ anagraficaId, filePath }) {
 export async function getAccessByIdAction(accessId, anagraficaId) {
   const { userUid } = await requireUser();
 
-  if (!accessId || !anagraficaId) throw new Error('Missing parameters');
+  if (!accessId || !anagraficaId) throw new Error("Missing parameters");
 
-  const anagraficaRef = adminDb.collection('anagrafica').doc(anagraficaId);
-  const anagraficaSnap = await anagraficaRef.get();
-  if (!anagraficaSnap.exists) throw new Error('Anagrafica not found');
+  await getAuthorizedAnagraficaRecord(anagraficaId, userUid);
 
-  const anagraficaData = anagraficaSnap.data() || {};
-  const allowedStructures = anagraficaData.canBeAccessedBy || anagraficaData.structureIds || [];
-
-  await verifyUserPermissions({ userUid, allowedStructures });
-
-  const accessSnap = await adminDb.collection('accessi').doc(accessId).get();
-  if (!accessSnap.exists) throw new Error('Accesso not found');
+  const accessSnap = await adminDb.collection("accessi").doc(accessId).get();
+  if (!accessSnap.exists) throw new Error("Accesso not found");
 
   const data = accessSnap.data();
-  if (data.anagraficaId !== anagraficaId) throw new Error('Access record does not belong to this anagrafica');
+  if (data.anagraficaId !== anagraficaId)
+    throw new Error("Access record does not belong to this anagrafica");
 
   await logDataAccess({
     actorUid: userUid,
-    resourceType: 'accessi',
+    resourceType: "accessi",
     resourceId: accessId,
-    details: { anagraficaId }
+    details: { anagraficaId },
   });
 
-  return JSON.stringify({ success: true, accesso: { id: accessSnap.id, ...data } });
+  return JSON.stringify({
+    success: true,
+    accesso: { id: accessSnap.id, ...data },
+  });
 }
 
 /**
  * Update an existing accesso record.
  * Handles uploading new files, soft-deleting removed files, and writing history.
  */
-export async function updateAccessAction({ accessId, anagraficaId, services, structureId }) {
+export async function updateAccessAction({
+  accessId,
+  anagraficaId,
+  services,
+  structureId,
+}) {
   const { userUid } = await requireUser();
 
-  if (!accessId || !anagraficaId || !services) throw new Error('Missing required fields');
+  if (!accessId || !anagraficaId || !services)
+    throw new Error("Missing required fields");
 
   // Permission check via parent anagrafica
-  const anagraficaRef = adminDb.collection('anagrafica').doc(anagraficaId);
-  const anagraficaSnap = await anagraficaRef.get();
-  if (!anagraficaSnap.exists) throw new Error('Anagrafica not found');
-
-  const anagraficaData = anagraficaSnap.data() || {};
-  const allowedStructures = anagraficaData.canBeAccessedBy || anagraficaData.structureIds || [];
-  await verifyUserPermissions({ userUid, allowedStructures });
+  const { allowedStructures } = await getAuthorizedAnagraficaRecord(
+    anagraficaId,
+    userUid,
+    structureId,
+  );
 
   // Load current doc for before-snapshot
-  const accessRef = adminDb.collection('accessi').doc(accessId);
+  const accessRef = adminDb.collection("accessi").doc(accessId);
   const accessSnap = await accessRef.get();
-  if (!accessSnap.exists) throw new Error('Accesso not found');
+  if (!accessSnap.exists) throw new Error("Accesso not found");
 
   const currentData = accessSnap.data();
-  if (currentData.anagraficaId !== anagraficaId) throw new Error('Access record does not belong to this anagrafica');
+  if (currentData.anagraficaId !== anagraficaId)
+    throw new Error("Access record does not belong to this anagrafica");
 
   const beforeServices = currentData.services || [];
   const existingStructureIds = currentData.structureIds || allowedStructures;
 
   // Soft-delete files marked for removal from the files collection
-  const allDeletedPaths = services.flatMap(svc => svc.deletedFilePaths || []);
+  const allDeletedPaths = services.flatMap((svc) => svc.deletedFilePaths || []);
   for (const filePath of allDeletedPaths) {
-    const filesQuery = await adminDb.collection('files')
-      .where('path', '==', filePath)
-      .where('anagraficaId', '==', anagraficaId)
+    const normalizedPath = normalizeAnagraficaFilePath(anagraficaId, filePath);
+    if (!normalizedPath) {
+      continue;
+    }
+
+    const filesQuery = await adminDb
+      .collection("files")
+      .where("path", "==", normalizedPath)
+      .where("anagraficaId", "==", anagraficaId)
       .limit(1)
       .get();
     if (!filesQuery.empty) {
       await filesQuery.docs[0].ref.update({
         deleted: true,
         deletedAt: new Date(),
-        deletedBy: userUid
+        deletedBy: userUid,
       });
     }
+    await deleteStorageObject(normalizedPath);
   }
 
   // Process each service: keep existing files, upload new files
-  const processedServices = await Promise.all(services.map(async (svc, index) => {
-    const targetFolder = await findOrCreateFolder(anagraficaId, svc.tipoAccesso || 'Documenti', structureId, userUid);
-    const targetFolderId = targetFolder?.id || null;
+  const processedServices = await Promise.all(
+    services.map(async (svc, index) => {
+      const targetFolder = await findOrCreateFolder(
+        anagraficaId,
+        svc.tipoAccesso || "Documenti",
+        structureId,
+        userUid,
+      );
+      const targetFolderId = targetFolder?.id || null;
 
-    const keptFiles = (svc.existingFiles || []).filter(
-      f => !(svc.deletedFilePaths || []).includes(f.path)
-    );
+      const keptFiles = (svc.existingFiles || []).filter(
+        (f) => !(svc.deletedFilePaths || []).includes(f.path),
+      );
 
-    const newlyUploadedFiles = [];
-    for (const fileItem of (svc.files || [])) {
-      const fileMeta = await uploadFileItem({ fileItem, anagraficaId, accessId, index, targetFolder, targetFolderId, structureId, userUid, structureIds: existingStructureIds });
-      if (fileMeta) newlyUploadedFiles.push(fileMeta);
-    }
+      const newlyUploadedFiles = [];
+      for (const fileItem of svc.files || []) {
+        const fileMeta = await uploadFileItem({
+          fileItem,
+          anagraficaId,
+          accessId,
+          index,
+          targetFolder,
+          targetFolderId,
+          structureId,
+          userUid,
+          structureIds: existingStructureIds,
+        });
+        if (fileMeta) newlyUploadedFiles.push(fileMeta);
+      }
 
-    return {
-      tipoAccesso: svc.tipoAccesso || null,
-      sottoCategorie: svc.sottoCategorie ?? null,
-      altro: svc.altro ?? null,
-      note: svc.note?.trim() || null,
-      classificazione: svc.classificazione ?? null,
-      enteRiferimento: svc.enteRiferimento ?? null,
-      files: [...keptFiles, ...newlyUploadedFiles],
-      reminderDate: svc.reminderDate ?? null,
-      reminderId: svc.reminderId ?? null,
-    };
-  }));
+      return {
+        tipoAccesso: svc.tipoAccesso || null,
+        sottoCategorie: svc.sottoCategorie ?? null,
+        altro: svc.altro ?? null,
+        note: svc.note?.trim() || null,
+        classificazione: svc.classificazione ?? null,
+        enteRiferimento: svc.enteRiferimento ?? null,
+        files: [...keptFiles, ...newlyUploadedFiles],
+        reminderDate: svc.reminderDate ?? null,
+        reminderId: svc.reminderId ?? null,
+      };
+    }),
+  );
 
   // Persist the update
   await accessRef.update({
@@ -517,20 +668,20 @@ export async function updateAccessAction({ accessId, anagraficaId, services, str
 
   // Write history entry (graceful failure)
   try {
-    await accessRef.collection('history').add({
+    await accessRef.collection("history").add({
       anagraficaId,
       changedAt: new Date(),
       changedBy: userUid,
       changedByMail: null,
       changedByStructure: structureId,
-      changeType: 'update',
-      changedGroups: ['services'],
+      changeType: "update",
+      changedGroups: ["services"],
       changes: {
-        services: { before: beforeServices, after: processedServices }
-      }
+        services: { before: beforeServices, after: processedServices },
+      },
     });
   } catch (histErr) {
-    console.error('Failed to write accesso history (update):', histErr);
+    console.error("Failed to write accesso history (update):", histErr);
   }
 
   invalidateAccessiCache(anagraficaId);
@@ -538,11 +689,11 @@ export async function updateAccessAction({ accessId, anagraficaId, services, str
 
   await logDataUpdate({
     actorUid: userUid,
-    resourceType: 'accessi',
+    resourceType: "accessi",
     resourceId: accessId,
     structureId,
-    changedFields: ['services'],
-    details: { anagraficaId }
+    changedFields: ["services"],
+    details: { anagraficaId },
   });
 
   return { success: true, accessId };
@@ -554,31 +705,33 @@ export async function updateAccessAction({ accessId, anagraficaId, services, str
 export async function getAccessHistoryAction(accessId, anagraficaId) {
   const { userUid } = await requireUser();
 
-  if (!accessId || !anagraficaId) throw new Error('Missing parameters');
+  if (!accessId || !anagraficaId) throw new Error("Missing parameters");
 
-  const anagraficaRef = adminDb.collection('anagrafica').doc(anagraficaId);
+  const anagraficaRef = adminDb.collection("anagrafica").doc(anagraficaId);
   const anagraficaSnap = await anagraficaRef.get();
-  if (!anagraficaSnap.exists) throw new Error('Anagrafica not found');
+  if (!anagraficaSnap.exists) throw new Error("Anagrafica not found");
 
   const anagraficaData = anagraficaSnap.data() || {};
-  const allowedStructures = anagraficaData.canBeAccessedBy || anagraficaData.structureIds || [];
+  const allowedStructures =
+    anagraficaData.canBeAccessedBy || anagraficaData.structureIds || [];
   await verifyUserPermissions({ userUid, allowedStructures });
 
   const historySnap = await adminDb
-    .collection('accessi')
+    .collection("accessi")
     .doc(accessId)
-    .collection('history')
-    .orderBy('changedAt', 'desc')
+    .collection("history")
+    .orderBy("changedAt", "desc")
     .limit(50)
     .get();
 
-  const entries = historySnap.docs.map(doc => {
+  const entries = historySnap.docs.map((doc) => {
     const data = doc.data();
     const changedAt = data.changedAt?.toDate?.() || new Date(data.changedAt);
     return {
       id: doc.id,
       ...JSON.parse(JSON.stringify(data)),
-      changedAt: changedAt instanceof Date ? changedAt.toISOString() : changedAt
+      changedAt:
+        changedAt instanceof Date ? changedAt.toISOString() : changedAt,
     };
   });
 

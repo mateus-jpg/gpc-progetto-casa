@@ -1,14 +1,19 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Folder, FolderOpen, ChevronRight, ChevronDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { ChevronDown, ChevronRight, Folder, FolderOpen } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 /**
  * Individual folder tree item with collapse/expand
  */
-function FolderTreeItem({ folder, currentFolderId, onSelectFolder, level = 0 }) {
+function FolderTreeItem({
+  folder,
+  currentFolderId,
+  onSelectFolder,
+  level = 0,
+}) {
   const [isExpanded, setIsExpanded] = useState(false);
   const hasChildren = folder.children && folder.children.length > 0;
   const isSelected = currentFolderId === folder.id;
@@ -29,9 +34,9 @@ function FolderTreeItem({ folder, currentFolderId, onSelectFolder, level = 0 }) 
     <div>
       <div
         className={cn(
-          'flex items-center gap-1 py-1.5 px-2 rounded-md cursor-pointer hover:bg-accent transition-colors',
-          isSelected && 'bg-accent font-medium',
-          level > 0 && 'ml-4'
+          "flex items-center gap-1 py-1.5 px-2 rounded-md cursor-pointer hover:bg-accent transition-colors",
+          isSelected && "bg-accent font-medium",
+          level > 0 && "ml-4",
         )}
         onClick={handleSelect}
       >
@@ -59,8 +64,8 @@ function FolderTreeItem({ folder, currentFolderId, onSelectFolder, level = 0 }) 
         ) : (
           <Folder
             className={cn(
-              'h-4 w-4 flex-shrink-0',
-              isDefaultCategory ? 'text-blue-600' : 'text-blue-500'
+              "h-4 w-4 flex-shrink-0",
+              isDefaultCategory ? "text-blue-600" : "text-blue-500",
             )}
           />
         )}
@@ -68,8 +73,8 @@ function FolderTreeItem({ folder, currentFolderId, onSelectFolder, level = 0 }) 
         {/* Folder Name */}
         <span
           className={cn(
-            'text-sm truncate flex-1',
-            isDefaultCategory && 'font-semibold'
+            "text-sm truncate flex-1",
+            isDefaultCategory && "font-semibold",
           )}
           title={folder.nome}
         >

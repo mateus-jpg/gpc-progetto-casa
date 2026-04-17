@@ -25,7 +25,7 @@ export async function GET() {
         uid: decoded.uid,
         email: decoded.email,
         emailVerified: decoded.email_verified ?? userRecord.emailVerified,
-        role: operatorData.role || 'user',
+        role: operatorData.role || "user",
         structureIds: operatorData.structureIds || [],
       },
     });

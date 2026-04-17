@@ -24,7 +24,7 @@ const getTitleFromPath = (path) => {
     return PATH_TITLES[path];
   }
   // Fallback for nested or unknown routes
-  const pathSegments = path.split('/').filter(Boolean);
+  const pathSegments = path.split("/").filter(Boolean);
   if (pathSegments.length > 0) {
     // Capitalize the first letter of the last segment
     const lastSegment = pathSegments[pathSegments.length - 1];
@@ -33,18 +33,18 @@ const getTitleFromPath = (path) => {
   return "GPC"; // Default fallback
 };
 
-
 export function SiteHeader() {
   const pathname = usePathname(); // 👈 Get the current path
   const title = getTitleFromPath(pathname); // 👈 Get the dynamic title
 
   return (
-    <header
-      className="flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear"
-    >
+    <header className="flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
+        <Separator
+          orientation="vertical"
+          className="mx-2 data-[orientation=vertical]:h-4"
+        />
         {/* Replace the static h1 with the dynamic title */}
         <h1 className="text-base font-medium">{title}</h1>
       </div>

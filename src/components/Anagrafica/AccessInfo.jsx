@@ -1,7 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { ExternalLink, FileIcon } from "lucide-react";
+import { MaterialReactTable } from "material-react-table";
+import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { getAccessFileUrl } from "@/actions/anagrafica/access";
 import {
   Accordion,
   AccordionContent,
@@ -9,18 +14,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MaterialReactTable } from "material-react-table";
-import Link from "next/link";
-import { FileIcon, ExternalLink } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { toast } from "sonner";
-
-import { getAccessFileUrl } from "@/actions/anagrafica/access";
 
 export default function AccessInfo({ accesses }) {
   if (!accesses) return null;
@@ -28,26 +27,33 @@ export default function AccessInfo({ accesses }) {
   const params = useParams();
   const structureId = params?.structureId;
 
-  const data = useMemo(() => (accesses || []).flatMap((acc) => {
-    if (acc.services && Array.isArray(acc.services)) {
-      return acc.services.map((svc, idx) => ({
-        ...svc,
-        accessId: acc.id,
-        anagraficaId: acc.anagraficaId,
-        createdAt: acc.createdAt,
-        createdBy: acc.createdBy,
-        createdByEmail: acc.createdByEmail,
-        uniqueKey: `${acc.id}-${idx}`
-      }));
-    }
-    return [acc];
-  }), [accesses]);
+  const data = useMemo(
+    () =>
+      (accesses || []).flatMap((acc) => {
+        if (acc.services && Array.isArray(acc.services)) {
+          return acc.services.map((svc, idx) => ({
+            ...svc,
+            accessId: acc.id,
+            anagraficaId: acc.anagraficaId,
+            createdAt: acc.createdAt,
+            createdBy: acc.createdBy,
+            createdByEmail: acc.createdByEmail,
+            uniqueKey: `${acc.id}-${idx}`,
+          }));
+        }
+        return [acc];
+      }),
+    [accesses],
+  );
 
   const handleDownloadFile = async (anagraficaId, file) => {
     try {
-      const response = await getAccessFileUrl({ anagraficaId, filePath: file.path });
+      const response = await getAccessFileUrl({
+        anagraficaId,
+        filePath: file.path,
+      });
       if (response.success && response.url) {
-        window.open(response.url, '_blank');
+        window.open(response.url, "_blank");
       } else {
         toast.error("Impossibile recuperare il file.");
       }
@@ -133,15 +139,28 @@ export default function AccessInfo({ accesses }) {
                         className="flex items-center gap-1 text-blue-600 hover:underline text-sm bg-transparent border-0 cursor-pointer p-0"
                       >
                         <FileIcon className="w-4 h-4" />
-                        {f.nome.length > 15 ? f.nome.slice(0, 15) + "..." : f.nome}
+                        {f.nome.length > 15
+                          ? f.nome.slice(0, 15) + "..."
+                          : f.nome}
                       </button>
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
                       <div className="text-xs space-y-1">
-                        <p><strong>Nome:</strong> {f.nome}</p>
-                        <p><strong>Nome Originale:</strong> {f.nomeOriginale || "-"}</p>
-                        <p><strong>Creato il:</strong> {f.dataCreazione ? formatDate(f.dataCreazione) : "-"}</p>
-                        <p><strong>Scadenza:</strong> {f.dataScadenza ? formatDate(f.dataScadenza) : "-"}</p>
+                        <p>
+                          <strong>Nome:</strong> {f.nome}
+                        </p>
+                        <p>
+                          <strong>Nome Originale:</strong>{" "}
+                          {f.nomeOriginale || "-"}
+                        </p>
+                        <p>
+                          <strong>Creato il:</strong>{" "}
+                          {f.dataCreazione ? formatDate(f.dataCreazione) : "-"}
+                        </p>
+                        <p>
+                          <strong>Scadenza:</strong>{" "}
+                          {f.dataScadenza ? formatDate(f.dataScadenza) : "-"}
+                        </p>
                       </div>
                     </TooltipContent>
                   </Tooltip>
@@ -167,18 +186,26 @@ export default function AccessInfo({ accesses }) {
       {
         accessorKey: "createdByEmail",
         header: "Operatore",
-        Cell: ({ cell, row }) => cell.getValue() || row.original.createdBy || "-",
+        Cell: ({ cell, row }) =>
+          cell.getValue() || row.original.createdBy || "-",
         size: 200,
       },
     ],
-    []
+    [],
   );
 
   return (
-    <Accordion type="single" collapsible defaultValue="item-1" className="flex flex-col gap-2 mt-2">
+    <Accordion
+      type="single"
+      collapsible
+      defaultValue="item-1"
+      className="flex flex-col gap-2 mt-2"
+    >
       <AccordionItem value="item-1">
         <AccordionTrigger className="flex items-center justify-between gap-4 px-2">
-          <h4 className="text-sm font-semibold">Visualizza / Nascondi Accessi</h4>
+          <h4 className="text-sm font-semibold">
+            Visualizza / Nascondi Accessi
+          </h4>
         </AccordionTrigger>
         <AccordionContent>
           {!data || data.length === 0 ? (
@@ -188,7 +215,10 @@ export default function AccessInfo({ accesses }) {
           ) : (
             <MaterialReactTable
               muiTablePaperProps={{
-                sx: { borderRadius: 3, border: '1px solid var(--color-gray-200)' }
+                sx: {
+                  borderRadius: 3,
+                  border: "1px solid var(--color-gray-200)",
+                },
               }}
               columns={columns}
               data={data}

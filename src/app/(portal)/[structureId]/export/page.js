@@ -1,31 +1,31 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import {
-  FileSpreadsheet,
-  Download,
-  CalendarRange,
-  Loader2,
-  CheckCircle2,
   AlertCircle,
   ArrowRight,
-} from 'lucide-react';
-import { exportAccessiCSV } from '@/actions/anagrafica/export';
+  CalendarRange,
+  CheckCircle2,
+  Download,
+  FileSpreadsheet,
+  Loader2,
+} from "lucide-react";
+import { useParams } from "next/navigation";
+import { useState } from "react";
+import { exportAccessiCSV } from "@/actions/anagrafica/export";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 function formatDate(dateStr) {
-  if (!dateStr) return '—';
-  const [y, m, d] = dateStr.split('-');
+  if (!dateStr) return "—";
+  const [y, m, d] = dateStr.split("-");
   return `${d}/${m}/${y}`;
 }
 
 export default function ExportPage() {
   const { structureId } = useParams();
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
   const firstOfYear = `${new Date().getFullYear()}-01-01`;
 
   const [startDate, setStartDate] = useState(firstOfYear);
@@ -42,11 +42,11 @@ export default function ExportPage() {
 
   const handleExport = async () => {
     if (!startDate || !endDate) {
-      setError('Seleziona le date di inizio e fine');
+      setError("Seleziona le date di inizio e fine");
       return;
     }
     if (startDate > endDate) {
-      setError('La data di inizio deve precedere la data di fine');
+      setError("La data di inizio deve precedere la data di fine");
       return;
     }
 
@@ -55,12 +55,16 @@ export default function ExportPage() {
     setLastCount(null);
 
     try {
-      const { csv, count } = await exportAccessiCSV({ structureId, startDate, endDate });
+      const { csv, count } = await exportAccessiCSV({
+        structureId,
+        startDate,
+        endDate,
+      });
       setLastCount(count);
 
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `accessi_${startDate}_${endDate}.csv`;
       document.body.appendChild(a);
@@ -81,9 +85,12 @@ export default function ExportPage() {
         <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 mb-6">
           <FileSpreadsheet className="w-8 h-8 text-primary" />
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight">Esporta Accessi</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Esporta Accessi
+        </h1>
         <p className="text-muted-foreground mt-3 text-sm leading-relaxed max-w-xs mx-auto">
-          Scarica gli accessi della struttura in formato CSV, un record per servizio
+          Scarica gli accessi della struttura in formato CSV, un record per
+          servizio
         </p>
       </div>
 
@@ -140,7 +147,9 @@ export default function ExportPage() {
           {/* Period badge */}
           {startDate && endDate && !error && lastCount === null && (
             <div className="flex items-center justify-between rounded-lg bg-muted/50 border border-dashed px-4 py-3">
-              <span className="text-xs text-muted-foreground">Periodo selezionato</span>
+              <span className="text-xs text-muted-foreground">
+                Periodo selezionato
+              </span>
               <span className="text-xs font-semibold font-mono tabular-nums">
                 {formatDate(startDate)} — {formatDate(endDate)}
               </span>
@@ -161,12 +170,14 @@ export default function ExportPage() {
               <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
               <div>
                 <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                  {lastCount === 0 ? 'Nessun accesso trovato' : 'Esportazione completata'}
+                  {lastCount === 0
+                    ? "Nessun accesso trovato"
+                    : "Esportazione completata"}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {lastCount === 0
-                    ? 'Nessun record nel periodo selezionato.'
-                    : `${lastCount} ${lastCount === 1 ? 'accesso esportato' : 'accessi esportati'}.`}
+                    ? "Nessun record nel periodo selezionato."
+                    : `${lastCount} ${lastCount === 1 ? "accesso esportato" : "accessi esportati"}.`}
                 </p>
               </div>
             </div>
@@ -178,17 +189,15 @@ export default function ExportPage() {
             disabled={isLoading}
             className="w-full h-11 gap-2"
           >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Esportazione in corso...
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4" />
-                Scarica CSV
-              </>
-            )}
+            {isLoading
+              ? <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Esportazione in corso...
+                </>
+              : <>
+                  <Download className="w-4 h-4" />
+                  Scarica CSV
+                </>}
           </Button>
         </div>
       </div>

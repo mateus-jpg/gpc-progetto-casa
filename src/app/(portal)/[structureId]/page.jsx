@@ -1,15 +1,25 @@
-"use client"
+"use client";
 
-import { use } from "react"
-import { useStatistics } from "@/hooks/use-statistics"
-import { SectionCards } from "@/components/section-cards"
-import { BirthPlaceMap, DemographicsCharts, AdditionalStatsCards, ServicesCharts } from "@/components/statistics"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { IconChartBar, IconUsers, IconClipboardList, IconWorld } from "@tabler/icons-react"
+import {
+  IconChartBar,
+  IconClipboardList,
+  IconUsers,
+  IconWorld,
+} from "@tabler/icons-react";
+import { use } from "react";
+import { SectionCards } from "@/components/section-cards";
+import {
+  AdditionalStatsCards,
+  BirthPlaceMap,
+  DemographicsCharts,
+  ServicesCharts,
+} from "@/components/statistics";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useStatistics } from "@/hooks/use-statistics";
 
 export default function Page({ params }) {
-  const { structureId } = use(params)
-  const { stats, isLoading } = useStatistics(structureId)
+  const { structureId } = use(params);
+  const { stats, isLoading } = useStatistics(structureId);
 
   return (
     <div className="@container/main flex flex-col gap-6">
@@ -63,5 +73,5 @@ export default function Page({ params }) {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

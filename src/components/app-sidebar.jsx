@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import * as React from "react"
 import {
+  IconBell,
   IconCamera,
   IconChartBar,
   IconDashboard,
@@ -13,19 +13,18 @@ import {
   IconHelp,
   IconInnerShadowTop,
   IconListDetails,
-  IconUsersGroup,
   IconReport,
   IconSearch,
   IconSettings,
   IconUsers,
-  IconBell,
-} from "@tabler/icons-react"
+  IconUsersGroup,
+} from "@tabler/icons-react";
+import * as React from "react";
 
-import { NavDocuments } from "@/components/nav-documents"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavStructures } from "./nav-structures"
-import { NavUser } from "@/components/nav-user"
+import { NavDocuments } from "@/components/nav-documents";
+import { NavMain } from "@/components/nav-main";
+import { NavSecondary } from "@/components/nav-secondary";
+import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -34,15 +33,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-
-import { useAuth } from "@/context/AuthContext"
-import Logo from "./Logo"
-import { NavStrutture } from "./nav-structures"
+} from "@/components/ui/sidebar";
+import { useAuth } from "@/context/AuthContext";
+import Logo from "./Logo";
+import { NavStructures, NavStrutture } from "./nav-structures";
 
 const data = {
-
-
   navMain: [
     {
       title: "Anagrafica",
@@ -126,9 +122,8 @@ const data = {
       url: "#",
       name: "operators",
       icon: IconUsersGroup,
-    }
-  ]
-  ,
+    },
+  ],
   documents: [
     {
       name: "Archivio Generale",
@@ -146,23 +141,21 @@ const data = {
       icon: IconFileWord,
     },
   ],
-}
+};
 
-export function PortalSideBar({
-  ...props
-}) {
+export function PortalSideBar({ ...props }) {
   const { user, loading } = useAuth();
 
-
-  
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
               <a href="#">
-                
                 <Logo className="!size-8" size={89} />
                 <span className="text-base font-semibold">GPC - OBT</span>
               </a>
@@ -173,7 +166,7 @@ export function PortalSideBar({
       <SidebarContent>
         <NavMain items={data.navMain} structureId={structureId} />
         <NavStructures items={data.structures} />
-      {/*   <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
+        {/*   <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
         {user ? <NavUser user={user} /> : <div className="p-4">Loading...</div>}

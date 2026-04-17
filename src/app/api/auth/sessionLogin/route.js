@@ -8,7 +8,9 @@ export async function POST(req) {
   // Apply rate limiting
   const rateLimitResponse = rateLimiters.login(req);
   if (rateLimitResponse) {
-    logger.warn('Rate limit exceeded for login', { ip: req.headers.get('x-forwarded-for') });
+    logger.warn("Rate limit exceeded for login", {
+      ip: req.headers.get("x-forwarded-for"),
+    });
     return rateLimitResponse;
   }
 
@@ -18,11 +20,8 @@ export async function POST(req) {
     const validation = validateSessionLogin(rawBody);
 
     if (!validation.success) {
-      logger.warn('Invalid session login request', { error: validation.error });
-      return NextResponse.json(
-        { error: validation.error },
-        { status: 400 }
-      );
+      logger.warn("Invalid session login request", { error: validation.error });
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const { idToken } = validation.data;
@@ -32,11 +31,13 @@ export async function POST(req) {
 
     // Create session cookie (5 days expiry)
     const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days in milliseconds
-    const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
+    const sessionCookie = await auth.createSessionCookie(idToken, {
+      expiresIn,
+    });
 
     const response = NextResponse.json({
       success: true,
-      uid: decodedToken.uid
+      uid: decodedToken.uid,
     });
 
     const cookieName = process.env.SESSION_COOKIE_NAME || "session";
@@ -50,20 +51,24 @@ export async function POST(req) {
       path: "/",
     });
 
-    logger.info('Session created', { uid: decodedToken.uid });
+    logger.info("Session created", { uid: decodedToken.uid });
 
     return response;
   } catch (error) {
-    logger.error('Session login error', error);
+    logger.error("Session login error", error);
 
     // Don't expose internal error details
-    const isTokenExpired = error.message?.includes('Token expired') ||
-                          error.code === 'auth/id-token-expired';
+    const isTokenExpired =
+      error.message?.includes("Token expired") ||
+      error.code === "auth/id-token-expired";
 
-    return NextResponse.json({
-      error: isTokenExpired
-        ? "Session expired, please try again"
-        : "Authentication failed"
-    }, { status: 401 });
+    return NextResponse.json(
+      {
+        error: isTokenExpired
+          ? "Session expired, please try again"
+          : "Authentication failed",
+      },
+      { status: 401 },
+    );
   }
 }

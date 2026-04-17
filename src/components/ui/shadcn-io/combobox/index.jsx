@@ -1,8 +1,9 @@
-'use client';;
-import { useControllableState } from '@radix-ui/react-use-controllable-state';
-import { ChevronsUpDownIcon, PlusIcon } from 'lucide-react';
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
+"use client";
+
+import { useControllableState } from "@radix-ui/react-use-controllable-state";
+import { ChevronsUpDownIcon, PlusIcon } from "lucide-react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -11,24 +12,24 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@/components/ui/command';
+} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 const ComboboxContext = createContext({
   data: [],
-  type: 'item',
-  value: '',
+  type: "item",
+  value: "",
   onValueChange: () => {},
   open: false,
   onOpenChange: () => {},
   width: 200,
   setWidth: () => {},
-  inputValue: '',
+  inputValue: "",
   setInputValue: () => {},
 });
 
@@ -44,7 +45,7 @@ export const Combobox = ({
   ...props
 }) => {
   const [value, onValueChange] = useControllableState({
-    defaultProp: defaultValue ?? '',
+    defaultProp: defaultValue ?? "",
     prop: controlledValue,
     onChange: controlledOnValueChange,
   });
@@ -54,7 +55,7 @@ export const Combobox = ({
     onChange: controlledOnOpenChange,
   });
   const [width, setWidth] = useState(200);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
 
   return (
     <ComboboxContext.Provider
@@ -69,16 +70,14 @@ export const Combobox = ({
         setWidth,
         inputValue,
         setInputValue,
-      }}>
+      }}
+    >
       <Popover {...props} onOpenChange={onOpenChange} open={open} />
     </ComboboxContext.Provider>
   );
 };
 
-export const ComboboxTrigger = ({
-  children,
-  ...props
-}) => {
+export const ComboboxTrigger = ({ children, ...props }) => {
   const { value, data, type, setWidth } = useContext(ComboboxContext);
   const ref = useRef(null);
 
@@ -86,7 +85,7 @@ export const ComboboxTrigger = ({
     // Create a ResizeObserver to detect width changes
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        const newWidth = (entry.target).offsetWidth;
+        const newWidth = entry.target.offsetWidth;
         if (newWidth) {
           setWidth?.(newWidth);
         }
@@ -111,7 +110,10 @@ export const ComboboxTrigger = ({
             {value
               ? data.find((item) => item.value === value)?.label
               : `Select ${type}...`}
-            <ChevronsUpDownIcon className="shrink-0 text-muted-foreground" size={16} />
+            <ChevronsUpDownIcon
+              className="shrink-0 text-muted-foreground"
+              size={16}
+            />
           </span>
         )}
       </Button>
@@ -119,15 +121,15 @@ export const ComboboxTrigger = ({
   );
 };
 
-export const ComboboxContent = ({
-  className,
-  popoverOptions,
-  ...props
-}) => {
+export const ComboboxContent = ({ className, popoverOptions, ...props }) => {
   const { width } = useContext(ComboboxContext);
 
   return (
-    <PopoverContent className={cn('p-0', className)} style={{ width }} {...popoverOptions}>
+    <PopoverContent
+      className={cn("p-0", className)}
+      style={{ width }}
+      {...popoverOptions}
+    >
       <Command {...props} />
     </PopoverContent>
   );
@@ -157,26 +159,22 @@ export const ComboboxInput = ({
       onValueChange={onValueChange}
       placeholder={`Search ${type}...`}
       value={value}
-      {...props} />
+      {...props}
+    />
   );
 };
 
-export const ComboboxList = (props) => (
-  <CommandList {...props} />
-);
+export const ComboboxList = (props) => <CommandList {...props} />;
 
-export const ComboboxEmpty = ({
-  children,
-  ...props
-}) => {
+export const ComboboxEmpty = ({ children, ...props }) => {
   const { type } = useContext(ComboboxContext);
 
-  return (<CommandEmpty {...props}>{children ?? `No ${type} found.`}</CommandEmpty>);
+  return (
+    <CommandEmpty {...props}>{children ?? `No ${type} found.`}</CommandEmpty>
+  );
 };
 
-export const ComboboxGroup = (props) => (
-  <CommandGroup {...props} />
-);
+export const ComboboxGroup = (props) => <CommandGroup {...props} />;
 
 export const ComboboxItem = (props) => {
   const { onValueChange, onOpenChange } = useContext(ComboboxContext);
@@ -187,19 +185,14 @@ export const ComboboxItem = (props) => {
         onValueChange(currentValue);
         onOpenChange(false);
       }}
-      {...props} />
+      {...props}
+    />
   );
 };
 
-export const ComboboxSeparator = (props) => (
-  <CommandSeparator {...props} />
-);
+export const ComboboxSeparator = (props) => <CommandSeparator {...props} />;
 
-export const ComboboxCreateNew = ({
-  onCreateNew,
-  children,
-  className
-}) => {
+export const ComboboxCreateNew = ({ onCreateNew, children, className }) => {
   const { inputValue, type, onValueChange, onOpenChange } =
     useContext(ComboboxContext);
 
@@ -216,11 +209,12 @@ export const ComboboxCreateNew = ({
   return (
     <button
       className={cn(
-        'relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-        className
+        "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        className,
       )}
       onClick={handleCreateNew}
-      type="button">
+      type="button"
+    >
       {children ? (
         children(inputValue)
       ) : (

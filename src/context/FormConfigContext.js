@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useMemo } from 'react';
+import { createContext, useContext, useMemo } from "react";
 import {
-  SECTION_DEFINITIONS,
   DEFAULT_FORM_CONFIGURATION,
-  mergeWithDefaults,
-  getSectionLabel,
   getFieldLabel,
   getFieldOptions,
-  isFieldVisible,
+  getOrderedSections,
+  getSectionLabel,
   isFieldRequired,
-  getOrderedSections
-} from '@/data/formConfigDefaults';
+  isFieldVisible,
+  mergeWithDefaults,
+  SECTION_DEFINITIONS,
+} from "@/data/formConfigDefaults";
 
 /**
  * Context for form configuration
@@ -27,10 +27,13 @@ export function FormConfigProvider({ config, children }) {
     return mergeWithDefaults(config);
   }, [config]);
 
-  const value = useMemo(() => ({
-    config: mergedConfig,
-    sectionDefinitions: SECTION_DEFINITIONS
-  }), [mergedConfig]);
+  const value = useMemo(
+    () => ({
+      config: mergedConfig,
+      sectionDefinitions: SECTION_DEFINITIONS,
+    }),
+    [mergedConfig],
+  );
 
   return (
     <FormConfigContext.Provider value={value}>
@@ -50,7 +53,7 @@ export function useFormConfig() {
     // Return defaults if used outside provider (for backwards compatibility)
     return {
       config: DEFAULT_FORM_CONFIGURATION,
-      sectionDefinitions: SECTION_DEFINITIONS
+      sectionDefinitions: SECTION_DEFINITIONS,
     };
   }
 
@@ -80,7 +83,7 @@ export function useSectionConfig(sectionId) {
       color: sectionDef.color,
       dataKey: sectionDef.dataKey,
       isServiceSection: sectionDef.isServiceSection || false,
-      fields: sectionConfig?.fields || {}
+      fields: sectionConfig?.fields || {},
     };
   }, [sectionId, sectionDef, sectionConfig, config]);
 }
@@ -113,7 +116,7 @@ export function useFieldConfig(sectionId, fieldId) {
       min: fieldDef.min,
       max: fieldDef.max,
       // Computed properties
-      isRequired: isFieldRequired(sectionId, fieldId, config)
+      isRequired: isFieldRequired(sectionId, fieldId, config),
     };
   }, [sectionId, fieldId, fieldDef, fieldConfig, config]);
 }
@@ -160,7 +163,7 @@ export function useVisibleFields(sectionId, formData) {
       return [];
     }
 
-    return Object.keys(sectionDef.fields).filter(fieldId => {
+    return Object.keys(sectionDef.fields).filter((fieldId) => {
       return isFieldVisible(sectionId, fieldId, config, formData);
     });
   }, [sectionId, sectionDef, config, formData]);

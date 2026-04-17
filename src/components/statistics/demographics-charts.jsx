@@ -1,6 +1,17 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import {
+  IconBriefcase,
+  IconHeart,
+  IconHome,
+  IconMan,
+  IconScale,
+  IconSchool,
+  IconUserQuestion,
+  IconUsers,
+  IconWoman,
+} from "@tabler/icons-react";
+import * as React from "react";
 import {
   Bar,
   BarChart,
@@ -13,30 +24,29 @@ import {
   ResponsiveContainer,
   XAxis,
   YAxis,
-} from "recharts"
+} from "recharts";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { IconUsers, IconMan, IconWoman, IconUserQuestion, IconSchool, IconBriefcase, IconHome, IconScale, IconHeart } from "@tabler/icons-react"
+} from "@/components/ui/chart";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Color palettes for different chart types
 const COLORS = {
   gender: {
-    "Maschio": "hsl(221, 83%, 53%)", // blue
-    "Femmina": "hsl(330, 81%, 60%)", // pink
-    "Altro": "hsl(142, 71%, 45%)", // green
+    Maschio: "hsl(221, 83%, 53%)", // blue
+    Femmina: "hsl(330, 81%, 60%)", // pink
+    Altro: "hsl(142, 71%, 45%)", // green
     "Non specificato": "hsl(215, 14%, 65%)", // gray
   },
   age: [
@@ -49,11 +59,11 @@ const COLORS = {
     "hsl(221, 83%, 25%)",
   ],
   status: {
-    "Occupato": "hsl(142, 71%, 45%)",
+    Occupato: "hsl(142, 71%, 45%)",
     "In formazione": "hsl(45, 93%, 47%)",
-    "Disoccupato": "hsl(0, 84%, 60%)",
+    Disoccupato: "hsl(0, 84%, 60%)",
     "In cerca di occupazione": "hsl(25, 95%, 53%)",
-    "Altro": "hsl(215, 14%, 65%)",
+    Altro: "hsl(215, 14%, 65%)",
   },
   education: [
     "hsl(262, 83%, 58%)",
@@ -63,36 +73,36 @@ const COLORS = {
     "hsl(262, 83%, 38%)",
   ],
   italian: {
-    "Nessuna": "hsl(0, 84%, 60%)",
-    "Base": "hsl(25, 95%, 53%)",
-    "Elementare": "hsl(45, 93%, 47%)",
-    "Intermedio": "hsl(142, 71%, 45%)",
-    "Avanzato": "hsl(221, 83%, 53%)",
+    Nessuna: "hsl(0, 84%, 60%)",
+    Base: "hsl(25, 95%, 53%)",
+    Elementare: "hsl(45, 93%, 47%)",
+    Intermedio: "hsl(142, 71%, 45%)",
+    Avanzato: "hsl(221, 83%, 53%)",
   },
-}
+};
 
 // Gender Distribution Chart
 function GenderChart({ data, isLoading }) {
   const chartData = React.useMemo(() => {
-    if (!data) return []
+    if (!data) return [];
     return Object.entries(data).map(([name, value]) => ({
       name,
       value,
       fill: COLORS.gender[name] || COLORS.gender["Altro"],
-    }))
-  }, [data])
+    }));
+  }, [data]);
 
-  const total = chartData.reduce((sum, item) => sum + item.value, 0)
+  const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
   const chartConfig = {
     value: { label: "Persone" },
     Maschio: { label: "Maschio", color: COLORS.gender["Maschio"] },
     Femmina: { label: "Femmina", color: COLORS.gender["Femmina"] },
     Altro: { label: "Altro", color: COLORS.gender["Altro"] },
-  }
+  };
 
   if (isLoading) {
-    return <Skeleton className="w-full h-[200px]" />
+    return <Skeleton className="w-full h-[200px]" />;
   }
 
   if (!chartData.length) {
@@ -100,11 +110,14 @@ function GenderChart({ data, isLoading }) {
       <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
         Nessun dato disponibile
       </div>
-    )
+    );
   }
 
   return (
-    <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[200px]">
+    <ChartContainer
+      config={chartConfig}
+      className="mx-auto aspect-square h-[200px]"
+    >
       <PieChart>
         <ChartTooltip
           cursor={false}
@@ -144,36 +157,36 @@ function GenderChart({ data, isLoading }) {
                       Totale
                     </tspan>
                   </text>
-                )
+                );
               }
             }}
           />
         </Pie>
       </PieChart>
     </ChartContainer>
-  )
+  );
 }
 
 // Age Distribution Chart
 function AgeChart({ data, isLoading }) {
   const chartData = React.useMemo(() => {
-    if (!data) return []
-    const order = ["<18", "18-20", "21-30", "31-40", "41-50", "51-60", ">60"]
+    if (!data) return [];
+    const order = ["<18", "18-20", "21-30", "31-40", "41-50", "51-60", ">60"];
     return order
-      .filter(key => data[key])
+      .filter((key) => data[key])
       .map((key, index) => ({
         name: key,
         value: data[key] || 0,
         fill: COLORS.age[index % COLORS.age.length],
-      }))
-  }, [data])
+      }));
+  }, [data]);
 
   const chartConfig = {
     value: { label: "Persone" },
-  }
+  };
 
   if (isLoading) {
-    return <Skeleton className="w-full h-[200px]" />
+    return <Skeleton className="w-full h-[200px]" />;
   }
 
   if (!chartData.length) {
@@ -181,12 +194,16 @@ function AgeChart({ data, isLoading }) {
       <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
         Nessun dato disponibile
       </div>
-    )
+    );
   }
 
   return (
     <ChartContainer config={chartConfig} className="h-[200px] w-full">
-      <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 20 }}>
+      <BarChart
+        data={chartData}
+        layout="vertical"
+        margin={{ left: 0, right: 20 }}
+      >
         <XAxis type="number" hide />
         <YAxis
           dataKey="name"
@@ -208,28 +225,28 @@ function AgeChart({ data, isLoading }) {
         </Bar>
       </BarChart>
     </ChartContainer>
-  )
+  );
 }
 
 // Job Status Radial Chart
 function JobStatusChart({ data, isLoading }) {
   const chartData = React.useMemo(() => {
-    if (!data) return []
+    if (!data) return [];
     return Object.entries(data)
       .map(([name, value]) => ({
-        name: name.length > 15 ? name.substring(0, 15) + '...' : name,
+        name: name.length > 15 ? name.substring(0, 15) + "..." : name,
         fullName: name,
         value,
         fill: COLORS.status[name] || "hsl(215, 14%, 65%)",
       }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 5)
-  }, [data])
+      .slice(0, 5);
+  }, [data]);
 
-  const total = Object.values(data || {}).reduce((sum, val) => sum + val, 0)
+  const total = Object.values(data || {}).reduce((sum, val) => sum + val, 0);
 
   if (isLoading) {
-    return <Skeleton className="w-full h-[200px]" />
+    return <Skeleton className="w-full h-[200px]" />;
   }
 
   if (!chartData.length) {
@@ -237,21 +254,24 @@ function JobStatusChart({ data, isLoading }) {
       <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
         Nessun dato disponibile
       </div>
-    )
+    );
   }
 
   return (
     <div className="h-[200px] w-full">
       <div className="space-y-3">
         {chartData.map((item, index) => {
-          const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0
+          const percentage =
+            total > 0 ? Math.round((item.value / total) * 100) : 0;
           return (
             <div key={item.fullName} className="space-y-1">
               <div className="flex items-center justify-between text-sm">
                 <span className="truncate max-w-[150px]" title={item.fullName}>
                   {item.name}
                 </span>
-                <span className="font-medium tabular-nums">{item.value} ({percentage}%)</span>
+                <span className="font-medium tabular-nums">
+                  {item.value} ({percentage}%)
+                </span>
               </div>
               <div className="h-2 bg-muted rounded-full overflow-hidden">
                 <div
@@ -263,35 +283,35 @@ function JobStatusChart({ data, isLoading }) {
                 />
               </div>
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
 
 // Italian Level Chart
 function ItalianLevelChart({ data, isLoading }) {
   const chartData = React.useMemo(() => {
-    if (!data) return []
-    const order = ["Nessuna", "Base", "Elementare", "Intermedio", "Avanzato"]
+    if (!data) return [];
+    const order = ["Nessuna", "Base", "Elementare", "Intermedio", "Avanzato"];
     return order
-      .filter(key => data[key] !== undefined)
-      .map(key => ({
+      .filter((key) => data[key] !== undefined)
+      .map((key) => ({
         name: key,
         value: data[key] || 0,
         fill: COLORS.italian[key] || "hsl(215, 14%, 65%)",
-      }))
-  }, [data])
+      }));
+  }, [data]);
 
-  const total = chartData.reduce((sum, item) => sum + item.value, 0)
+  const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
   const chartConfig = {
     value: { label: "Persone" },
-  }
+  };
 
   if (isLoading) {
-    return <Skeleton className="w-full h-[200px]" />
+    return <Skeleton className="w-full h-[200px]" />;
   }
 
   if (!chartData.length) {
@@ -299,7 +319,7 @@ function ItalianLevelChart({ data, isLoading }) {
       <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
         Nessun dato disponibile
       </div>
-    )
+    );
   }
 
   return (
@@ -325,7 +345,7 @@ function ItalianLevelChart({ data, isLoading }) {
         </Bar>
       </BarChart>
     </ChartContainer>
-  )
+  );
 }
 
 // Main Demographics Dashboard Component
@@ -405,22 +425,28 @@ export function DemographicsCharts({ stats, isLoading }) {
           <CardDescription>Livello di conoscenza</CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
-          <ItalianLevelChart data={stats?.byItalianLevel} isLoading={isLoading} />
+          <ItalianLevelChart
+            data={stats?.byItalianLevel}
+            isLoading={isLoading}
+          />
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 // Additional Stats Cards Component
 export function AdditionalStatsCards({ stats, isLoading }) {
-  const legalStats = stats?.byLegalStatus || {}
-  const housingStats = stats?.byHousingStatus || {}
-  const vulnerabilityStats = stats?.byVulnerability || {}
+  const legalStats = stats?.byLegalStatus || {};
+  const housingStats = stats?.byHousingStatus || {};
+  const vulnerabilityStats = stats?.byVulnerability || {};
 
-  const totalLegal = Object.values(legalStats).reduce((a, b) => a + b, 0)
-  const totalHousing = Object.values(housingStats).reduce((a, b) => a + b, 0)
-  const totalVulnerability = Object.values(vulnerabilityStats).reduce((a, b) => a + b, 0)
+  const totalLegal = Object.values(legalStats).reduce((a, b) => a + b, 0);
+  const totalHousing = Object.values(housingStats).reduce((a, b) => a + b, 0);
+  const totalVulnerability = Object.values(vulnerabilityStats).reduce(
+    (a, b) => a + b,
+    0,
+  );
 
   if (isLoading) {
     return (
@@ -436,7 +462,7 @@ export function AdditionalStatsCards({ stats, isLoading }) {
           </Card>
         ))}
       </div>
-    )
+    );
   }
 
   return (
@@ -458,18 +484,24 @@ export function AdditionalStatsCards({ stats, isLoading }) {
           ) : (
             <div className="space-y-2">
               {Object.entries(legalStats)
-                .sort(([,a], [,b]) => b - a)
+                .sort(([, a], [, b]) => b - a)
                 .slice(0, 5)
                 .map(([name, value]) => {
-                  const percentage = totalLegal > 0 ? Math.round((value / totalLegal) * 100) : 0
+                  const percentage =
+                    totalLegal > 0 ? Math.round((value / totalLegal) * 100) : 0;
                   return (
-                    <div key={name} className="flex items-center justify-between text-sm">
-                      <span className="truncate max-w-[180px]" title={name}>{name}</span>
+                    <div
+                      key={name}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span className="truncate max-w-[180px]" title={name}>
+                        {name}
+                      </span>
                       <Badge variant="secondary" className="font-mono text-xs">
                         {value} ({percentage}%)
                       </Badge>
                     </div>
-                  )
+                  );
                 })}
             </div>
           )}
@@ -493,18 +525,26 @@ export function AdditionalStatsCards({ stats, isLoading }) {
           ) : (
             <div className="space-y-2">
               {Object.entries(housingStats)
-                .sort(([,a], [,b]) => b - a)
+                .sort(([, a], [, b]) => b - a)
                 .slice(0, 5)
                 .map(([name, value]) => {
-                  const percentage = totalHousing > 0 ? Math.round((value / totalHousing) * 100) : 0
+                  const percentage =
+                    totalHousing > 0
+                      ? Math.round((value / totalHousing) * 100)
+                      : 0;
                   return (
-                    <div key={name} className="flex items-center justify-between text-sm">
-                      <span className="truncate max-w-[180px]" title={name}>{name}</span>
+                    <div
+                      key={name}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span className="truncate max-w-[180px]" title={name}>
+                        {name}
+                      </span>
                       <Badge variant="secondary" className="font-mono text-xs">
                         {value} ({percentage}%)
                       </Badge>
                     </div>
-                  )
+                  );
                 })}
             </div>
           )}
@@ -528,23 +568,34 @@ export function AdditionalStatsCards({ stats, isLoading }) {
           ) : (
             <div className="space-y-2">
               {Object.entries(vulnerabilityStats)
-                .sort(([,a], [,b]) => b - a)
+                .sort(([, a], [, b]) => b - a)
                 .slice(0, 5)
                 .map(([name, value]) => {
-                  const percentage = totalVulnerability > 0 ? Math.round((value / totalVulnerability) * 100) : 0
+                  const percentage =
+                    totalVulnerability > 0
+                      ? Math.round((value / totalVulnerability) * 100)
+                      : 0;
                   return (
-                    <div key={name} className="flex items-center justify-between text-sm">
-                      <span className="truncate max-w-[180px]" title={name}>{name}</span>
-                      <Badge variant="outline" className="font-mono text-xs border-red-200 dark:border-red-800">
+                    <div
+                      key={name}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span className="truncate max-w-[180px]" title={name}>
+                        {name}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="font-mono text-xs border-red-200 dark:border-red-800"
+                      >
                         {value} ({percentage}%)
                       </Badge>
                     </div>
-                  )
+                  );
                 })}
             </div>
           )}
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

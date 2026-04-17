@@ -1,12 +1,50 @@
 const admin = require("firebase-admin");
-const { onDocumentCreated, onDocumentUpdated, onDocumentWritten } = require("firebase-functions/v2/firestore");
+const {
+  onDocumentCreated,
+  onDocumentUpdated,
+  onDocumentWritten,
+} = require("firebase-functions/v2/firestore");
 const { onRequest } = require("firebase-functions/v2/https");
 const { getISOWeek, differenceInYears } = require("date-fns");
 
-
-
 admin.initializeApp();
 const db = admin.firestore();
+
+async function authorizeAdminRequest(req) {
+  const authHeader =
+    req.get("authorization") || req.headers.authorization || "";
+  if (!authHeader.startsWith("Bearer ")) {
+    return { ok: false, status: 401, error: "Missing bearer token" };
+  }
+
+  const token = authHeader.slice("Bearer ".length).trim();
+  if (!token) {
+    return { ok: false, status: 401, error: "Missing bearer token" };
+  }
+
+  const maintenanceSecret = process.env.RECALCULATE_STATS_SECRET;
+  if (maintenanceSecret && token === maintenanceSecret) {
+    return { ok: true, actorUid: "maintenance-secret" };
+  }
+
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(token, true);
+    const operatorDoc = await db
+      .collection("operators")
+      .doc(decodedToken.uid)
+      .get();
+    const operatorData = operatorDoc.exists ? operatorDoc.data() : null;
+
+    if (operatorData?.role !== "admin") {
+      return { ok: false, status: 403, error: "Admin privileges required" };
+    }
+
+    return { ok: true, actorUid: decodedToken.uid };
+  } catch (error) {
+    console.error("Failed to authorize admin request:", error);
+    return { ok: false, status: 401, error: "Invalid bearer token" };
+  }
+}
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -87,9 +125,21 @@ async function updatePersonalStats(docRef, anagraficaData, increment = true) {
     };
 
     updateCategory(newStats.byGender, anagraficaData.anagrafica?.sesso, amount);
-    updateCategory(newStats.byAgeRange, calculateAgeRange(anagraficaData.anagrafica?.dataDiNascita), amount);
-    updateCategory(newStats.byBirthPlace, anagraficaData.anagrafica?.luogoDiNascita, amount);
-    processArrayCategory(newStats.byCittadinanza, anagraficaData.anagrafica?.cittadinanza, amount);
+    updateCategory(
+      newStats.byAgeRange,
+      calculateAgeRange(anagraficaData.anagrafica?.dataDiNascita),
+      amount,
+    );
+    updateCategory(
+      newStats.byBirthPlace,
+      anagraficaData.anagrafica?.luogoDiNascita,
+      amount,
+    );
+    processArrayCategory(
+      newStats.byCittadinanza,
+      anagraficaData.anagrafica?.cittadinanza,
+      amount,
+    );
 
     await docRef.set(newStats, { merge: true });
   } catch (error) {
@@ -103,7 +153,11 @@ async function updatePersonalStats(docRef, anagraficaData, increment = true) {
  *         byHousingStatus, byJobStatus, byEducationOrigin, byEducationItaly,
  *         byItalianLevel, byVulnerability, byIntenzioneItalia, byReferral
  */
-async function updateStructureSpecificStats(docRef, structureData, increment = true) {
+async function updateStructureSpecificStats(
+  docRef,
+  structureData,
+  increment = true,
+) {
   try {
     const docSnap = await docRef.get();
     const statsData = docSnap.exists ? docSnap.data() : {};
@@ -125,26 +179,79 @@ async function updateStructureSpecificStats(docRef, structureData, increment = t
       updatedAt: admin.firestore.Timestamp.now(),
     };
 
-    updateCategory(newStats.byFamilyType, structureData.nucleoFamiliare?.nucleoTipo, amount);
-    updateCategory(newStats.byNucleoType, structureData.nucleoFamiliare?.nucleo, amount);
+    updateCategory(
+      newStats.byFamilyType,
+      structureData.nucleoFamiliare?.nucleoTipo,
+      amount,
+    );
+    updateCategory(
+      newStats.byNucleoType,
+      structureData.nucleoFamiliare?.nucleo,
+      amount,
+    );
 
     const figli = structureData.nucleoFamiliare?.figli;
     if (figli !== undefined && figli !== null) {
-      const figliCategory = figli === 0 ? "0" : figli === 1 ? "1" : figli === 2 ? "2" : figli <= 4 ? "3-4" : "5+";
+      const figliCategory =
+        figli === 0
+          ? "0"
+          : figli === 1
+            ? "1"
+            : figli === 2
+              ? "2"
+              : figli <= 4
+                ? "3-4"
+                : "5+";
       updateCategory(newStats.byChildrenCount, figliCategory, amount);
     }
 
-    updateCategory(newStats.byLegalStatus, structureData.legaleAbitativa?.situazioneLegale, amount);
-    processArrayCategory(newStats.byHousingStatus, structureData.legaleAbitativa?.situazioneAbitativa, amount);
+    updateCategory(
+      newStats.byLegalStatus,
+      structureData.legaleAbitativa?.situazioneLegale,
+      amount,
+    );
+    processArrayCategory(
+      newStats.byHousingStatus,
+      structureData.legaleAbitativa?.situazioneAbitativa,
+      amount,
+    );
 
-    updateCategory(newStats.byJobStatus, structureData.lavoroFormazione?.situazioneLavorativa, amount);
-    updateCategory(newStats.byEducationOrigin, structureData.lavoroFormazione?.titoloDiStudioOrigine, amount);
-    updateCategory(newStats.byEducationItaly, structureData.lavoroFormazione?.titoloDiStudioItalia, amount);
-    updateCategory(newStats.byItalianLevel, structureData.lavoroFormazione?.conoscenzaItaliano, amount);
+    updateCategory(
+      newStats.byJobStatus,
+      structureData.lavoroFormazione?.situazioneLavorativa,
+      amount,
+    );
+    updateCategory(
+      newStats.byEducationOrigin,
+      structureData.lavoroFormazione?.titoloDiStudioOrigine,
+      amount,
+    );
+    updateCategory(
+      newStats.byEducationItaly,
+      structureData.lavoroFormazione?.titoloDiStudioItalia,
+      amount,
+    );
+    updateCategory(
+      newStats.byItalianLevel,
+      structureData.lavoroFormazione?.conoscenzaItaliano,
+      amount,
+    );
 
-    processArrayCategory(newStats.byVulnerability, structureData.vulnerabilita?.vulnerabilita, amount);
-    updateCategory(newStats.byIntenzioneItalia, structureData.vulnerabilita?.intenzioneItalia, amount);
-    updateCategory(newStats.byReferral, structureData.referral?.referral, amount);
+    processArrayCategory(
+      newStats.byVulnerability,
+      structureData.vulnerabilita?.vulnerabilita,
+      amount,
+    );
+    updateCategory(
+      newStats.byIntenzioneItalia,
+      structureData.vulnerabilita?.intenzioneItalia,
+      amount,
+    );
+    updateCategory(
+      newStats.byReferral,
+      structureData.referral?.referral,
+      amount,
+    );
 
     await docRef.set(newStats, { merge: true });
   } catch (error) {
@@ -173,7 +280,11 @@ async function updateAccessStats(docRef, data, increment = true) {
     const services = data.services || [];
     for (const service of services) {
       updateCategory(newStats.byAccessType, service.tipoAccesso, amount);
-      processArrayCategory(newStats.bySubcategory, service.sottoCategorie, amount);
+      processArrayCategory(
+        newStats.bySubcategory,
+        service.sottoCategorie,
+        amount,
+      );
 
       if (service.classificazione) {
         let classKey = service.classificazione;
@@ -183,22 +294,31 @@ async function updateAccessStats(docRef, data, increment = true) {
         updateCategory(newStats.byClassification, classKey, amount);
       }
 
-      updateCategory(newStats.byReferralEntity, service.enteRiferimento, amount);
+      updateCategory(
+        newStats.byReferralEntity,
+        service.enteRiferimento,
+        amount,
+      );
 
       const filesCount = service.files?.length || 0;
-      const filesWithExpiry = (service.files || []).filter(f => f.dataScadenza).length;
+      const filesWithExpiry = (service.files || []).filter(
+        (f) => f.dataScadenza,
+      ).length;
 
       if (increment) {
         newStats.totalFiles += filesCount;
         newStats.filesWithExpiration += filesWithExpiry;
       } else {
         newStats.totalFiles = Math.max(0, newStats.totalFiles - filesCount);
-        newStats.filesWithExpiration = Math.max(0, newStats.filesWithExpiration - filesWithExpiry);
+        newStats.filesWithExpiration = Math.max(
+          0,
+          newStats.filesWithExpiration - filesWithExpiry,
+        );
       }
 
       if (service.reminderDate) {
-         if (increment) newStats.totalReminders++;
-         else newStats.totalReminders = Math.max(0, newStats.totalReminders - 1);
+        if (increment) newStats.totalReminders++;
+        else newStats.totalReminders = Math.max(0, newStats.totalReminders - 1);
       }
     }
 
@@ -208,7 +328,13 @@ async function updateAccessStats(docRef, data, increment = true) {
   }
 }
 
-async function updateReminderStats(docRef, reminderData, isNew, wasCompleted, isNowCompleted) {
+async function updateReminderStats(
+  docRef,
+  reminderData,
+  isNew,
+  wasCompleted,
+  isNowCompleted,
+) {
   try {
     const docSnap = await docRef.get();
     const statsData = docSnap.exists ? docSnap.data() : {};
@@ -224,7 +350,11 @@ async function updateReminderStats(docRef, reminderData, isNew, wasCompleted, is
     if (isNew) {
       newStats.totalRemindersCreated += 1;
       newStats.activeReminders += 1;
-      updateCategory(newStats.remindersByServiceType, reminderData.serviceType, 1);
+      updateCategory(
+        newStats.remindersByServiceType,
+        reminderData.serviceType,
+        1,
+      );
     }
 
     if (!wasCompleted && isNowCompleted) {
@@ -232,7 +362,10 @@ async function updateReminderStats(docRef, reminderData, isNew, wasCompleted, is
       newStats.completedReminders += 1;
     } else if (wasCompleted && !isNowCompleted) {
       newStats.activeReminders += 1;
-      newStats.completedReminders = Math.max(0, newStats.completedReminders - 1);
+      newStats.completedReminders = Math.max(
+        0,
+        newStats.completedReminders - 1,
+      );
     }
 
     await docRef.set(newStats, { merge: true });
@@ -257,13 +390,41 @@ exports.onAnagraficaCreate = onDocumentCreated(
 
     for (const structureId of structures) {
       await Promise.all([
-        updatePersonalStats(db.collection("statistics").doc(structureId), data, true),
-        updatePersonalStats(db.collection("statistics").doc(structureId).collection("daily").doc(getDailyId(now)), data, true),
-        updatePersonalStats(db.collection("statistics").doc(structureId).collection("weekly").doc(getWeekId(now)), data, true),
-        updatePersonalStats(db.collection("statistics").doc(structureId).collection("monthly").doc(getMonthId(now)), data, true)
+        updatePersonalStats(
+          db.collection("statistics").doc(structureId),
+          data,
+          true,
+        ),
+        updatePersonalStats(
+          db
+            .collection("statistics")
+            .doc(structureId)
+            .collection("daily")
+            .doc(getDailyId(now)),
+          data,
+          true,
+        ),
+        updatePersonalStats(
+          db
+            .collection("statistics")
+            .doc(structureId)
+            .collection("weekly")
+            .doc(getWeekId(now)),
+          data,
+          true,
+        ),
+        updatePersonalStats(
+          db
+            .collection("statistics")
+            .doc(structureId)
+            .collection("monthly")
+            .doc(getMonthId(now)),
+          data,
+          true,
+        ),
       ]);
     }
-  }
+  },
 );
 
 exports.onAnagraficaUpdate = onDocumentUpdated(
@@ -277,13 +438,42 @@ exports.onAnagraficaUpdate = onDocumentUpdated(
 
     // 1. Handle Soft Delete
     if (!beforeData.deletedAt && afterData.deletedAt) {
-      const structures = beforeData.structureIds || beforeData.canBeAccessedBy || [];
+      const structures =
+        beforeData.structureIds || beforeData.canBeAccessedBy || [];
       for (const structureId of structures) {
         await Promise.all([
-          updatePersonalStats(db.collection("statistics").doc(structureId), beforeData, false),
-          updatePersonalStats(db.collection("statistics").doc(structureId).collection("daily").doc(getDailyId(now)), beforeData, false),
-          updatePersonalStats(db.collection("statistics").doc(structureId).collection("weekly").doc(getWeekId(now)), beforeData, false),
-          updatePersonalStats(db.collection("statistics").doc(structureId).collection("monthly").doc(getMonthId(now)), beforeData, false)
+          updatePersonalStats(
+            db.collection("statistics").doc(structureId),
+            beforeData,
+            false,
+          ),
+          updatePersonalStats(
+            db
+              .collection("statistics")
+              .doc(structureId)
+              .collection("daily")
+              .doc(getDailyId(now)),
+            beforeData,
+            false,
+          ),
+          updatePersonalStats(
+            db
+              .collection("statistics")
+              .doc(structureId)
+              .collection("weekly")
+              .doc(getWeekId(now)),
+            beforeData,
+            false,
+          ),
+          updatePersonalStats(
+            db
+              .collection("statistics")
+              .doc(structureId)
+              .collection("monthly")
+              .doc(getMonthId(now)),
+            beforeData,
+            false,
+          ),
         ]);
       }
       return;
@@ -291,46 +481,97 @@ exports.onAnagraficaUpdate = onDocumentUpdated(
 
     // 2. Handle Restore
     if (beforeData.deletedAt && !afterData.deletedAt) {
-      const structures = afterData.structureIds || afterData.canBeAccessedBy || [];
+      const structures =
+        afterData.structureIds || afterData.canBeAccessedBy || [];
       for (const structureId of structures) {
         await Promise.all([
-          updatePersonalStats(db.collection("statistics").doc(structureId), afterData, true),
-          updatePersonalStats(db.collection("statistics").doc(structureId).collection("daily").doc(getDailyId(now)), afterData, true),
-          updatePersonalStats(db.collection("statistics").doc(structureId).collection("weekly").doc(getWeekId(now)), afterData, true),
-          updatePersonalStats(db.collection("statistics").doc(structureId).collection("monthly").doc(getMonthId(now)), afterData, true)
+          updatePersonalStats(
+            db.collection("statistics").doc(structureId),
+            afterData,
+            true,
+          ),
+          updatePersonalStats(
+            db
+              .collection("statistics")
+              .doc(structureId)
+              .collection("daily")
+              .doc(getDailyId(now)),
+            afterData,
+            true,
+          ),
+          updatePersonalStats(
+            db
+              .collection("statistics")
+              .doc(structureId)
+              .collection("weekly")
+              .doc(getWeekId(now)),
+            afterData,
+            true,
+          ),
+          updatePersonalStats(
+            db
+              .collection("statistics")
+              .doc(structureId)
+              .collection("monthly")
+              .doc(getMonthId(now)),
+            afterData,
+            true,
+          ),
         ]);
       }
       return;
     }
 
     // 3. Handle Structure Access Changes (sharing with new structure or removing)
-    const beforeStructures = new Set(beforeData.structureIds || beforeData.canBeAccessedBy || []);
-    const afterStructures = new Set(afterData.structureIds || afterData.canBeAccessedBy || []);
+    const beforeStructures = new Set(
+      beforeData.structureIds || beforeData.canBeAccessedBy || [],
+    );
+    const afterStructures = new Set(
+      afterData.structureIds || afterData.canBeAccessedBy || [],
+    );
 
     // Structure removed: decrement personal stats
     for (const structureId of beforeStructures) {
       if (!afterStructures.has(structureId)) {
-        await updatePersonalStats(db.collection("statistics").doc(structureId), beforeData, false);
+        await updatePersonalStats(
+          db.collection("statistics").doc(structureId),
+          beforeData,
+          false,
+        );
       }
     }
     // Structure added: increment personal stats
     for (const structureId of afterStructures) {
       if (!beforeStructures.has(structureId)) {
-        await updatePersonalStats(db.collection("statistics").doc(structureId), afterData, true);
+        await updatePersonalStats(
+          db.collection("statistics").doc(structureId),
+          afterData,
+          true,
+        );
       }
     }
 
     // 4. Handle personal data changes within same structures
-    const personalChanged = JSON.stringify(beforeData.anagrafica) !== JSON.stringify(afterData.anagrafica);
+    const personalChanged =
+      JSON.stringify(beforeData.anagrafica) !==
+      JSON.stringify(afterData.anagrafica);
     if (personalChanged) {
       for (const structureId of afterStructures) {
         if (beforeStructures.has(structureId)) {
-          await updatePersonalStats(db.collection("statistics").doc(structureId), beforeData, false);
-          await updatePersonalStats(db.collection("statistics").doc(structureId), afterData, true);
+          await updatePersonalStats(
+            db.collection("statistics").doc(structureId),
+            beforeData,
+            false,
+          );
+          await updatePersonalStats(
+            db.collection("statistics").doc(structureId),
+            afterData,
+            true,
+          );
         }
       }
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -347,12 +588,40 @@ exports.onAnagraficaDataCreate = onDocumentCreated(
     const now = new Date();
 
     await Promise.all([
-      updateStructureSpecificStats(db.collection("statistics").doc(structureId), data, true),
-      updateStructureSpecificStats(db.collection("statistics").doc(structureId).collection("daily").doc(getDailyId(now)), data, true),
-      updateStructureSpecificStats(db.collection("statistics").doc(structureId).collection("weekly").doc(getWeekId(now)), data, true),
-      updateStructureSpecificStats(db.collection("statistics").doc(structureId).collection("monthly").doc(getMonthId(now)), data, true)
+      updateStructureSpecificStats(
+        db.collection("statistics").doc(structureId),
+        data,
+        true,
+      ),
+      updateStructureSpecificStats(
+        db
+          .collection("statistics")
+          .doc(structureId)
+          .collection("daily")
+          .doc(getDailyId(now)),
+        data,
+        true,
+      ),
+      updateStructureSpecificStats(
+        db
+          .collection("statistics")
+          .doc(structureId)
+          .collection("weekly")
+          .doc(getWeekId(now)),
+        data,
+        true,
+      ),
+      updateStructureSpecificStats(
+        db
+          .collection("statistics")
+          .doc(structureId)
+          .collection("monthly")
+          .doc(getMonthId(now)),
+        data,
+        true,
+      ),
     ]);
-  }
+  },
 );
 
 exports.onAnagraficaDataUpdate = onDocumentUpdated(
@@ -365,15 +634,32 @@ exports.onAnagraficaDataUpdate = onDocumentUpdated(
     const structureId = afterData.structureId || beforeData.structureId;
     if (!structureId) return;
 
-    const relevantFields = ["nucleoFamiliare", "legaleAbitativa", "lavoroFormazione", "vulnerabilita", "referral"];
-    const isChanged = relevantFields.some(field => JSON.stringify(beforeData[field]) !== JSON.stringify(afterData[field]));
+    const relevantFields = [
+      "nucleoFamiliare",
+      "legaleAbitativa",
+      "lavoroFormazione",
+      "vulnerabilita",
+      "referral",
+    ];
+    const isChanged = relevantFields.some(
+      (field) =>
+        JSON.stringify(beforeData[field]) !== JSON.stringify(afterData[field]),
+    );
 
     if (isChanged) {
       // Decrement old values, increment new values (total stats only - no historical correction)
-      await updateStructureSpecificStats(db.collection("statistics").doc(structureId), beforeData, false);
-      await updateStructureSpecificStats(db.collection("statistics").doc(structureId), afterData, true);
+      await updateStructureSpecificStats(
+        db.collection("statistics").doc(structureId),
+        beforeData,
+        false,
+      );
+      await updateStructureSpecificStats(
+        db.collection("statistics").doc(structureId),
+        afterData,
+        true,
+      );
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -390,13 +676,41 @@ exports.onAccessCreate = onDocumentCreated(
 
     for (const structureId of structures) {
       await Promise.all([
-        updateAccessStats(db.collection("statistics").doc(structureId), data, true),
-        updateAccessStats(db.collection("statistics").doc(structureId).collection("daily").doc(getDailyId(now)), data, true),
-        updateAccessStats(db.collection("statistics").doc(structureId).collection("weekly").doc(getWeekId(now)), data, true),
-        updateAccessStats(db.collection("statistics").doc(structureId).collection("monthly").doc(getMonthId(now)), data, true)
+        updateAccessStats(
+          db.collection("statistics").doc(structureId),
+          data,
+          true,
+        ),
+        updateAccessStats(
+          db
+            .collection("statistics")
+            .doc(structureId)
+            .collection("daily")
+            .doc(getDailyId(now)),
+          data,
+          true,
+        ),
+        updateAccessStats(
+          db
+            .collection("statistics")
+            .doc(structureId)
+            .collection("weekly")
+            .doc(getWeekId(now)),
+          data,
+          true,
+        ),
+        updateAccessStats(
+          db
+            .collection("statistics")
+            .doc(structureId)
+            .collection("monthly")
+            .doc(getMonthId(now)),
+          data,
+          true,
+        ),
       ]);
     }
-  }
+  },
 );
 
 exports.onAccessUpdate = onDocumentUpdated(
@@ -407,13 +721,23 @@ exports.onAccessUpdate = onDocumentUpdated(
     if (!beforeData || !afterData) return;
     const structures = afterData.structureIds || [];
 
-    if (JSON.stringify(beforeData.services) !== JSON.stringify(afterData.services)) {
+    if (
+      JSON.stringify(beforeData.services) !== JSON.stringify(afterData.services)
+    ) {
       for (const structureId of structures) {
-        await updateAccessStats(db.collection("statistics").doc(structureId), beforeData, false);
-        await updateAccessStats(db.collection("statistics").doc(structureId), afterData, true);
+        await updateAccessStats(
+          db.collection("statistics").doc(structureId),
+          beforeData,
+          false,
+        );
+        await updateAccessStats(
+          db.collection("statistics").doc(structureId),
+          afterData,
+          true,
+        );
       }
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -430,10 +754,13 @@ exports.onReminderWrite = onDocumentWritten(
     if (beforeData && !afterData) {
       if (beforeData.structureId) {
         const docRef = db.collection("statistics").doc(beforeData.structureId);
-        await docRef.set({
-             activeReminders: admin.firestore.FieldValue.increment(-1),
-             updatedAt: admin.firestore.Timestamp.now()
-        }, { merge: true });
+        await docRef.set(
+          {
+            activeReminders: admin.firestore.FieldValue.increment(-1),
+            updatedAt: admin.firestore.Timestamp.now(),
+          },
+          { merge: true },
+        );
       }
       return;
     }
@@ -460,11 +787,17 @@ exports.onReminderWrite = onDocumentWritten(
 
         if (wasCompleted !== isNowCompleted) {
           const totalRef = db.collection("statistics").doc(structureId);
-          await updateReminderStats(totalRef, afterData, false, wasCompleted, isNowCompleted);
+          await updateReminderStats(
+            totalRef,
+            afterData,
+            false,
+            wasCompleted,
+            isNowCompleted,
+          );
         }
       }
     }
-  }
+  },
 );
 
 // ============================================================================
@@ -472,15 +805,31 @@ exports.onReminderWrite = onDocumentWritten(
 // ============================================================================
 
 exports.recalculateStats = onRequest(
-  { region: "europe-west1", cors: true, timeoutSeconds: 540, memory: "1GiB" },
+  { region: "europe-west1", cors: false, timeoutSeconds: 540, memory: "1GiB" },
   async (req, res) => {
-    const structureId = req.query.structureId;
+    if (req.method !== "POST") {
+      res.status(405).json({ error: "Method not allowed" });
+      return;
+    }
+
+    const authorization = await authorizeAdminRequest(req);
+    if (!authorization.ok) {
+      res.status(authorization.status).json({ error: authorization.error });
+      return;
+    }
+
+    const structureId =
+      typeof req.query.structureId === "string"
+        ? req.query.structureId.trim()
+        : "";
     if (!structureId) {
       res.status(400).json({ error: "structureId is required" });
       return;
     }
 
-    console.log(`Starting recalculation for structure: ${structureId}`);
+    console.log(`Starting recalculation for structure: ${structureId}`, {
+      actorUid: authorization.actorUid,
+    });
 
     try {
       const stats = {
@@ -533,32 +882,39 @@ exports.recalculateStats = onRequest(
       // ==================================================================
       // PHASE 1: PERSONAL STATS from `anagrafica` collection
       // ==================================================================
-      const anagraficaSnap = await db.collection("anagrafica")
+      const anagraficaSnap = await db
+        .collection("anagrafica")
         .where("structureIds", "array-contains", structureId)
         .get();
 
-      anagraficaSnap.docs.forEach(doc => {
+      anagraficaSnap.docs.forEach((doc) => {
         const data = doc.data();
         if (data.deletedAt) return;
 
         stats.totalPersons++;
         increment(stats.byGender, data.anagrafica?.sesso);
-        increment(stats.byAgeRange, calculateAgeRange(data.anagrafica?.dataDiNascita));
+        increment(
+          stats.byAgeRange,
+          calculateAgeRange(data.anagrafica?.dataDiNascita),
+        );
         increment(stats.byBirthPlace, data.anagrafica?.luogoDiNascita);
 
         if (Array.isArray(data.anagrafica?.cittadinanza)) {
-          data.anagrafica.cittadinanza.forEach(c => increment(stats.byCittadinanza, c));
+          data.anagrafica.cittadinanza.forEach((c) =>
+            increment(stats.byCittadinanza, c),
+          );
         }
       });
 
       // ==================================================================
       // PHASE 2: STRUCTURE-SPECIFIC STATS from `anagrafica_data` collection
       // ==================================================================
-      const structureDataSnap = await db.collection("anagrafica_data")
+      const structureDataSnap = await db
+        .collection("anagrafica_data")
         .where("structureId", "==", structureId)
         .get();
 
-      structureDataSnap.docs.forEach(doc => {
+      structureDataSnap.docs.forEach((doc) => {
         const data = doc.data();
 
         increment(stats.byFamilyType, data.nucleoFamiliare?.nucleoTipo);
@@ -566,44 +922,75 @@ exports.recalculateStats = onRequest(
 
         const figli = data.nucleoFamiliare?.figli;
         if (figli !== undefined && figli !== null) {
-          const cat = figli === 0 ? "0" : figli === 1 ? "1" : figli === 2 ? "2" : figli <= 4 ? "3-4" : "5+";
+          const cat =
+            figli === 0
+              ? "0"
+              : figli === 1
+                ? "1"
+                : figli === 2
+                  ? "2"
+                  : figli <= 4
+                    ? "3-4"
+                    : "5+";
           increment(stats.byChildrenCount, cat);
         }
 
         increment(stats.byLegalStatus, data.legaleAbitativa?.situazioneLegale);
         if (Array.isArray(data.legaleAbitativa?.situazioneAbitativa)) {
-          data.legaleAbitativa.situazioneAbitativa.forEach(s => increment(stats.byHousingStatus, s));
+          data.legaleAbitativa.situazioneAbitativa.forEach((s) =>
+            increment(stats.byHousingStatus, s),
+          );
         }
 
-        increment(stats.byJobStatus, data.lavoroFormazione?.situazioneLavorativa);
-        increment(stats.byEducationOrigin, data.lavoroFormazione?.titoloDiStudioOrigine);
-        increment(stats.byEducationItaly, data.lavoroFormazione?.titoloDiStudioItalia);
-        increment(stats.byItalianLevel, data.lavoroFormazione?.conoscenzaItaliano);
+        increment(
+          stats.byJobStatus,
+          data.lavoroFormazione?.situazioneLavorativa,
+        );
+        increment(
+          stats.byEducationOrigin,
+          data.lavoroFormazione?.titoloDiStudioOrigine,
+        );
+        increment(
+          stats.byEducationItaly,
+          data.lavoroFormazione?.titoloDiStudioItalia,
+        );
+        increment(
+          stats.byItalianLevel,
+          data.lavoroFormazione?.conoscenzaItaliano,
+        );
 
         if (Array.isArray(data.vulnerabilita?.vulnerabilita)) {
-          data.vulnerabilita.vulnerabilita.forEach(v => increment(stats.byVulnerability, v));
+          data.vulnerabilita.vulnerabilita.forEach((v) =>
+            increment(stats.byVulnerability, v),
+          );
         }
-        increment(stats.byIntenzioneItalia, data.vulnerabilita?.intenzioneItalia);
+        increment(
+          stats.byIntenzioneItalia,
+          data.vulnerabilita?.intenzioneItalia,
+        );
         increment(stats.byReferral, data.referral?.referral);
       });
 
       // ==================================================================
       // PHASE 3: ACCESS STATS from `accessi` collection
       // ==================================================================
-      const accessSnap = await db.collection("accessi")
+      const accessSnap = await db
+        .collection("accessi")
         .where("structureIds", "array-contains", structureId)
         .get();
 
-      accessSnap.docs.forEach(doc => {
+      accessSnap.docs.forEach((doc) => {
         const data = doc.data();
         stats.totalAccesses++;
 
         const services = data.services || [];
-        services.forEach(service => {
+        services.forEach((service) => {
           increment(stats.byAccessType, service.tipoAccesso);
 
           if (Array.isArray(service.sottoCategorie)) {
-            service.sottoCategorie.forEach(sub => increment(stats.bySubcategory, sub));
+            service.sottoCategorie.forEach((sub) =>
+              increment(stats.bySubcategory, sub),
+            );
           }
 
           if (service.classificazione) {
@@ -617,8 +1004,10 @@ exports.recalculateStats = onRequest(
           increment(stats.byReferralEntity, service.enteRiferimento);
 
           if (Array.isArray(service.files)) {
-             stats.totalFiles += service.files.length;
-             stats.filesWithExpiration += service.files.filter(f => f.dataScadenza).length;
+            stats.totalFiles += service.files.length;
+            stats.filesWithExpiration += service.files.filter(
+              (f) => f.dataScadenza,
+            ).length;
           }
 
           if (service.reminderDate) {
@@ -630,11 +1019,12 @@ exports.recalculateStats = onRequest(
       // ==================================================================
       // PHASE 4: REMINDER STATS from `reminders` collection
       // ==================================================================
-      const reminderSnap = await db.collection("reminders")
+      const reminderSnap = await db
+        .collection("reminders")
         .where("structureId", "==", structureId)
         .get();
 
-      reminderSnap.docs.forEach(doc => {
+      reminderSnap.docs.forEach((doc) => {
         const data = doc.data();
         stats.totalRemindersCreated++;
         increment(stats.remindersByServiceType, data.serviceType);
@@ -657,13 +1047,12 @@ exports.recalculateStats = onRequest(
         data: {
           persons: stats.totalPersons,
           accesses: stats.totalAccesses,
-          reminders: stats.activeReminders
-        }
+          reminders: stats.activeReminders,
+        },
       });
-
     } catch (error) {
       console.error("Error recalculating stats:", error);
       res.status(500).json({ error: error.message });
     }
-  }
+  },
 );

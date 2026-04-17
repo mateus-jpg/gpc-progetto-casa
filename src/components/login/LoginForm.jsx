@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword, signOut } from "firebase/auth";
-import { clientAuth } from "@/lib/firebase/firebaseClient"; // your Firebase client SDK init
-import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,11 +13,10 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { clientAuth } from "@/lib/firebase/firebaseClient"; // your Firebase client SDK init
+import { cn } from "@/lib/utils";
 
-export function LoginForm({
-  className,
-  ...props
-}) {
+export function LoginForm({ className, ...props }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -31,13 +28,13 @@ export function LoginForm({
     const cleanup = async () => {
       try {
         // Wait for auth to initialize
-        await new Promise(resolve => {
-          const unsubscribe = clientAuth.onAuthStateChanged(user => {
+        await new Promise((resolve) => {
+          const unsubscribe = clientAuth.onAuthStateChanged((user) => {
             unsubscribe();
             resolve();
           });
         });
-        
+
         if (clientAuth.currentUser) {
           console.log("Cleaning up existing auth state");
           await signOut(clientAuth);
@@ -61,7 +58,11 @@ export function LoginForm({
       }
 
       // 2. Sign in with Firebase
-      const userCred = await signInWithEmailAndPassword(clientAuth, email, password);
+      const userCred = await signInWithEmailAndPassword(
+        clientAuth,
+        email,
+        password,
+      );
       const idToken = await userCred.user.getIdToken();
 
       // 3. Exchange ID token for a session cookie
@@ -69,27 +70,31 @@ export function LoginForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken }),
-        credentials: 'include', // Ensure cookies are included
+        credentials: "include", // Ensure cookies are included
       });
 
       console.log("Session login response:", res);
-      
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Session creation failed");
       }
-      
+
       console.log("✓ Session cookie created");
 
       // 4. Small delay to ensure cookie is properly set before redirect
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       // 5. Use window.location instead of router.push for hard navigation
       // This ensures the middleware runs with the fresh cookie
       window.location.href = "/dashboard";
     } catch (err) {
       console.error("Login error:", err);
-      setError(err.message.includes("auth/") ? "Invalid email or password" : err.message);
+      setError(
+        err.message.includes("auth/")
+          ? "Invalid email or password"
+          : err.message,
+      );
     } finally {
       setLoading(false);
     }
@@ -97,7 +102,7 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card >
+      <Card>
         <CardHeader>
           <CardTitle className="text-center">GPC - Login</CardTitle>
           <CardDescription>

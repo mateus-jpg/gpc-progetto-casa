@@ -1,132 +1,25 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { getAnagrafica, updateAnagrafica } from "@/actions/anagrafica/anagrafica";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
-// Form sections - reusable components
-import PersonalInfoSection from "@/components/Anagrafica/Form/PersonalInfoSection";
-import FamilyUnitSection from "@/components/Anagrafica/Form/FamilyUnitSection";
-import LegalStatusSection from "@/components/Anagrafica/Form/LegalStatusSection";
-import WorkEducationSection from "@/components/Anagrafica/Form/WorkEducationSection";
-import VulnerabilitySection from "@/components/Anagrafica/Form/VulnerabilitySection";
-import ReferralSection from "@/components/Anagrafica/Form/ReferralSection";
-
-const INITIAL_FORM_STATE = {
-  anagrafica: {
-    cognome: "",
-    nome: "",
-    sesso: "",
-    dataDiNascita: undefined,
-    luogoDiNascita: "",
-    cittadinanza: [],
-    comuneDiDomicilio: "",
-    telefono: "",
-    email: "",
-  },
-  nucleoFamiliare: {
-    nucleo: "singolo",
-    nucleoTipo: "",
-    figli: 0,
-  },
-  legaleAbitativa: {
-    situazioneLegale: "",
-    situazioneAbitativa: [],
-  },
-  lavoroFormazione: {
-    situazioneLavorativa: "",
-    titoloDiStudioOrigine: "",
-    titoloDiStudioItalia: "",
-    conoscenzaItaliano: "",
-  },
-  vulnerabilita: {
-    vulnerabilita: [],
-    intenzioneItalia: "",
-    paeseDestinazione: "",
-  },
-  referral: {
-    referral: "",
-    referralAltro: "",
-  },
-  canBeAccessedBy: [],
-};
-
-/**
- * Transforms API response data into form state format
- */
-function transformApiDataToFormState(data) {
-  // Handle date conversion
-  let dataDiNascita;
-  if (data.anagrafica?.dataDiNascita) {
-    if (typeof data.anagrafica.dataDiNascita === 'string') {
-      dataDiNascita = new Date(data.anagrafica.dataDiNascita);
-    } else if (data.anagrafica.dataDiNascita._seconds) {
-      dataDiNascita = new Date(data.anagrafica.dataDiNascita._seconds * 1000);
-    }
-  }
-
-  return {
-    anagrafica: {
-      cognome: data.anagrafica?.cognome || "",
-      nome: data.anagrafica?.nome || "",
-      sesso: data.anagrafica?.sesso || "",
-      dataDiNascita,
-      luogoDiNascita: data.anagrafica?.luogoDiNascita || "",
-      cittadinanza: data.anagrafica?.cittadinanza || [],
-      comuneDiDomicilio: data.anagrafica?.comuneDiDomicilio || "",
-      telefono: data.anagrafica?.telefono || "",
-      email: data.anagrafica?.email || "",
-    },
-    nucleoFamiliare: {
-      nucleo: data.nucleoFamiliare?.nucleo || "singolo",
-      nucleoTipo: data.nucleoFamiliare?.nucleoTipo || "",
-      figli: data.nucleoFamiliare?.figli || 0,
-    },
-    legaleAbitativa: {
-      situazioneLegale: data.legaleAbitativa?.situazioneLegale || "",
-      situazioneAbitativa: data.legaleAbitativa?.situazioneAbitativa || [],
-    },
-    lavoroFormazione: {
-      situazioneLavorativa: data.lavoroFormazione?.situazioneLavorativa || "",
-      titoloDiStudioOrigine: data.lavoroFormazione?.titoloDiStudioOrigine || "",
-      titoloDiStudioItalia: data.lavoroFormazione?.titoloDiStudioItalia || "",
-      conoscenzaItaliano: data.lavoroFormazione?.conoscenzaItaliano || "",
-    },
-    vulnerabilita: {
-      vulnerabilita: data.vulnerabilita?.vulnerabilita || [],
-      intenzioneItalia: data.vulnerabilita?.intenzioneItalia || "",
-      paeseDestinazione: data.vulnerabilita?.paeseDestinazione || "",
-    },
-    referral: {
-      referral: data.referral?.referral || "",
-      referralAltro: "",
-    },
-    canBeAccessedBy: data.canBeAccessedBy || [],
-  };
-}
-
-/**
- * Prepares form data for API submission
- */
-function preparePayloadForSubmission(formData) {
-  const payload = { ...formData };
-
-  // Handle referral normalization
-  let finalReferral = payload.referral.referral;
-  if ((finalReferral === "Altro" || finalReferral === "Ente partner") && payload.referral.referralAltro?.trim()) {
-    finalReferral = payload.referral.referralAltro.trim();
-  }
-
-  payload.referral = { ...payload.referral, referral: finalReferral };
-  delete payload.referral.referralAltro;
-
-  return payload;
-}
+import {
+  getAnagrafica,
+  updateAnagrafica,
+} from "@/actions/anagrafica/anagrafica";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { FormConfigProvider } from "@/context/FormConfigContext";
+import AnagraficaFormSections from "@/features/anagrafica/form/AnagraficaFormSections";
+import { createEmptyAnagraficaFormState } from "@/features/anagrafica/form/defaults";
+import {
+  prepareAnagraficaPayload,
+  transformAnagraficaApiToFormState,
+} from "@/features/anagrafica/form/mappers";
+import { useAnagraficaForm } from "@/features/anagrafica/form/useAnagraficaForm";
+import { useStructureFormConfig } from "@/features/anagrafica/form/useStructureFormConfig";
 
 // Loading state component
 function LoadingState() {
@@ -198,14 +91,12 @@ function FormActions({ structureId, id, isSaving }) {
         disabled={isSaving}
         className="min-w-[200px] h-12 text-base font-medium"
       >
-        {isSaving ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Salvataggio...
-          </>
-        ) : (
-          "Salva Modifiche"
-        )}
+        {isSaving
+          ? <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Salvataggio...
+            </>
+          : "Salva Modifiche"}
       </Button>
     </div>
   );
@@ -217,7 +108,10 @@ export default function EditAnagraficaPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+  const { formConfig, configLoading } = useStructureFormConfig(structureId);
+  const { formData, setFormData, handleChange } = useAnagraficaForm(() =>
+    createEmptyAnagraficaFormState(),
+  );
 
   // Fetch existing anagrafica data
   useEffect(() => {
@@ -226,7 +120,7 @@ export default function EditAnagraficaPage() {
         setIsLoading(true);
         const dataStr = await getAnagrafica(id, structureId);
         const data = JSON.parse(dataStr);
-        setFormData(transformApiDataToFormState(data));
+        setFormData(transformAnagraficaApiToFormState(data));
       } catch (err) {
         console.error("Error fetching anagrafica:", err);
         setError(err.message);
@@ -238,25 +132,14 @@ export default function EditAnagraficaPage() {
     if (id) {
       fetchAnagrafica();
     }
-  }, [id]);
-
-  // Memoized change handler to prevent unnecessary re-renders
-  const handleChange = useCallback((group, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [group]: {
-        ...prev[group],
-        [field]: value,
-      },
-    }));
-  }, []);
+  }, [id, setFormData, structureId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       setIsSaving(true);
-      const payload = preparePayloadForSubmission(formData);
+      const payload = prepareAnagraficaPayload(formData);
       await updateAnagrafica(id, payload, structureId);
       toast.success("Dati aggiornati correttamente");
       router.push(`/${structureId}/anagrafica/${id}`);
@@ -268,24 +151,32 @@ export default function EditAnagraficaPage() {
     }
   };
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading || configLoading) return <LoadingState />;
   if (error) return <ErrorState error={error} structureId={structureId} />;
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-full mx-auto px-4">
-        <PageHeader formData={formData} structureId={structureId} id={id} />
+    <FormConfigProvider config={formConfig}>
+      <div className="min-h-screen">
+        <div className="max-w-full mx-auto px-4">
+          <PageHeader formData={formData} structureId={structureId} id={id} />
 
-        <form onSubmit={handleSubmit} className="grid md:grid-cols-2 grid-cols-1 gap-6">
-          <PersonalInfoSection formData={formData} handleChange={handleChange} />
-          <FamilyUnitSection formData={formData} handleChange={handleChange} />
-          <LegalStatusSection formData={formData} handleChange={handleChange} />
-          <WorkEducationSection formData={formData} handleChange={handleChange} />
-          <VulnerabilitySection formData={formData} handleChange={handleChange} />
-          <ReferralSection formData={formData} handleChange={handleChange} />
-          <FormActions structureId={structureId} id={id} isSaving={isSaving} />
-        </form>
+          <form
+            onSubmit={handleSubmit}
+            className="grid md:grid-cols-2 grid-cols-1 gap-6"
+          >
+            <AnagraficaFormSections
+              formData={formData}
+              handleChange={handleChange}
+              includePrivacy
+            />
+            <FormActions
+              structureId={structureId}
+              id={id}
+              isSaving={isSaving}
+            />
+          </form>
+        </div>
       </div>
-    </div>
+    </FormConfigProvider>
   );
 }

@@ -2,10 +2,10 @@
  * Custom hook for file operations (move, drag-drop, etc.)
  */
 
-import { useState, useCallback } from 'react';
-import { toast } from 'sonner';
-import { moveFileToFolder, moveFilesToFolder } from '@/actions/files/folders';
-import { deleteFile } from '@/actions/files/files';
+import { useCallback, useState } from "react";
+import { toast } from "sonner";
+import { deleteFile } from "@/actions/files/files";
+import { moveFilesToFolder, moveFileToFolder } from "@/actions/files/folders";
 
 /**
  * Hook for managing file operations
@@ -23,7 +23,7 @@ export function useFileOperations(structureId, onSuccess) {
   const moveFile = useCallback(
     async (fileId, targetFolderId) => {
       if (!structureId) {
-        toast.error('Structure ID is required');
+        toast.error("Structure ID is required");
         return { success: false };
       }
 
@@ -36,22 +36,22 @@ export function useFileOperations(structureId, onSuccess) {
         });
 
         if (result.error) {
-          toast.error(result.message || 'Failed to move file');
+          toast.error(result.message || "Failed to move file");
           return { success: false };
         }
 
-        toast.success(result.message || 'File moved successfully');
+        toast.success(result.message || "File moved successfully");
         if (onSuccess) onSuccess();
         return { success: true };
       } catch (error) {
-        console.error('[MOVE_FILE_ERROR]:', error);
-        toast.error('An error occurred while moving the file');
+        console.error("[MOVE_FILE_ERROR]:", error);
+        toast.error("An error occurred while moving the file");
         return { success: false };
       } finally {
         setIsMoving(false);
       }
     },
-    [structureId, onSuccess]
+    [structureId, onSuccess],
   );
 
   /**
@@ -60,12 +60,12 @@ export function useFileOperations(structureId, onSuccess) {
   const moveFiles = useCallback(
     async (fileIds, targetFolderId) => {
       if (!structureId) {
-        toast.error('Structure ID is required');
+        toast.error("Structure ID is required");
         return { success: false };
       }
 
       if (!fileIds || fileIds.length === 0) {
-        toast.error('No files selected');
+        toast.error("No files selected");
         return { success: false };
       }
 
@@ -78,24 +78,24 @@ export function useFileOperations(structureId, onSuccess) {
         });
 
         if (result.error) {
-          toast.error(result.message || 'Failed to move files');
+          toast.error(result.message || "Failed to move files");
           return { success: false };
         }
 
         toast.success(
-          result.message || `${result.movedCount} file(s) moved successfully`
+          result.message || `${result.movedCount} file(s) moved successfully`,
         );
         if (onSuccess) onSuccess();
         return { success: true, ...result };
       } catch (error) {
-        console.error('[MOVE_FILES_ERROR]:', error);
-        toast.error('An error occurred while moving files');
+        console.error("[MOVE_FILES_ERROR]:", error);
+        toast.error("An error occurred while moving files");
         return { success: false };
       } finally {
         setIsMoving(false);
       }
     },
-    [structureId, onSuccess]
+    [structureId, onSuccess],
   );
 
   /**
@@ -108,22 +108,22 @@ export function useFileOperations(structureId, onSuccess) {
         const result = await deleteFile(fileId);
 
         if (result.error) {
-          toast.error(result.message || 'Failed to delete file');
+          toast.error(result.message || "Failed to delete file");
           return { success: false };
         }
 
-        toast.success(result.message || 'File deleted successfully');
+        toast.success(result.message || "File deleted successfully");
         if (onSuccess) onSuccess();
         return { success: true };
       } catch (error) {
-        console.error('[DELETE_FILE_ERROR]:', error);
-        toast.error('An error occurred while deleting the file');
+        console.error("[DELETE_FILE_ERROR]:", error);
+        toast.error("An error occurred while deleting the file");
         return { success: false };
       } finally {
         setIsDeleting(false);
       }
     },
-    [onSuccess]
+    [onSuccess],
   );
 
   /**
@@ -151,7 +151,7 @@ export function useFileOperations(structureId, onSuccess) {
       // Single file move
       return await moveFile(active.id, targetFolder.id);
     },
-    [moveFile, moveFiles]
+    [moveFile, moveFiles],
   );
 
   /**
@@ -174,7 +174,7 @@ export function useFileOperations(structureId, onSuccess) {
     }
 
     // Can't drop folder on its own descendant
-    if (target.path && target.path.startsWith(draggedItem.path + '/')) {
+    if (target.path && target.path.startsWith(draggedItem.path + "/")) {
       return false;
     }
 
@@ -202,7 +202,7 @@ export function useFileSelection() {
     setSelectedFiles((prev) =>
       prev.includes(fileId)
         ? prev.filter((id) => id !== fileId)
-        : [...prev, fileId]
+        : [...prev, fileId],
     );
   }, []);
 
@@ -218,7 +218,7 @@ export function useFileSelection() {
     (fileId) => {
       return selectedFiles.includes(fileId);
     },
-    [selectedFiles]
+    [selectedFiles],
   );
 
   return {

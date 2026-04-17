@@ -1,24 +1,35 @@
-import { z } from 'zod';
-import { emailSchema, phoneSchema, uidSchema, safeStringSchema } from './common';
+import { z } from "zod";
+import {
+  emailSchema,
+  phoneSchema,
+  safeStringSchema,
+  uidSchema,
+} from "./common";
 
 /**
  * User validation schemas for admin operations
  */
 
 // Role options
-const roleSchema = z.enum(['user', 'structure_admin', 'project_admin', 'admin']);
+const roleSchema = z.enum([
+  "user",
+  "structure_admin",
+  "project_admin",
+  "admin",
+]);
 
 /**
  * Schema for creating a new user
  */
 export const createUserSchema = z.object({
   email: emailSchema,
-  password: z.string()
-    .min(6, 'Password must be at least 6 characters')
-    .max(100, 'Password too long'),
+  password: z
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .max(100, "Password too long"),
   displayName: safeStringSchema(100).optional(),
   phone: phoneSchema,
-  role: roleSchema.optional().default('user'),
+  role: roleSchema.optional().default("user"),
   projectIds: z.array(z.string().max(100)).max(50).optional().default([]),
   structureIds: z.array(z.string().max(100)).max(50).optional().default([]),
 });
@@ -26,12 +37,14 @@ export const createUserSchema = z.object({
 /**
  * Schema for updating a user
  */
-export const updateUserSchema = z.object({
-  email: emailSchema.optional(),
-  displayName: safeStringSchema(100).optional(),
-  phone: phoneSchema,
-  role: roleSchema.optional(),
-}).strict();
+export const updateUserSchema = z
+  .object({
+    email: emailSchema.optional(),
+    displayName: safeStringSchema(100).optional(),
+    phone: phoneSchema,
+    role: roleSchema.optional(),
+  })
+  .strict();
 
 /**
  * Schema for adding/removing user from structure
@@ -43,11 +56,13 @@ export const userStructureSchema = z.object({
 /**
  * Schema for profile update (self-service)
  */
-export const profileUpdateSchema = z.object({
-  displayName: safeStringSchema(100).optional(),
-  phone: phoneSchema,
-  email: emailSchema.optional(),
-}).strict();
+export const profileUpdateSchema = z
+  .object({
+    displayName: safeStringSchema(100).optional(),
+    phone: phoneSchema,
+    email: emailSchema.optional(),
+  })
+  .strict();
 
 /**
  * Validate create user request
@@ -58,11 +73,11 @@ export function validateCreateUser(data) {
   if (!result.success) {
     return {
       success: false,
-      errors: result.error.errors.map(err => ({
-        field: err.path.join('.'),
+      errors: result.error.errors.map((err) => ({
+        field: err.path.join("."),
         message: err.message,
       })),
-      error: result.error.errors.map(e => e.message).join(', '),
+      error: result.error.errors.map((e) => e.message).join(", "),
     };
   }
 
@@ -78,11 +93,11 @@ export function validateUpdateUser(data) {
   if (!result.success) {
     return {
       success: false,
-      errors: result.error.errors.map(err => ({
-        field: err.path.join('.'),
+      errors: result.error.errors.map((err) => ({
+        field: err.path.join("."),
         message: err.message,
       })),
-      error: result.error.errors.map(e => e.message).join(', '),
+      error: result.error.errors.map((e) => e.message).join(", "),
     };
   }
 
@@ -98,11 +113,11 @@ export function validateProfileUpdate(data) {
   if (!result.success) {
     return {
       success: false,
-      errors: result.error.errors.map(err => ({
-        field: err.path.join('.'),
+      errors: result.error.errors.map((err) => ({
+        field: err.path.join("."),
         message: err.message,
       })),
-      error: result.error.errors.map(e => e.message).join(', '),
+      error: result.error.errors.map((e) => e.message).join(", "),
     };
   }
 

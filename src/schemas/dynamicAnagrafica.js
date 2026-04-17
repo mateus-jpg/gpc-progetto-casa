@@ -1,11 +1,11 @@
-import { z } from 'zod';
+import { z } from "zod";
 import {
-  SECTION_DEFINITIONS,
-  isFieldVisible,
+  getFieldOptions,
   isFieldRequired,
+  isFieldVisible,
   mergeWithDefaults,
-  getFieldOptions
-} from '@/data/formConfigDefaults';
+  SECTION_DEFINITIONS,
+} from "@/data/formConfigDefaults";
 
 /**
  * Dynamic Anagrafica Validation Schema Builder
@@ -28,65 +28,61 @@ function buildFieldSchema(sectionId, fieldId, fieldDef, config, formData) {
   let schema;
 
   switch (fieldDef.type) {
-    case 'text':
+    case "text":
       schema = z.string().max(500);
       break;
 
-    case 'email':
-      schema = z.string().email('Email non valida').or(z.literal(''));
+    case "email":
+      schema = z.string().email("Email non valida").or(z.literal(""));
       break;
 
-    case 'tel':
+    case "tel":
       schema = z.string().max(30);
       break;
 
-    case 'number':
+    case "number":
       schema = z.number().int();
       if (fieldDef.min !== undefined) schema = schema.min(fieldDef.min);
       if (fieldDef.max !== undefined) schema = schema.max(fieldDef.max);
       break;
 
-    case 'date':
+    case "date":
       // Accept Date objects, strings, or undefined/null
-      schema = z.union([
-        z.date(),
-        z.string().min(1),
-        z.null(),
-        z.undefined()
-      ]);
+      schema = z.union([z.date(), z.string().min(1), z.null(), z.undefined()]);
       break;
 
-    case 'select':
-    case 'radio':
+    case "select":
+    case "radio":
       // For select/radio, validate against the configured options
       if (options && options.length > 0) {
-        schema = z.string().refine(
-          val => !val || options.includes(val),
-          { message: `Valore non valido. Opzioni: ${options.join(', ')}` }
-        );
+        schema = z.string().refine((val) => !val || options.includes(val), {
+          message: `Valore non valido. Opzioni: ${options.join(", ")}`,
+        });
       } else {
         schema = z.string();
       }
       break;
 
-    case 'multiSelect':
+    case "multiSelect":
       // For multiSelect, validate each item against the configured options
       if (options && options.length > 0) {
-        schema = z.array(z.string()).refine(
-          arr => !arr || arr.every(val => options.includes(val)),
-          { message: 'Uno o più valori non sono validi' }
-        );
+        schema = z
+          .array(z.string())
+          .refine((arr) => !arr || arr.every((val) => options.includes(val)), {
+            message: "Uno o più valori non sono validi",
+          });
       } else {
         schema = z.array(z.string());
       }
       break;
 
-    case 'countrySelect':
-    case 'multiCountrySelect':
+    case "countrySelect":
+    case "multiCountrySelect":
       // Country selects - just validate as string/array
-      schema = fieldDef.type === 'multiCountrySelect'
-        ? z.array(z.string())
-        : z.string();
+      schema =
+        fieldDef.type === "multiCountrySelect"
+          ? z.array(z.string())
+          : z.string();
       break;
 
     default:
@@ -96,17 +92,23 @@ function buildFieldSchema(sectionId, fieldId, fieldDef, config, formData) {
   // Apply required/optional based on configuration
   if (isRequired) {
     // For required fields, ensure they have a value
-    if (fieldDef.type === 'multiSelect' || fieldDef.type === 'multiCountrySelect') {
-      schema = schema.min(1, 'Seleziona almeno un valore');
-    } else if (fieldDef.type === 'number') {
+    if (
+      fieldDef.type === "multiSelect" ||
+      fieldDef.type === "multiCountrySelect"
+    ) {
+      schema = schema.min(1, "Seleziona almeno un valore");
+    } else if (fieldDef.type === "number") {
       // Numbers don't need min(1) validation on the value, just ensure not undefined
-    } else if (fieldDef.type !== 'date') {
-      schema = schema.min(1, 'Campo obbligatorio');
+    } else if (fieldDef.type !== "date") {
+      schema = schema.min(1, "Campo obbligatorio");
     }
   } else {
     // Optional fields
-    schema = schema.optional().nullable().or(z.literal(''));
-    if (fieldDef.type === 'multiSelect' || fieldDef.type === 'multiCountrySelect') {
+    schema = schema.optional().nullable().or(z.literal(""));
+    if (
+      fieldDef.type === "multiSelect" ||
+      fieldDef.type === "multiCountrySelect"
+    ) {
       schema = z.array(z.string()).optional().default([]);
     }
   }
@@ -128,7 +130,13 @@ function buildSectionSchema(sectionId, sectionDef, config, formData) {
   const fieldSchemas = {};
 
   for (const [fieldId, fieldDef] of Object.entries(sectionDef.fields)) {
-    fieldSchemas[fieldId] = buildFieldSchema(sectionId, fieldId, fieldDef, config, formData);
+    fieldSchemas[fieldId] = buildFieldSchema(
+      sectionId,
+      fieldId,
+      fieldDef,
+      config,
+      formData,
+    );
   }
 
   return z.object(fieldSchemas).passthrough();
@@ -152,11 +160,18 @@ export function buildDynamicAnagraficaSchema(config, formData = {}) {
     }
 
     const dataKey = sectionDef.dataKey;
-    sectionSchemas[dataKey] = buildSectionSchema(sectionId, sectionDef, mergedConfig, formData);
+    sectionSchemas[dataKey] = buildSectionSchema(
+      sectionId,
+      sectionDef,
+      mergedConfig,
+      formData,
+    );
   }
 
   // Add canBeAccessedBy field
-  sectionSchemas.canBeAccessedBy = z.array(z.string()).min(1, 'La struttura è obbligatoria');
+  sectionSchemas.canBeAccessedBy = z
+    .array(z.string())
+    .min(1, "La struttura è obbligatoria");
   sectionSchemas.registeredByStructure = z.string().optional();
 
   return z.object(sectionSchemas).passthrough();
@@ -175,8 +190,8 @@ export function validateDynamicAnagrafica(data, config) {
   if (!result.success) {
     return {
       success: false,
-      errors: result.error.errors.map(err => ({
-        field: err.path.join('.'),
+      errors: result.error.errors.map((err) => ({
+        field: err.path.join("."),
         message: err.message,
       })),
     };
@@ -247,5 +262,5 @@ export default {
   buildDynamicAnagraficaSchema,
   validateDynamicAnagrafica,
   getRequiredFields,
-  getVisibleFields
+  getVisibleFields,
 };

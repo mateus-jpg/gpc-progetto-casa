@@ -1,14 +1,27 @@
 "use client";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
-import { Bold, Italic, Strikethrough, Code, List, ListOrdered, Quote, Undo, Redo, Heading1, Heading2, Heading3 } from "lucide-react";
-import { Toggle } from "@/components/ui/toggle";
-import { Separator } from "@/components/ui/separator";
+import { EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import {
+  Bold,
+  Code,
+  Heading1,
+  Heading2,
+  Heading3,
+  Italic,
+  List,
+  ListOrdered,
+  Quote,
+  Redo,
+  Strikethrough,
+  Undo,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Toggle } from "@/components/ui/toggle";
 import "@/styles/tiptap.css"; // Import the CSS
 const MenuBar = ({ editor }) => {
-  if (!editor) {  
+  if (!editor) {
     return null;
   }
 
@@ -57,7 +70,9 @@ const MenuBar = ({ editor }) => {
       <Toggle
         size="sm"
         pressed={editor.isActive("heading", { level: 1 })}
-        onPressedChange={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        onPressedChange={() =>
+          editor.chain().focus().toggleHeading({ level: 1 }).run()
+        }
       >
         <Heading1 className="h-4 w-4" />
       </Toggle>
@@ -65,7 +80,9 @@ const MenuBar = ({ editor }) => {
       <Toggle
         size="sm"
         pressed={editor.isActive("heading", { level: 2 })}
-        onPressedChange={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        onPressedChange={() =>
+          editor.chain().focus().toggleHeading({ level: 2 }).run()
+        }
       >
         <Heading2 className="h-4 w-4" />
       </Toggle>
@@ -73,7 +90,9 @@ const MenuBar = ({ editor }) => {
       <Toggle
         size="sm"
         pressed={editor.isActive("heading", { level: 3 })}
-        onPressedChange={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        onPressedChange={() =>
+          editor.chain().focus().toggleHeading({ level: 3 }).run()
+        }
       >
         <Heading3 className="h-4 w-4" />
       </Toggle>
@@ -135,7 +154,7 @@ export const TiptapEditor = ({ content, onChange, placeholder }) => {
       StarterKit,
       Placeholder.configure({
         placeholder: placeholder,
-        emptyEditorClass: 'is-editor-empty',
+        emptyEditorClass: "is-editor-empty",
       }),
     ],
     immediatelyRender: false,
@@ -146,7 +165,7 @@ export const TiptapEditor = ({ content, onChange, placeholder }) => {
     editorProps: {
       attributes: {
         class: "min-h-[150px] focus:outline-none",
-        'data-placeholder': placeholder,
+        "data-placeholder": placeholder,
       },
     },
   });

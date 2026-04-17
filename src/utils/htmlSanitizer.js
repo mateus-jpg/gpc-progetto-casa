@@ -3,10 +3,25 @@ import sanitizeHtml from "sanitize-html";
 export function sanitizeRichText(dirtyHtml) {
   return sanitizeHtml(dirtyHtml || "", {
     allowedTags: [
-      "p", "br", "b", "i", "em", "strong", "a",
-      "ul", "ol", "li", "blockquote", "code",
-      "h1", "h2", "h3", "h4", "h5", "h6",
-      "span"
+      "p",
+      "br",
+      "b",
+      "i",
+      "em",
+      "strong",
+      "a",
+      "ul",
+      "ol",
+      "li",
+      "blockquote",
+      "code",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "span",
     ],
     allowedAttributes: {
       a: ["href", "title", "target", "rel"],
@@ -20,7 +35,10 @@ export function sanitizeRichText(dirtyHtml) {
     allowedSchemes: ["http", "https", "mailto"],
     allowedSchemesByTag: {},
     transformTags: {
-      a: sanitizeHtml.simpleTransform("a", { target: "_blank", rel: "noopener noreferrer" })
+      a: sanitizeHtml.simpleTransform("a", {
+        target: "_blank",
+        rel: "noopener noreferrer",
+      }),
     },
     // rimuove commenti HTML e script/eventi pericolosi
     allowProtocolRelative: false,

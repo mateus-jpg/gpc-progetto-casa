@@ -1,8 +1,12 @@
-'use client';
+"use client";
 
-import { cloneElement } from 'react';
-import { useFieldConfig, useFieldVisibility, useSectionConfig } from '@/context/FormConfigContext';
-import { Label } from '@/components/ui/label';
+import { cloneElement } from "react";
+import { Label } from "@/components/ui/label";
+import {
+  useFieldConfig,
+  useFieldVisibility,
+  useSectionConfig,
+} from "@/context/FormConfigContext";
 
 /**
  * Wrapper component that handles field visibility and configuration
@@ -13,8 +17,8 @@ export function ConfigurableField({
   fieldId,
   formData,
   children,
-  className = '',
-  showLabel = true
+  className = "",
+  showLabel = true,
 }) {
   const fieldConfig = useFieldConfig(sectionId, fieldId);
   const isVisible = useFieldVisibility(sectionId, fieldId, formData);
@@ -29,9 +33,10 @@ export function ConfigurableField({
     required: fieldConfig.isRequired,
     placeholder: children.props.placeholder || fieldConfig.placeholder,
     // Pass options if the field accepts them and they're configured
-    ...(fieldConfig.options && children.props.options === undefined && {
-      options: fieldConfig.options
-    })
+    ...(fieldConfig.options &&
+      children.props.options === undefined && {
+        options: fieldConfig.options,
+      }),
   });
 
   return (
@@ -51,11 +56,7 @@ export function ConfigurableField({
  * Wrapper component that handles section visibility
  * Use this to wrap entire sections to make them configuration-aware
  */
-export function ConfigurableSection({
-  sectionId,
-  children,
-  className = ''
-}) {
+export function ConfigurableSection({ sectionId, children, className = "" }) {
   const sectionConfig = useSectionConfig(sectionId);
 
   // Don't render if section doesn't exist or is disabled
@@ -63,11 +64,7 @@ export function ConfigurableSection({
     return null;
   }
 
-  return (
-    <div className={className}>
-      {children}
-    </div>
-  );
+  return <div className={className}>{children}</div>;
 }
 
 /**
@@ -107,7 +104,7 @@ export function useConfigurableFieldProps(sectionId, fieldId, formData) {
     options: fieldConfig.options,
     type: fieldConfig.type,
     min: fieldConfig.min,
-    max: fieldConfig.max
+    max: fieldConfig.max,
   };
 }
 

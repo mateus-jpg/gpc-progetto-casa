@@ -1,34 +1,34 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import { useSWRConfig } from 'swr';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import {
-  FolderPlus,
-  Upload,
-  RefreshCw,
   ArrowLeft,
+  FolderPlus,
   Grid3x3,
   List,
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import FolderTree from '@/components/Files/FolderTree/FolderTree';
-import FileGridView from '@/components/Files/FileList/FileGridView';
-import FileListTable from '@/components/Files/FileList/FileListTable';
-import FolderBreadcrumbs from '@/components/Files/Breadcrumbs/FolderBreadcrumbs';
-import CreateFolderDialog from '@/components/Files/Dialogs/CreateFolderDialog';
-import UploadFilesDialog from '@/components/Files/Dialogs/UploadFilesDialog';
-import MoveItemDialog from '@/components/Files/Dialogs/MoveItemDialog';
+  RefreshCw,
+  Upload,
+} from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useCallback, useState } from "react";
+import { useSWRConfig } from "swr";
+import FolderBreadcrumbs from "@/components/Files/Breadcrumbs/FolderBreadcrumbs";
+import CreateFolderDialog from "@/components/Files/Dialogs/CreateFolderDialog";
+import MoveItemDialog from "@/components/Files/Dialogs/MoveItemDialog";
+import UploadFilesDialog from "@/components/Files/Dialogs/UploadFilesDialog";
+import FileGridView from "@/components/Files/FileList/FileGridView";
+import FileListTable from "@/components/Files/FileList/FileListTable";
+import FolderTree from "@/components/Files/FolderTree/FolderTree";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useFileOperations } from "@/hooks/useFileOperations";
+import { useFolderOperations } from "@/hooks/useFolderOperations";
 import {
-  useFolderTree,
-  useFolderContents,
   invalidateFolderTreeCache,
-} from '@/hooks/useFolderTree';
-import { useFolderOperations } from '@/hooks/useFolderOperations';
-import { useFileOperations } from '@/hooks/useFileOperations';
-import { useParams } from 'next/navigation';
+  useFolderContents,
+  useFolderTree,
+} from "@/hooks/useFolderTree";
 
 /**
  * Files page with Google Drive-style grid view
@@ -41,7 +41,7 @@ export default function FilesPage() {
   const { mutate } = useSWRConfig();
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [createFolderDialogOpen, setCreateFolderDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [movingItem, setMovingItem] = useState(null);
 
@@ -106,7 +106,7 @@ export default function FilesPage() {
       setMoveDialogOpen(false);
       setMovingItem(null);
     },
-    [movingItem, folderOps, fileOps]
+    [movingItem, folderOps, fileOps],
   );
 
   // Handle refresh
@@ -116,38 +116,50 @@ export default function FilesPage() {
     invalidateFolderTreeCache(mutate, anagraficaId);
   };
 
-  const currentFolderName = currentFolder?.nome || 'Root';
+  const currentFolderName = currentFolder?.nome || "Root";
 
-  const handleFileMove = useCallback((fileIdOrObj, targetFolderId) => {
-    if (targetFolderId !== undefined) {
-      fileOps.moveFile(fileIdOrObj, targetFolderId);
-    } else {
-      handleMoveClick({ ...fileIdOrObj, isFolder: false });
-    }
-  }, [fileOps, handleMoveClick]);
+  const handleFileMove = useCallback(
+    (fileIdOrObj, targetFolderId) => {
+      if (targetFolderId !== undefined) {
+        fileOps.moveFile(fileIdOrObj, targetFolderId);
+      } else {
+        handleMoveClick({ ...fileIdOrObj, isFolder: false });
+      }
+    },
+    [fileOps, handleMoveClick],
+  );
 
-  const handleFileDelete = useCallback((file) => {
-    if (confirm(`Are you sure you want to delete "${file.nome}"?`)) {
-      fileOps.removeFile(file.id);
-    }
-  }, [fileOps]);
+  const handleFileDelete = useCallback(
+    (file) => {
+      if (confirm(`Are you sure you want to delete "${file.nome}"?`)) {
+        fileOps.removeFile(file.id);
+      }
+    },
+    [fileOps],
+  );
 
-  const handleFolderDelete = useCallback((folder) => {
-    const hasContents = subfolders.length > 0 || files.length > 0;
-    const message = hasContents
-      ? `"${folder.nome}" is not empty. Delete all contents?`
-      : `Are you sure you want to delete "${folder.nome}"?`;
-    if (confirm(message)) {
-      folderOps.remove(folder.id, hasContents);
-    }
-  }, [subfolders.length, files.length, folderOps]);
+  const handleFolderDelete = useCallback(
+    (folder) => {
+      const hasContents = subfolders.length > 0 || files.length > 0;
+      const message = hasContents
+        ? `"${folder.nome}" is not empty. Delete all contents?`
+        : `Are you sure you want to delete "${folder.nome}"?`;
+      if (confirm(message)) {
+        folderOps.remove(folder.id, hasContents);
+      }
+    },
+    [subfolders.length, files.length, folderOps],
+  );
 
-  const handleFolderRename = useCallback((folder) => {
-    const newName = prompt('Enter new folder name:', folder.nome);
-    if (newName && newName !== folder.nome) {
-      folderOps.rename(folder.id, newName);
-    }
-  }, [folderOps]);
+  const handleFolderRename = useCallback(
+    (folder) => {
+      const newName = prompt("Enter new folder name:", folder.nome);
+      if (newName && newName !== folder.nome) {
+        folderOps.rename(folder.id, newName);
+      }
+    },
+    [folderOps],
+  );
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -175,17 +187,17 @@ export default function FilesPage() {
               {/* View toggle */}
               <div className="flex border rounded-md">
                 <Button
-                  variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                  variant={viewMode === "grid" ? "secondary" : "ghost"}
                   size="sm"
-                  onClick={() => setViewMode('grid')}
+                  onClick={() => setViewMode("grid")}
                   className="rounded-r-none"
                 >
                   <Grid3x3 className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                  variant={viewMode === "list" ? "secondary" : "ghost"}
                   size="sm"
-                  onClick={() => setViewMode('list')}
+                  onClick={() => setViewMode("list")}
                   className="rounded-l-none"
                 >
                   <List className="h-4 w-4" />
@@ -262,40 +274,44 @@ export default function FilesPage() {
                 <Separator />
 
                 {/* File Grid or List View */}
-                {viewMode === 'grid' ? (
-                  <FileGridView
-                    files={files}
-                    subfolders={subfolders}
-                    currentFolder={currentFolder}
-                    onFolderOpen={handleFolderSelect}
-                    onFileMove={handleFileMove}
-                    onFileDelete={handleFileDelete}
-                    onFolderMove={(folderIdOrObj, targetFolderId) => {
-                      if (targetFolderId !== undefined) {
-                        folderOps.move(folderIdOrObj, targetFolderId);
-                      } else {
-                        handleMoveClick({ ...folderIdOrObj, isFolder: true });
+                {viewMode === "grid"
+                  ? <FileGridView
+                      files={files}
+                      subfolders={subfolders}
+                      currentFolder={currentFolder}
+                      onFolderOpen={handleFolderSelect}
+                      onFileMove={handleFileMove}
+                      onFileDelete={handleFileDelete}
+                      onFolderMove={(folderIdOrObj, targetFolderId) => {
+                        if (targetFolderId !== undefined) {
+                          folderOps.move(folderIdOrObj, targetFolderId);
+                        } else {
+                          handleMoveClick({ ...folderIdOrObj, isFolder: true });
+                        }
+                      }}
+                      onFolderDelete={handleFolderDelete}
+                      onFolderRename={handleFolderRename}
+                      onFileRename={() =>
+                        alert("File rename not yet implemented")
                       }
-                    }}
-                    onFolderDelete={handleFolderDelete}
-                    onFolderRename={handleFolderRename}
-                    onFileRename={() => alert('File rename not yet implemented')}
-                    isLoading={isLoadingContents}
-                  />
-                ) : (
-                  <FileListTable
-                    files={files}
-                    subfolders={subfolders}
-                    onFolderOpen={handleFolderSelect}
-                    onFileMove={handleFileMove}
-                    onFileDelete={handleFileDelete}
-                    onFolderDelete={handleFolderDelete}
-                    onFolderMove={(folder) => handleMoveClick({ ...folder, isFolder: true })}
-                    onFolderRename={handleFolderRename}
-                    onFileRename={() => alert('File rename not yet implemented')}
-                    isLoading={isLoadingContents}
-                  />
-                )}
+                      isLoading={isLoadingContents}
+                    />
+                  : <FileListTable
+                      files={files}
+                      subfolders={subfolders}
+                      onFolderOpen={handleFolderSelect}
+                      onFileMove={handleFileMove}
+                      onFileDelete={handleFileDelete}
+                      onFolderDelete={handleFolderDelete}
+                      onFolderMove={(folder) =>
+                        handleMoveClick({ ...folder, isFolder: true })
+                      }
+                      onFolderRename={handleFolderRename}
+                      onFileRename={() =>
+                        alert("File rename not yet implemented")
+                      }
+                      isLoading={isLoadingContents}
+                    />}
               </div>
             </div>
           </div>

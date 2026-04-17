@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import { Folder } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Folder } from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 /**
  * Dialog for moving a file or folder to a different destination folder.
@@ -68,8 +68,8 @@ export default function MoveItemDialog({
             {/* Root option */}
             <button
               className={cn(
-                'w-full text-left px-3 py-2 rounded-md flex items-center gap-2 hover:bg-accent text-sm',
-                selectedFolderId === null && 'bg-accent font-medium'
+                "w-full text-left px-3 py-2 rounded-md flex items-center gap-2 hover:bg-accent text-sm",
+                selectedFolderId === null && "bg-accent font-medium",
               )}
               onClick={() => setSelectedFolderId(null)}
             >
@@ -81,8 +81,8 @@ export default function MoveItemDialog({
               <button
                 key={folder.id}
                 className={cn(
-                  'w-full text-left px-3 py-2 rounded-md flex items-center gap-2 hover:bg-accent text-sm',
-                  selectedFolderId === folder.id && 'bg-accent font-medium'
+                  "w-full text-left px-3 py-2 rounded-md flex items-center gap-2 hover:bg-accent text-sm",
+                  selectedFolderId === folder.id && "bg-accent font-medium",
                 )}
                 onClick={() => setSelectedFolderId(folder.id)}
                 style={{ paddingLeft: `${12 + (folder.depth || 0) * 16}px` }}
@@ -105,7 +105,7 @@ export default function MoveItemDialog({
             Cancel
           </Button>
           <Button onClick={handleConfirm} disabled={!hasSelection || isMoving}>
-            {isMoving ? 'Moving...' : 'Move Here'}
+            {isMoving ? "Moving..." : "Move Here"}
           </Button>
         </DialogFooter>
       </DialogContent>

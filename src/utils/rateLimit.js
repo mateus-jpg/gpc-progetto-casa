@@ -79,19 +79,19 @@ export function checkRateLimit(key, options) {
  */
 export function getClientIP(request) {
   // Check various headers set by proxies/load balancers
-  const forwarded = request.headers.get('x-forwarded-for');
+  const forwarded = request.headers.get("x-forwarded-for");
   if (forwarded) {
     // x-forwarded-for can contain multiple IPs, take the first one
-    return forwarded.split(',')[0].trim();
+    return forwarded.split(",")[0].trim();
   }
 
-  const realIP = request.headers.get('x-real-ip');
+  const realIP = request.headers.get("x-real-ip");
   if (realIP) {
     return realIP;
   }
 
   // Fallback for local development
-  return '127.0.0.1';
+  return "127.0.0.1";
 }
 
 /**
@@ -113,14 +113,13 @@ export function rateLimit(options = {}) {
   const {
     windowMs = 15 * 60 * 1000, // 15 minutes
     maxRequests = 100,
-    message = 'Too many requests, please try again later',
+    message = "Too many requests, please try again later",
     keyGenerator = getClientIP,
   } = options;
 
   return (request) => {
-    const key = typeof keyGenerator === 'function'
-      ? keyGenerator(request)
-      : keyGenerator;
+    const key =
+      typeof keyGenerator === "function" ? keyGenerator(request) : keyGenerator;
 
     const result = checkRateLimit(key, { windowMs, maxRequests });
 
@@ -133,13 +132,13 @@ export function rateLimit(options = {}) {
         {
           status: 429,
           headers: {
-            'Content-Type': 'application/json',
-            'Retry-After': String(result.resetIn),
-            'X-RateLimit-Limit': String(result.total),
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': String(result.resetIn),
+            "Content-Type": "application/json",
+            "Retry-After": String(result.resetIn),
+            "X-RateLimit-Limit": String(result.total),
+            "X-RateLimit-Remaining": "0",
+            "X-RateLimit-Reset": String(result.resetIn),
           },
-        }
+        },
       );
     }
 
@@ -156,34 +155,35 @@ export const rateLimiters = {
   auth: rateLimit({
     windowMs: 15 * 60 * 1000,
     maxRequests: 5,
-    message: 'Too many authentication attempts. Please try again in 15 minutes.',
+    message:
+      "Too many authentication attempts. Please try again in 15 minutes.",
   }),
 
   // Login: 10 attempts per 15 minutes per IP
   login: rateLimit({
     windowMs: 15 * 60 * 1000,
     maxRequests: 10,
-    message: 'Too many login attempts. Please try again later.',
+    message: "Too many login attempts. Please try again later.",
   }),
 
   // Password reset: 3 attempts per hour per IP
   passwordReset: rateLimit({
     windowMs: 60 * 60 * 1000,
     maxRequests: 3,
-    message: 'Too many password reset requests. Please try again in an hour.',
+    message: "Too many password reset requests. Please try again in an hour.",
   }),
 
   // User creation: 10 per hour per IP
   userCreation: rateLimit({
     windowMs: 60 * 60 * 1000,
     maxRequests: 10,
-    message: 'Too many user creation requests. Please try again later.',
+    message: "Too many user creation requests. Please try again later.",
   }),
 
   // General API: 100 requests per minute per IP
   api: rateLimit({
     windowMs: 60 * 1000,
     maxRequests: 100,
-    message: 'Too many requests. Please slow down.',
+    message: "Too many requests. Please slow down.",
   }),
 };

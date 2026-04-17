@@ -1,19 +1,16 @@
-import { StructureSidebar } from "@/components/structure/StructureSidebar";
-import { SiteHeader } from "@/components/site-header"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
 import { redirect } from "next/navigation";
-import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
+import { SiteHeader } from "@/components/site-header";
+import { StructureSidebar } from "@/components/structure/StructureSidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { collections } from "@/utils/database";
+import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
 
 async function validateStructureAccess(structureId) {
   try {
     // Check if structure exists
     const structureDoc = await collections.structures().doc(structureId).get();
     if (!structureDoc.exists) {
-      return { valid: false, reason: 'not_found' };
+      return { valid: false, reason: "not_found" };
     }
 
     // Check if user has access
@@ -22,7 +19,7 @@ async function validateStructureAccess(structureId) {
 
     return { valid: true };
   } catch (error) {
-    return { valid: false, reason: 'no_access' };
+    return { valid: false, reason: "no_access" };
   }
 }
 
@@ -32,12 +29,12 @@ export default async function Layout({ children, params }) {
   // Validate structure exists and user has access
   const { valid } = await validateStructureAccess(structureId);
   if (!valid) {
-    redirect('/');
+    redirect("/");
   }
 
   return (
     <>
-      <StructureSidebar variant="inset"/>
+      <StructureSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">

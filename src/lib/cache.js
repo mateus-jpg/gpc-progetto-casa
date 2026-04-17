@@ -3,9 +3,8 @@
  * Uses Next.js unstable_cache for server-side data caching
  */
 
-import { unstable_cache } from 'next/cache';
-import { revalidateTag } from 'next/cache';
-import { CACHE as CACHE_CONFIG } from '@/config/constants';
+import { revalidateTag, unstable_cache } from "next/cache";
+import { CACHE as CACHE_CONFIG } from "@/config/constants";
 
 /**
  * Cache tag generators for consistent cache key naming
@@ -38,7 +37,8 @@ export const CACHE_TAGS = {
   // Structure Files
   structureFiles: (structureId) => `structure-files-${structureId}`,
   structureFolders: (structureId) => `structure-folders-${structureId}`,
-  structureFolderContents: (folderId) => `structure-folder-contents-${folderId}`,
+  structureFolderContents: (folderId) =>
+    `structure-folder-contents-${folderId}`,
 };
 
 /**
@@ -153,7 +153,10 @@ export function invalidateStructureFilesCache(structureId) {
  * @param {string} structureId - The structure document ID
  * @param {string[]} affectedFolderIds - Array of folder IDs that were affected
  */
-export function invalidateStructureFolderCaches(structureId, affectedFolderIds = []) {
+export function invalidateStructureFolderCaches(
+  structureId,
+  affectedFolderIds = [],
+) {
   revalidateTag(CACHE_TAGS.structureFolders(structureId));
 
   for (const folderId of affectedFolderIds) {
@@ -171,12 +174,8 @@ export function invalidateStructureFolderCaches(structureId, affectedFolderIds =
  * @param {Object} options - Cache options (tags, revalidate)
  */
 export function createCachedFetcher(fn, keyParts, options = {}) {
-  return unstable_cache(
-    fn,
-    keyParts,
-    {
-      revalidate: options.revalidate || 60,
-      tags: options.tags || [],
-    }
-  );
+  return unstable_cache(fn, keyParts, {
+    revalidate: options.revalidate || 60,
+    tags: options.tags || [],
+  });
 }

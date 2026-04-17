@@ -1,6 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useCallback, useEffect } from 'react';
+import { File as FileIcon, Upload, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { uploadFiles } from "@/actions/files/files";
+import DatePicker from "@/components/form/DatePicker";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,42 +14,37 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Dropzone, DropzoneContent } from '@/components/ui/shadcn-io/dropzone';
-import { Upload, File as FileIcon, X } from 'lucide-react';
-import { uploadFiles } from '@/actions/files/files';
-import { toast } from 'sonner';
-import { formatBytes } from '@/lib/utils';
-import DatePicker from '@/components/form/DatePicker';
+} from "@/components/ui/select";
+import { Dropzone, DropzoneContent } from "@/components/ui/shadcn-io/dropzone";
+import { formatBytes } from "@/lib/utils";
 
 const MIME_BY_EXTENSION = {
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  doc: 'application/msword',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  xls: 'application/vnd.ms-excel',
-  pdf: 'application/pdf',
-  png: 'image/png',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  gif: 'image/gif',
-  webp: 'image/webp',
-  txt: 'text/plain',
-  csv: 'text/csv',
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  doc: "application/msword",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  xls: "application/vnd.ms-excel",
+  pdf: "application/pdf",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  txt: "text/plain",
+  csv: "text/csv",
 };
 
 function resolveFileType(file) {
-  if (file.type && file.type !== 'application/octet-stream') return file.type;
-  const ext = file.name.split('.').pop()?.toLowerCase();
+  if (file.type && file.type !== "application/octet-stream") return file.type;
+  const ext = file.name.split(".").pop()?.toLowerCase();
   return MIME_BY_EXTENSION[ext] || file.type;
 }
 
@@ -81,7 +81,9 @@ function FileItem({ fileData, onUpdate, onRemove }) {
         <Input
           id={`name-${fileData.id}`}
           value={fileData.displayName}
-          onChange={(e) => onUpdate({ ...fileData, displayName: e.target.value })}
+          onChange={(e) =>
+            onUpdate({ ...fileData, displayName: e.target.value })
+          }
           placeholder="Nome del documento"
           className="h-9"
         />
@@ -157,25 +159,25 @@ export default function UploadFilesDialog({
 
   const handleUpdateFile = useCallback((index, updatedFileData) => {
     setSelectedFiles((prev) =>
-      prev.map((item, i) => (i === index ? updatedFileData : item))
+      prev.map((item, i) => (i === index ? updatedFileData : item)),
     );
   }, []);
 
   const handleUpload = async () => {
     if (selectedFiles.length === 0) {
-      toast.error('Please select at least one file');
+      toast.error("Please select at least one file");
       return;
     }
 
     if (!selectedFolderId) {
-      toast.error('Please select a folder');
+      toast.error("Please select a folder");
       return;
     }
 
     // Validate that all files have a document name
     const missingNames = selectedFiles.filter((f) => !f.displayName.trim());
     if (missingNames.length > 0) {
-      toast.error('Please provide a document name for all files');
+      toast.error("Please provide a document name for all files");
       return;
     }
 
@@ -191,7 +193,7 @@ export default function UploadFilesDialog({
           displayName: fileData.displayName,
           documentDate: fileData.documentDate,
           expirationDate: fileData.expirationDate,
-        }))
+        })),
       );
 
       const result = await uploadFiles({
@@ -203,14 +205,14 @@ export default function UploadFilesDialog({
       });
 
       if (result.error) {
-        toast.error(result.message || 'Failed to upload files');
+        toast.error(result.message || "Failed to upload files");
         return;
       }
 
       toast.success(
         `Uploaded ${result.uploadedCount} file(s) successfully${
-          result.errorCount > 0 ? ` (${result.errorCount} failed)` : ''
-        }`
+          result.errorCount > 0 ? ` (${result.errorCount} failed)` : ""
+        }`,
       );
 
       // Reset and close
@@ -218,8 +220,8 @@ export default function UploadFilesDialog({
       setOpen(false);
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error('[UPLOAD_ERROR]:', error);
-      toast.error('An error occurred while uploading files');
+      console.error("[UPLOAD_ERROR]:", error);
+      toast.error("An error occurred while uploading files");
     } finally {
       setIsUploading(false);
     }
@@ -256,7 +258,7 @@ export default function UploadFilesDialog({
           <div className="space-y-2">
             <Label htmlFor="folder">Upload to Folder</Label>
             <Select
-              value={selectedFolderId || ''}
+              value={selectedFolderId || ""}
               onValueChange={setSelectedFolderId}
               disabled={isUploading}
             >
@@ -279,16 +281,16 @@ export default function UploadFilesDialog({
             <Dropzone
               onDrop={handleDrop}
               accept={{
-                'application/pdf': ['.pdf'],
-                'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
-                'application/msword': ['.doc'],
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                  ['.docx'],
-                'application/vnd.ms-excel': ['.xls'],
-                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-                  ['.xlsx'],
-                'text/plain': ['.txt'],
-                'text/csv': ['.csv'],
+                "application/pdf": [".pdf"],
+                "image/*": [".png", ".jpg", ".jpeg", ".gif", ".webp"],
+                "application/msword": [".doc"],
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                  [".docx"],
+                "application/vnd.ms-excel": [".xls"],
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                  [".xlsx"],
+                "text/plain": [".txt"],
+                "text/csv": [".csv"],
               }}
               maxSize={10 * 1024 * 1024} // 10MB
               maxFiles={10}
@@ -339,7 +341,9 @@ export default function UploadFilesDialog({
             onClick={handleUpload}
             disabled={isUploading || selectedFiles.length === 0}
           >
-            {isUploading ? 'Uploading...' : `Upload ${selectedFiles.length} file(s)`}
+            {isUploading
+              ? "Uploading..."
+              : `Upload ${selectedFiles.length} file(s)`}
           </Button>
         </DialogFooter>
       </DialogContent>

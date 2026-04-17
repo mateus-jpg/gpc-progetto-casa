@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { safeStringSchema } from './common';
+import { z } from "zod";
+import { safeStringSchema } from "./common";
 
 /**
  * Project validation schemas for admin operations
@@ -9,17 +9,23 @@ import { safeStringSchema } from './common';
  * Schema for creating a new project
  */
 export const createProjectSchema = z.object({
-  name: z.string().max(200).min(1, 'Project name is required').transform(str => str?.trim()),
+  name: z
+    .string()
+    .max(200)
+    .min(1, "Project name is required")
+    .transform((str) => str?.trim()),
   description: safeStringSchema(1000).optional(),
 });
 
 /**
  * Schema for updating a project
  */
-export const updateProjectSchema = z.object({
-  name: safeStringSchema(200).optional(),
-  description: safeStringSchema(1000).optional(),
-}).strict();
+export const updateProjectSchema = z
+  .object({
+    name: safeStringSchema(200).optional(),
+    description: safeStringSchema(1000).optional(),
+  })
+  .strict();
 
 /**
  * Schema for adding/removing user from project
@@ -37,11 +43,11 @@ export function validateCreateProject(data) {
   if (!result.success) {
     return {
       success: false,
-      errors: result.error.errors.map(err => ({
-        field: err.path.join('.'),
+      errors: result.error.errors.map((err) => ({
+        field: err.path.join("."),
         message: err.message,
       })),
-      error: result.error.errors.map(e => e.message).join(', '),
+      error: result.error.errors.map((e) => e.message).join(", "),
     };
   }
 
@@ -57,11 +63,11 @@ export function validateUpdateProject(data) {
   if (!result.success) {
     return {
       success: false,
-      errors: result.error.errors.map(err => ({
-        field: err.path.join('.'),
+      errors: result.error.errors.map((err) => ({
+        field: err.path.join("."),
         message: err.message,
       })),
-      error: result.error.errors.map(e => e.message).join(', '),
+      error: result.error.errors.map((e) => e.message).join(", "),
     };
   }
 

@@ -9,16 +9,16 @@ export async function GET(req) {
     if (!sessionCookie) {
       return NextResponse.json({ error: "No session" }, { status: 401 });
     }
-    
+
     // Verify session cookie with checkRevoked=true for security
     const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
-    
+
     return NextResponse.json({
       user: {
         uid: decodedToken.uid,
         email: decodedToken.email,
         email_verified: decodedToken.email_verified,
-      }
+      },
     });
   } catch (error) {
     console.error("Session verification error:", error);

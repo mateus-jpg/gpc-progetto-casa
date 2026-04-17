@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useState } from 'react';
-import { getFileUrl } from '@/actions/files/files';
-import { toast } from 'sonner';
+import { createContext, useContext, useState } from "react";
+import { toast } from "sonner";
+import { getFileUrl } from "@/actions/files/files";
 
 /**
  * Context for injecting a custom getFileUrl action.
@@ -26,14 +26,14 @@ export function useFileDownload(fileId) {
     try {
       const result = await getUrlAction(fileId);
       if (result.error) {
-        toast.error(result.message || 'Failed to get download URL');
+        toast.error(result.message || "Failed to get download URL");
         return;
       }
-      window.open(result.url, '_blank');
-      toast.success('Opening file...');
+      window.open(result.url, "_blank");
+      toast.success("Opening file...");
     } catch (error) {
-      console.error('[DOWNLOAD_ERROR]:', error);
-      toast.error('Failed to download file');
+      console.error("[DOWNLOAD_ERROR]:", error);
+      toast.error("Failed to download file");
     } finally {
       setIsDownloading(false);
     }

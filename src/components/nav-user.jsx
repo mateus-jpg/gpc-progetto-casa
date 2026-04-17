@@ -1,21 +1,17 @@
-"use client"
+"use client";
 
 import {
   IconCreditCard,
   IconDotsVertical,
   IconLogout,
   IconNotification,
+  IconSettings,
   IconUserCircle,
   IconUserPlus,
   IconUsers,
-  IconSettings,
-} from "@tabler/icons-react"
-
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+} from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,16 +20,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useRouter } from "next/navigation"
-import { useLogout } from "@/hooks/use-logout"
+} from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useLogout } from "@/hooks/use-logout";
 
 function SkeletonUser() {
   return (
@@ -44,17 +39,15 @@ function SkeletonUser() {
         <Skeleton className="h-2 w-[100px] bg-gray-600" />
       </div>
     </div>
-  )
+  );
 }
 
-export function NavUser({
-  user, loading
-}) {
-  const { isMobile } = useSidebar()
-  const router = useRouter()
+export function NavUser({ user, loading }) {
+  const { isMobile } = useSidebar();
+  const router = useRouter();
   const { logout, isLoggingOut } = useLogout();
   if (loading) {
-    return <SkeletonUser />
+    return <SkeletonUser />;
   }
 
   return (
@@ -64,15 +57,25 @@ export function NavUser({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
-              {loading ? <SkeletonUser /> : (
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            >
+              {loading ? (
+                <SkeletonUser />
+              ) : (
                 <>
                   <Avatar className="h-8 w-8 rounded-lg grayscale">
-                    <AvatarImage src={user.imgUrl || "" } alt={user.displayName} />
-                    <AvatarFallback className="rounded-lg">{user.displayName.charAt(0)}</AvatarFallback>
+                    <AvatarImage
+                      src={user.imgUrl || ""}
+                      alt={user.displayName}
+                    />
+                    <AvatarFallback className="rounded-lg">
+                      {user.displayName.charAt(0)}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-medium">{user.displayName}</span>
+                    <span className="truncate font-medium">
+                      {user.displayName}
+                    </span>
                     <span className="text-muted-foreground truncate text-xs">
                       {user.email}
                     </span>
@@ -86,7 +89,8 @@ export function NavUser({
             className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "right"}
             align="end"
-            sideOffset={4}>
+            sideOffset={4}
+          >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
@@ -94,7 +98,9 @@ export function NavUser({
                   <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.displayName}</span>
+                  <span className="truncate font-medium">
+                    {user.displayName}
+                  </span>
                   <span className="text-muted-foreground truncate text-xs">
                     {user.email}
                   </span>
@@ -108,11 +114,13 @@ export function NavUser({
                 Profile
               </DropdownMenuItem>
             </DropdownMenuGroup>
-            {user?.role === 'admin' && (
+            {user?.role === "admin" && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                  <DropdownMenuItem onClick={() => router.push("/admin/users/new")}>
+                  <DropdownMenuItem
+                    onClick={() => router.push("/admin/users/new")}
+                  >
                     <IconUserPlus />
                     Crea utente
                   </DropdownMenuItem>

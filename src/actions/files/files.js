@@ -1,17 +1,34 @@
-'use server';
+"use server";
 
-import { unstable_cache } from 'next/cache';
-import admin from '@/lib/firebase/firebaseAdmin';
-import { requireUser, verifyUserPermissions } from '@/utils/server-auth';
-import { getAnagraficaInternal } from '../anagrafica/anagrafica';
-import { logDataCreate, logFileAccess, logDataDelete } from '@/utils/audit';
-import { CACHE_TAGS, REVALIDATE, invalidateFilesCache } from '@/lib/cache';
-import { createFolderInternal } from './folders';
-import { v4 as uuidv4 } from 'uuid';
-import path from 'path';
+import { unstable_cache } from "next/cache";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
+import { CACHE_TAGS, invalidateFilesCache, REVALIDATE } from "@/lib/cache";
+import admin from "@/lib/firebase/firebaseAdmin";
+import { logDataCreate, logDataDelete, logFileAccess } from "@/utils/audit";
+import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
+import { getAnagraficaInternal } from "../anagrafica/anagrafica";
+import { createFolderInternal } from "./folders";
 
 const adminDb = admin.firestore();
 const adminStorage = admin.storage();
+
+async function deleteStorageObject(filePath) {
+  if (!filePath) return;
+
+  try {
+    await adminStorage.bucket().file(filePath).delete();
+  } catch (error) {
+    const notFound =
+      error?.code === 404 ||
+      error?.details === "No such object" ||
+      error?.message?.includes("No such object");
+
+    if (!notFound) {
+      console.error("[DELETE_STORAGE_OBJECT_ERROR]:", error);
+    }
+  }
+}
 
 /**
  * Validates file before upload
@@ -20,7 +37,7 @@ function validateFile(file, maxSizeMB = 10) {
   const maxSize = maxSizeMB * 1024 * 1024;
 
   if (!file || !file.name) {
-    throw new Error('Invalid file');
+    throw new Error("Invalid file");
   }
 
   if (file.size > maxSize) {
@@ -29,18 +46,18 @@ function validateFile(file, maxSizeMB = 10) {
 
   // Basic MIME type validation
   const allowedTypes = [
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'text/plain',
-    'text/csv'
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/plain",
+    "text/csv",
   ];
 
   if (!allowedTypes.includes(file.type)) {
@@ -53,7 +70,7 @@ function validateFile(file, maxSizeMB = 10) {
 /**
  * Generate secure storage path for file
  */
-function generateFilePath(anagraficaId, filename, category = 'general') {
+function generateFilePath(anagraficaId, filename, category = "general") {
   const ext = path.extname(filename);
   const uuid = uuidv4();
   const timestamp = Date.now();
@@ -69,15 +86,14 @@ async function uploadToStorage(filePath, fileBuffer, contentType) {
   const bucket = adminStorage.bucket();
 
   // Convert ArrayBuffer to Node.js Buffer if needed
-  const buffer = fileBuffer instanceof ArrayBuffer
-    ? Buffer.from(fileBuffer)
-    : fileBuffer;
+  const buffer =
+    fileBuffer instanceof ArrayBuffer ? Buffer.from(fileBuffer) : fileBuffer;
 
   await bucket.file(filePath).save(buffer, {
     metadata: {
       contentType,
-      uploadedAt: new Date().toISOString()
-    }
+      uploadedAt: new Date().toISOString(),
+    },
   });
 
   return filePath;
@@ -96,14 +112,14 @@ async function createFileDocument({
   displayName,
   mimeType,
   size,
-  category = 'OTHER',
+  category = "OTHER",
   tags = [],
   documentDate = null,
   expirationDate = null,
   structureIds,
   uploadedByStructure,
   userUid,
-  userEmail
+  userEmail,
 }) {
   const fileData = {
     // File Information
@@ -142,14 +158,14 @@ async function createFileDocument({
 
     // Access Tracking
     lastAccessedAt: null,
-    accessCount: 0
+    accessCount: 0,
   };
 
-  const docRef = await adminDb.collection('files').add(fileData);
+  const docRef = await adminDb.collection("files").add(fileData);
 
   return {
     id: docRef.id,
-    ...fileData
+    ...fileData,
   };
 }
 
@@ -172,15 +188,15 @@ export async function uploadFiles({
   files,
   folderId = null,
   accessoId = null,
-  category = 'OTHER',
+  category = "OTHER",
   tags = [],
   expirationDate = null,
-  structureId
+  structureId,
 }) {
   try {
     // 1. AUTHENTICATION
     const { userUid, headers } = await requireUser();
-    const userEmail = headers.get('x-user-email');
+    const userEmail = headers.get("x-user-email");
 
     // 2. VERIFY ACCESS TO ANAGRAFICA
     const anagraficaData = await getAnagraficaInternal(anagraficaId, userUid);
@@ -189,20 +205,25 @@ export async function uploadFiles({
     // Verify user has access through specified structure
     await verifyUserPermissions({
       userUid,
-      structureId
+      structureId,
     });
+
+    if (structureId && !allowedStructures.includes(structureId)) {
+      throw new Error("Forbidden: structureId not allowed for this anagrafica");
+    }
 
     // 3. RESOLVE TARGET FOLDER
     let targetFolderId = folderId;
 
     if (!targetFolderId) {
       // No folderId provided: find or create a folder by category name
-      const folderName = category || 'Documenti';
+      const folderName = category || "Documenti";
 
-      const folderQuery = await adminDb.collection('folders')
-        .where('anagraficaId', '==', anagraficaId)
-        .where('nome', '==', folderName)
-        .where('deleted', '==', false)
+      const folderQuery = await adminDb
+        .collection("folders")
+        .where("anagraficaId", "==", anagraficaId)
+        .where("nome", "==", folderName)
+        .where("deleted", "==", false)
         .limit(1)
         .get();
 
@@ -215,30 +236,35 @@ export async function uploadFiles({
           parentFolderId: null,
           structureId,
           userUid,
-          userEmail
+          userEmail,
         });
 
         if (!newFolderResult.success) {
-          throw new Error(`Failed to create folder: ${newFolderResult.message}`);
+          throw new Error(
+            `Failed to create folder: ${newFolderResult.message}`,
+          );
         }
         targetFolderId = newFolderResult.folder.id;
       }
     } else {
       // Verify folder exists and belongs to this anagrafica
-      const folderDoc = await adminDb.collection('folders').doc(targetFolderId).get();
+      const folderDoc = await adminDb
+        .collection("folders")
+        .doc(targetFolderId)
+        .get();
 
       if (!folderDoc.exists || folderDoc.data().deleted) {
-        throw new Error('Target folder not found');
+        throw new Error("Target folder not found");
       }
 
       if (folderDoc.data().anagraficaId !== anagraficaId) {
-        throw new Error('Folder does not belong to this anagrafica');
+        throw new Error("Folder does not belong to this anagrafica");
       }
     }
 
     // 4. VALIDATE FILES
     if (!files || !Array.isArray(files) || files.length === 0) {
-      throw new Error('No files provided');
+      throw new Error("No files provided");
     }
 
     const uploadedFiles = [];
@@ -273,13 +299,13 @@ export async function uploadFiles({
           structureIds: allowedStructures,
           uploadedByStructure: structureId,
           userUid,
-          userEmail
+          userEmail,
         });
 
         // Audit log: file upload
         await logDataCreate({
           actorUid: userUid,
-          resourceType: 'file',
+          resourceType: "file",
           resourceId: fileDoc.id,
           structureId,
           details: {
@@ -287,18 +313,17 @@ export async function uploadFiles({
             accessoId,
             fileName: file.name,
             fileSize: file.size,
-            category
-          }
+            category,
+          },
         });
 
         uploadedFiles.push(fileDoc);
-
       } catch (fileError) {
         console.error(`[FILE_UPLOAD_ERROR] ${file.name}:`, fileError);
         uploadedFiles.push({
           name: file.name,
           error: true,
-          message: fileError.message
+          message: fileError.message,
         });
       }
     }
@@ -309,15 +334,14 @@ export async function uploadFiles({
     return {
       success: true,
       files: uploadedFiles,
-      uploadedCount: uploadedFiles.filter(f => !f.error).length,
-      errorCount: uploadedFiles.filter(f => f.error).length
+      uploadedCount: uploadedFiles.filter((f) => !f.error).length,
+      errorCount: uploadedFiles.filter((f) => f.error).length,
     };
-
   } catch (error) {
-    console.error('[UPLOAD_FILES_ERROR]:', error);
+    console.error("[UPLOAD_FILES_ERROR]:", error);
     return {
       error: true,
-      message: error.message
+      message: error.message,
     };
   }
 }
@@ -328,33 +352,44 @@ export async function uploadFiles({
 async function fetchFilesFromDb(anagraficaId, options = {}) {
   const { accessoId = null, folderId = null } = options;
 
-  let query = adminDb.collection('files')
-    .where('anagraficaId', '==', anagraficaId)
-    .where('deleted', '==', false)
-    .orderBy('createdAt', 'desc');
+  let query = adminDb
+    .collection("files")
+    .where("anagraficaId", "==", anagraficaId)
+    .where("deleted", "==", false)
+    .orderBy("createdAt", "desc");
 
   // Optionally filter by accesso
   if (accessoId) {
-    query = query.where('accessoId', '==', accessoId);
+    query = query.where("accessoId", "==", accessoId);
   }
 
   // Optionally filter by folder
   if (folderId) {
-    query = query.where('folderId', '==', folderId);
+    query = query.where("folderId", "==", folderId);
   }
 
   const snapshot = await query.get();
 
-  return snapshot.docs.map(doc => ({
+  return snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
     // Convert Firestore timestamps to ISO strings
-    dataDocumento: doc.data().dataDocumento?.toDate?.()?.toISOString() || doc.data().dataDocumento,
-    dataCreazione: doc.data().dataCreazione?.toDate?.()?.toISOString() || doc.data().dataCreazione,
-    dataScadenza: doc.data().dataScadenza?.toDate?.()?.toISOString() || doc.data().dataScadenza,
-    createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || doc.data().createdAt,
-    updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || doc.data().updatedAt,
-    lastAccessedAt: doc.data().lastAccessedAt?.toDate?.()?.toISOString() || doc.data().lastAccessedAt
+    dataDocumento:
+      doc.data().dataDocumento?.toDate?.()?.toISOString() ||
+      doc.data().dataDocumento,
+    dataCreazione:
+      doc.data().dataCreazione?.toDate?.()?.toISOString() ||
+      doc.data().dataCreazione,
+    dataScadenza:
+      doc.data().dataScadenza?.toDate?.()?.toISOString() ||
+      doc.data().dataScadenza,
+    createdAt:
+      doc.data().createdAt?.toDate?.()?.toISOString() || doc.data().createdAt,
+    updatedAt:
+      doc.data().updatedAt?.toDate?.()?.toISOString() || doc.data().updatedAt,
+    lastAccessedAt:
+      doc.data().lastAccessedAt?.toDate?.()?.toISOString() ||
+      doc.data().lastAccessedAt,
   }));
 }
 
@@ -369,7 +404,7 @@ async function fetchFilesFromDb(anagraficaId, options = {}) {
 export async function getFiles(anagraficaId, options = {}) {
   try {
     // Support legacy signature: getFiles(anagraficaId, accessoId)
-    if (typeof options === 'string') {
+    if (typeof options === "string") {
       options = { accessoId: options };
     }
 
@@ -382,14 +417,14 @@ export async function getFiles(anagraficaId, options = {}) {
     await getAnagraficaInternal(anagraficaId, userUid);
 
     // 3. GET CACHED FILES
-    const cacheKey = `${anagraficaId}-${accessoId || 'all'}-${folderId || 'all'}`;
+    const cacheKey = `${anagraficaId}-${accessoId || "all"}-${folderId || "all"}`;
     const getCachedFiles = unstable_cache(
       async () => fetchFilesFromDb(anagraficaId, options),
-      ['files', cacheKey],
+      ["files", cacheKey],
       {
         tags: [CACHE_TAGS.files(anagraficaId)],
-        revalidate: REVALIDATE.files
-      }
+        revalidate: REVALIDATE.files,
+      },
     );
 
     const files = await getCachedFiles();
@@ -397,14 +432,13 @@ export async function getFiles(anagraficaId, options = {}) {
     return {
       success: true,
       count: files.length,
-      files
+      files,
     };
-
   } catch (error) {
-    console.error('[GET_FILES_ERROR]:', error);
+    console.error("[GET_FILES_ERROR]:", error);
     return {
       error: true,
-      message: error.message
+      message: error.message,
     };
   }
 }
@@ -420,17 +454,17 @@ export async function getFileUrl(fileId) {
     const { userUid } = await requireUser();
 
     // 2. GET FILE DOCUMENT
-    const fileDoc = await adminDb.collection('files').doc(fileId).get();
+    const fileDoc = await adminDb.collection("files").doc(fileId).get();
 
     if (!fileDoc.exists) {
-      throw new Error('File not found');
+      throw new Error("File not found");
     }
 
     const fileData = fileDoc.data();
 
     // Check soft delete
     if (fileData.deleted) {
-      throw new Error('File not found');
+      throw new Error("File not found");
     }
 
     // 3. VERIFY ACCESS TO ANAGRAFICA
@@ -440,16 +474,19 @@ export async function getFileUrl(fileId) {
     const bucket = adminStorage.bucket();
     const originalName = fileData.nomeOriginale || fileData.nome;
     const [url] = await bucket.file(fileData.path).getSignedUrl({
-      action: 'read',
+      action: "read",
       expires: Date.now() + 3600000, // 1 hour
-      responseDisposition: `attachment; filename="${originalName}"`
+      responseDisposition: `attachment; filename="${originalName}"`,
     });
 
     // 5. UPDATE ACCESS TRACKING
-    await adminDb.collection('files').doc(fileId).update({
-      lastAccessedAt: new Date(),
-      accessCount: admin.firestore.FieldValue.increment(1)
-    });
+    await adminDb
+      .collection("files")
+      .doc(fileId)
+      .update({
+        lastAccessedAt: new Date(),
+        accessCount: admin.firestore.FieldValue.increment(1),
+      });
 
     // 6. AUDIT LOG
     await logFileAccess({
@@ -459,8 +496,8 @@ export async function getFileUrl(fileId) {
       details: {
         fileId,
         fileName: fileData.nome,
-        category: fileData.category
-      }
+        category: fileData.category,
+      },
     });
 
     return {
@@ -471,15 +508,14 @@ export async function getFileUrl(fileId) {
         nome: fileData.nome,
         nomeOriginale: fileData.nomeOriginale,
         tipo: fileData.tipo,
-        dimensione: fileData.dimensione
-      }
+        dimensione: fileData.dimensione,
+      },
     };
-
   } catch (error) {
-    console.error('[GET_FILE_URL_ERROR]:', error);
+    console.error("[GET_FILE_URL_ERROR]:", error);
     return {
       error: true,
-      message: error.message
+      message: error.message,
     };
   }
 }
@@ -495,29 +531,31 @@ export async function deleteFile(fileId) {
     const { userUid } = await requireUser();
 
     // 2. GET FILE DOCUMENT
-    const fileDoc = await adminDb.collection('files').doc(fileId).get();
+    const fileDoc = await adminDb.collection("files").doc(fileId).get();
 
     if (!fileDoc.exists) {
-      throw new Error('File not found');
+      throw new Error("File not found");
     }
 
     const fileData = fileDoc.data();
 
     // Check if already deleted
     if (fileData.deleted) {
-      throw new Error('File already deleted');
+      throw new Error("File already deleted");
     }
 
     // 3. VERIFY ACCESS TO ANAGRAFICA
     await getAnagraficaInternal(fileData.anagraficaId, userUid);
 
     // 4. SOFT DELETE
-    await adminDb.collection('files').doc(fileId).update({
+    await adminDb.collection("files").doc(fileId).update({
       deleted: true,
       deletedAt: new Date(),
       deletedBy: userUid,
-      updatedAt: new Date()
+      updatedAt: new Date(),
     });
+
+    await deleteStorageObject(fileData.path);
 
     // 5. INVALIDATE CACHE
     invalidateFilesCache(fileData.anagraficaId);
@@ -525,26 +563,25 @@ export async function deleteFile(fileId) {
     // 6. AUDIT LOG
     await logDataDelete({
       actorUid: userUid,
-      resourceType: 'file',
+      resourceType: "file",
       resourceId: fileId,
       softDelete: true,
       details: {
         anagraficaId: fileData.anagraficaId,
         fileName: fileData.nome,
-        category: fileData.category
-      }
+        category: fileData.category,
+      },
     });
 
     return {
       success: true,
-      message: 'File eliminato con successo'
+      message: "File eliminato con successo",
     };
-
   } catch (error) {
-    console.error('[DELETE_FILE_ERROR]:', error);
+    console.error("[DELETE_FILE_ERROR]:", error);
     return {
       error: true,
-      message: error.message
+      message: error.message,
     };
   }
 }
@@ -561,29 +598,29 @@ export async function updateFileMetadata(fileId, updates) {
     const { userUid } = await requireUser();
 
     // 2. GET FILE DOCUMENT
-    const fileDoc = await adminDb.collection('files').doc(fileId).get();
+    const fileDoc = await adminDb.collection("files").doc(fileId).get();
 
     if (!fileDoc.exists) {
-      throw new Error('File not found');
+      throw new Error("File not found");
     }
 
     const fileData = fileDoc.data();
 
     // Check if deleted
     if (fileData.deleted) {
-      throw new Error('File not found');
+      throw new Error("File not found");
     }
 
     // 3. VERIFY ACCESS TO ANAGRAFICA
     await getAnagraficaInternal(fileData.anagraficaId, userUid);
 
     // 4. VALIDATE AND PREPARE UPDATES
-    const allowedFields = ['nome', 'tags', 'category', 'dataScadenza'];
+    const allowedFields = ["nome", "tags", "category", "dataScadenza"];
     const updateData = {};
 
-    Object.keys(updates).forEach(key => {
+    Object.keys(updates).forEach((key) => {
       if (allowedFields.includes(key)) {
-        if (key === 'dataScadenza' && updates[key]) {
+        if (key === "dataScadenza" && updates[key]) {
           updateData[key] = new Date(updates[key]);
         } else {
           updateData[key] = updates[key];
@@ -592,27 +629,26 @@ export async function updateFileMetadata(fileId, updates) {
     });
 
     if (Object.keys(updateData).length === 0) {
-      throw new Error('No valid fields to update');
+      throw new Error("No valid fields to update");
     }
 
     updateData.updatedAt = new Date();
 
     // 5. UPDATE DOCUMENT
-    await adminDb.collection('files').doc(fileId).update(updateData);
+    await adminDb.collection("files").doc(fileId).update(updateData);
 
     // 6. INVALIDATE CACHE
     invalidateFilesCache(fileData.anagraficaId);
 
     return {
       success: true,
-      message: 'File metadata aggiornati con successo'
+      message: "File metadata aggiornati con successo",
     };
-
   } catch (error) {
-    console.error('[UPDATE_FILE_METADATA_ERROR]:', error);
+    console.error("[UPDATE_FILE_METADATA_ERROR]:", error);
     return {
       error: true,
-      message: error.message
+      message: error.message,
     };
   }
 }
@@ -629,38 +665,40 @@ export async function getFileStats(anagraficaId) {
     await getAnagraficaInternal(anagraficaId, userUid);
 
     // 3. GET FILES
-    const snapshot = await adminDb.collection('files')
-      .where('anagraficaId', '==', anagraficaId)
-      .where('deleted', '==', false)
+    const snapshot = await adminDb
+      .collection("files")
+      .where("anagraficaId", "==", anagraficaId)
+      .where("deleted", "==", false)
       .get();
 
-    const files = snapshot.docs.map(doc => doc.data());
+    const files = snapshot.docs.map((doc) => doc.data());
 
     // 4. COMPUTE STATS
     const stats = {
       totalFiles: files.length,
       totalSize: files.reduce((sum, f) => sum + (f.dimensione || 0), 0),
       byCategory: {},
-      withExpiration: files.filter(f => f.dataScadenza).length,
-      expired: files.filter(f => f.dataScadenza && new Date(f.dataScadenza) < new Date()).length
+      withExpiration: files.filter((f) => f.dataScadenza).length,
+      expired: files.filter(
+        (f) => f.dataScadenza && new Date(f.dataScadenza) < new Date(),
+      ).length,
     };
 
     // Count by category
-    files.forEach(file => {
-      const cat = file.category || 'other';
+    files.forEach((file) => {
+      const cat = file.category || "other";
       stats.byCategory[cat] = (stats.byCategory[cat] || 0) + 1;
     });
 
     return {
       success: true,
-      stats
+      stats,
     };
-
   } catch (error) {
-    console.error('[GET_FILE_STATS_ERROR]:', error);
+    console.error("[GET_FILE_STATS_ERROR]:", error);
     return {
       error: true,
-      message: error.message
+      message: error.message,
     };
   }
 }

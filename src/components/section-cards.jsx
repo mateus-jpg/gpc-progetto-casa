@@ -1,8 +1,15 @@
-"use client"
+"use client";
 
-import { IconTrendingDown, IconTrendingUp, IconUsers, IconCalendarEvent, IconFileText, IconBriefcase } from "@tabler/icons-react"
+import {
+  IconBriefcase,
+  IconCalendarEvent,
+  IconFileText,
+  IconTrendingDown,
+  IconTrendingUp,
+  IconUsers,
+} from "@tabler/icons-react";
 
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardAction,
@@ -10,8 +17,8 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function SectionCards({ stats, isLoading }) {
   if (isLoading) {
@@ -30,20 +37,24 @@ export function SectionCards({ stats, isLoading }) {
           </Card>
         ))}
       </div>
-    )
+    );
   }
 
-  const totalPersons = stats?.totalPersons || 0
-  const activeReminders = stats?.activeReminders || 0
-  const totalFiles = stats?.totalFiles || 0
-  const totalAccesses = stats?.totalAccesses || 0
+  const totalPersons = stats?.totalPersons || 0;
+  const activeReminders = stats?.activeReminders || 0;
+  const totalFiles = stats?.totalFiles || 0;
+  const totalAccesses = stats?.totalAccesses || 0;
 
   // Calculate job status summary
-  const jobStats = stats?.byJobStatus || {}
-  const employed = jobStats["Occupato"] || jobStats["occupato"] || 0
-  const inTraining = jobStats["In formazione"] || jobStats["in formazione"] || 0
-  const totalJobTracked = Object.values(jobStats).reduce((a, b) => a + b, 0)
-  const employmentRate = totalJobTracked > 0 ? Math.round(((employed + inTraining) / totalJobTracked) * 100) : 0
+  const jobStats = stats?.byJobStatus || {};
+  const employed = jobStats["Occupato"] || jobStats["occupato"] || 0;
+  const inTraining =
+    jobStats["In formazione"] || jobStats["in formazione"] || 0;
+  const totalJobTracked = Object.values(jobStats).reduce((a, b) => a + b, 0);
+  const employmentRate =
+    totalJobTracked > 0
+      ? Math.round(((employed + inTraining) / totalJobTracked) * 100)
+      : 0;
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
@@ -54,10 +65,13 @@ export function SectionCards({ stats, isLoading }) {
             Persone Registrate
           </CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {totalPersons.toLocaleString('it-IT')}
+            {totalPersons.toLocaleString("it-IT")}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline" className="text-emerald-600 dark:text-emerald-400">
+            <Badge
+              variant="outline"
+              className="text-emerald-600 dark:text-emerald-400"
+            >
               <IconTrendingUp className="size-3" />
               Attivo
             </Badge>
@@ -80,16 +94,22 @@ export function SectionCards({ stats, isLoading }) {
             Promemoria Attivi
           </CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {activeReminders.toLocaleString('it-IT')}
+            {activeReminders.toLocaleString("it-IT")}
           </CardTitle>
           <CardAction>
             {activeReminders > 5 ? (
-              <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
+              <Badge
+                variant="outline"
+                className="text-amber-600 dark:text-amber-400"
+              >
                 <IconTrendingUp className="size-3" />
                 Attenzione
               </Badge>
             ) : (
-              <Badge variant="outline" className="text-emerald-600 dark:text-emerald-400">
+              <Badge
+                variant="outline"
+                className="text-emerald-600 dark:text-emerald-400"
+              >
                 <IconTrendingDown className="size-3" />
                 Sotto controllo
               </Badge>
@@ -113,10 +133,13 @@ export function SectionCards({ stats, isLoading }) {
             Documenti Caricati
           </CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {totalFiles.toLocaleString('it-IT')}
+            {totalFiles.toLocaleString("it-IT")}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline" className="text-blue-600 dark:text-blue-400">
+            <Badge
+              variant="outline"
+              className="text-blue-600 dark:text-blue-400"
+            >
               <IconTrendingUp className="size-3" />
               Gestiti
             </Badge>
@@ -139,10 +162,13 @@ export function SectionCards({ stats, isLoading }) {
             Totale Accessi
           </CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {totalAccesses.toLocaleString('it-IT')}
+            {totalAccesses.toLocaleString("it-IT")}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline" className="text-violet-600 dark:text-violet-400">
+            <Badge
+              variant="outline"
+              className="text-violet-600 dark:text-violet-400"
+            >
               {employmentRate}% attivi
             </Badge>
           </CardAction>
@@ -152,10 +178,11 @@ export function SectionCards({ stats, isLoading }) {
             Servizi erogati
           </div>
           <div className="text-muted-foreground">
-            {Object.keys(stats?.byAccessType || {}).length} tipologie di servizio
+            {Object.keys(stats?.byAccessType || {}).length} tipologie di
+            servizio
           </div>
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

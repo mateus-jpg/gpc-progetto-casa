@@ -1,8 +1,11 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import { Skeleton } from "@mui/material";
 import {
+  IconAdjustmentsHeart,
+  IconBell,
   IconCamera,
+  IconCategoryPlus,
   IconChartBar,
   IconDashboard,
   IconDatabase,
@@ -11,24 +14,23 @@ import {
   IconFileWord,
   IconFolder,
   IconHelp,
+  IconInfoCircle,
   IconInnerShadowTop,
   IconListDetails,
   IconReport,
-  IconUsersGroup,
   IconSearch,
   IconSettings,
-  IconCategoryPlus,
+  IconTableExport,
   IconUsers,
-  IconBell,
-  IconInfoCircle,
-  IconAdjustmentsHeart,
-  IconTableExport
-} from "@tabler/icons-react"
-
-import { NavDocuments } from "@/components/nav-documents"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+  IconUsersGroup,
+} from "@tabler/icons-react";
+import { useParams } from "next/navigation";
+import * as React from "react";
+import { NavDocuments } from "@/components/nav-documents";
+import { NavMain } from "@/components/nav-main";
+import { NavSecondary } from "@/components/nav-secondary";
+import { NavUser } from "@/components/nav-user";
+import { StructureSwitcher } from "@/components/structure-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -37,18 +39,12 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import {StructureSwitcher} from "@/components/structure-switcher"
-import { useAuth } from "@/context/AuthContext"
-import Logo from "../Logo"
-import { useParams } from "next/navigation"
-import { Skeleton } from "@mui/material"
-import { NavStructures } from "../nav-structures"
-
+} from "@/components/ui/sidebar";
+import { useAuth } from "@/context/AuthContext";
+import Logo from "../Logo";
+import { NavStructures } from "../nav-structures";
 
 const data = {
-
-
   navMain: [
     {
       title: "Anagrafica",
@@ -65,7 +61,7 @@ const data = {
       url: "export",
       icon: IconTableExport,
     },
-   /*  {
+    /*  {
       title: "Gestione Community",
       url: "#",
       icon: IconFolder,
@@ -139,10 +135,8 @@ const data = {
       title: "Gestione Modulo Anagrafica",
       url: "admin/form-config",
       icon: IconAdjustmentsHeart,
-    }
-    
-  ]
-  ,
+    },
+  ],
   navSecondary: [
     {
       title: "Settings",
@@ -161,7 +155,7 @@ const data = {
     },
   ],
   documents: [
-   /*  {
+    /*  {
       name: "Archivio Generale",
       url: "#",
       icon: IconDatabase,
@@ -177,34 +171,38 @@ const data = {
       icon: IconFileWord,
     }, */
   ],
-}
+};
 
-export function StructureSidebar({
-  ...props
-}) {
-  const { user, loading, availableStructures, availableProjects, currentStructure, setCurrentStructure } = useAuth();
-  const {structureId} = useParams();
-
+export function StructureSidebar({ ...props }) {
+  const {
+    user,
+    loading,
+    availableStructures,
+    availableProjects,
+    currentStructure,
+    setCurrentStructure,
+  } = useAuth();
+  const { structureId } = useParams();
 
   React.useEffect(() => {
-
     if (structureId) {
-      const structure = availableStructures.find(s => s.id === structureId);
+      const structure = availableStructures.find((s) => s.id === structureId);
       if (structure) {
         setCurrentStructure(structure);
-        console.log(structure)
+        console.log(structure);
       }
-
     }
   }, [structureId, availableStructures]);
-
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
               <a href="/dashboard">
                 <Logo className="!size-8" size={89} />
                 <span className="text-base font-semibold">GPC - OBT</span>
@@ -212,23 +210,37 @@ export function StructureSidebar({
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-
-            {availableStructures ? <StructureSwitcher structures={availableStructures} projects={availableProjects} selectedStructure={currentStructure} user={user} /> :
-            <Skeleton variant="rectangular" width={210} height={40} className="rounded-lg" />
-            }
+            {availableStructures ? (
+              <StructureSwitcher
+                structures={availableStructures}
+                projects={availableProjects}
+                selectedStructure={currentStructure}
+                user={user}
+              />
+            ) : (
+              <Skeleton
+                variant="rectangular"
+                width={210}
+                height={40}
+                className="rounded-lg"
+              />
+            )}
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        {currentStructure && 
-        <>
-        <NavMain items={data.navMain} structureId={currentStructure.id} />
-        {!loading && user && currentStructure.admins.includes(user.uid) &&
-          <NavStructures structureId={currentStructure.id} items={data.structures} />
-        }
-      </>
-}
-      {/*   <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
+        {currentStructure && (
+          <>
+            <NavMain items={data.navMain} structureId={currentStructure.id} />
+            {!loading && user && currentStructure.admins.includes(user.uid) && (
+              <NavStructures
+                structureId={currentStructure.id}
+                items={data.structures}
+              />
+            )}
+          </>
+        )}
+        {/*   <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} loading={loading} />

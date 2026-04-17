@@ -1,6 +1,12 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import {
+  IconBuildingCommunity,
+  IconCategory,
+  IconChartTreemap,
+  IconClipboardList,
+} from "@tabler/icons-react";
+import * as React from "react";
 import {
   Bar,
   BarChart,
@@ -9,23 +15,22 @@ import {
   Treemap,
   XAxis,
   YAxis,
-} from "recharts"
+} from "recharts";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { IconClipboardList, IconCategory, IconBuildingCommunity, IconChartTreemap } from "@tabler/icons-react"
+} from "@/components/ui/chart";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Color palette for services
 const SERVICE_COLORS = [
@@ -33,41 +38,41 @@ const SERVICE_COLORS = [
   "hsl(262, 83%, 58%)", // purple
   "hsl(330, 81%, 60%)", // pink
   "hsl(142, 71%, 45%)", // green
-  "hsl(45, 93%, 47%)",  // yellow
-  "hsl(25, 95%, 53%)",  // orange
-  "hsl(0, 84%, 60%)",   // red
+  "hsl(45, 93%, 47%)", // yellow
+  "hsl(25, 95%, 53%)", // orange
+  "hsl(0, 84%, 60%)", // red
   "hsl(180, 70%, 45%)", // teal
   "hsl(291, 64%, 42%)", // magenta
   "hsl(199, 89%, 48%)", // sky
-]
+];
 
 const CLASSIFICATION_COLORS = {
   "Presa in carico": "hsl(142, 71%, 45%)",
-  "Informativa": "hsl(221, 83%, 53%)",
-  "Referral": "hsl(262, 83%, 58%)",
-}
+  Informativa: "hsl(221, 83%, 53%)",
+  Referral: "hsl(262, 83%, 58%)",
+};
 
 // Access Type Chart (Horizontal Bar)
 function AccessTypeChart({ data, isLoading }) {
   const chartData = React.useMemo(() => {
-    if (!data) return []
+    if (!data) return [];
     return Object.entries(data)
       .map(([name, value], index) => ({
-        name: name.length > 25 ? name.substring(0, 25) + '...' : name,
+        name: name.length > 25 ? name.substring(0, 25) + "..." : name,
         fullName: name,
         value,
         fill: SERVICE_COLORS[index % SERVICE_COLORS.length],
       }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 8)
-  }, [data])
+      .slice(0, 8);
+  }, [data]);
 
   const chartConfig = {
     value: { label: "Accessi" },
-  }
+  };
 
   if (isLoading) {
-    return <Skeleton className="w-full h-[280px]" />
+    return <Skeleton className="w-full h-[280px]" />;
   }
 
   if (!chartData.length) {
@@ -75,12 +80,16 @@ function AccessTypeChart({ data, isLoading }) {
       <div className="flex items-center justify-center h-[280px] text-muted-foreground text-sm">
         Nessun dato disponibile
       </div>
-    )
+    );
   }
 
   return (
     <ChartContainer config={chartConfig} className="h-[280px] w-full">
-      <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 20 }}>
+      <BarChart
+        data={chartData}
+        layout="vertical"
+        margin={{ left: 0, right: 20 }}
+      >
         <XAxis type="number" hide />
         <YAxis
           dataKey="name"
@@ -95,15 +104,17 @@ function AccessTypeChart({ data, isLoading }) {
           cursor={false}
           content={({ active, payload }) => {
             if (active && payload && payload.length) {
-              const data = payload[0].payload
+              const data = payload[0].payload;
               return (
                 <div className="bg-background border rounded-lg px-3 py-2 shadow-lg">
                   <p className="font-medium text-sm">{data.fullName}</p>
-                  <p className="text-muted-foreground text-xs">{data.value} accessi</p>
+                  <p className="text-muted-foreground text-xs">
+                    {data.value} accessi
+                  </p>
                 </div>
-              )
+              );
             }
-            return null
+            return null;
           }}
         />
         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
@@ -113,26 +124,26 @@ function AccessTypeChart({ data, isLoading }) {
         </Bar>
       </BarChart>
     </ChartContainer>
-  )
+  );
 }
 
 // Classification Donut Stats
 function ClassificationStats({ data, isLoading }) {
   const stats = React.useMemo(() => {
-    if (!data) return []
+    if (!data) return [];
     return Object.entries(data)
       .map(([name, value]) => ({
         name,
         value,
         color: CLASSIFICATION_COLORS[name] || "hsl(215, 14%, 65%)",
       }))
-      .sort((a, b) => b.value - a.value)
-  }, [data])
+      .sort((a, b) => b.value - a.value);
+  }, [data]);
 
-  const total = stats.reduce((sum, item) => sum + item.value, 0)
+  const total = stats.reduce((sum, item) => sum + item.value, 0);
 
   if (isLoading) {
-    return <Skeleton className="w-full h-[140px]" />
+    return <Skeleton className="w-full h-[140px]" />;
   }
 
   if (!stats.length) {
@@ -140,13 +151,14 @@ function ClassificationStats({ data, isLoading }) {
       <div className="flex items-center justify-center h-[140px] text-muted-foreground text-sm">
         Nessun dato disponibile
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-4">
       {stats.map((item) => {
-        const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0
+        const percentage =
+          total > 0 ? Math.round((item.value / total) * 100) : 0;
         return (
           <div key={item.name} className="space-y-2">
             <div className="flex items-center justify-between">
@@ -171,29 +183,29 @@ function ClassificationStats({ data, isLoading }) {
               />
             </div>
           </div>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 // Subcategory Treemap
 function SubcategoryTreemap({ data, isLoading }) {
   const treeData = React.useMemo(() => {
-    if (!data) return []
+    if (!data) return [];
     return Object.entries(data)
       .map(([name, value], index) => ({
-        name: name.length > 20 ? name.substring(0, 20) + '...' : name,
+        name: name.length > 20 ? name.substring(0, 20) + "..." : name,
         fullName: name,
         size: value,
         fill: SERVICE_COLORS[index % SERVICE_COLORS.length],
       }))
       .sort((a, b) => b.size - a.size)
-      .slice(0, 12)
-  }, [data])
+      .slice(0, 12);
+  }, [data]);
 
   if (isLoading) {
-    return <Skeleton className="w-full h-[200px]" />
+    return <Skeleton className="w-full h-[200px]" />;
   }
 
   if (!treeData.length) {
@@ -201,7 +213,7 @@ function SubcategoryTreemap({ data, isLoading }) {
       <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
         Nessun dato disponibile
       </div>
-    )
+    );
   }
 
   return (
@@ -213,7 +225,7 @@ function SubcategoryTreemap({ data, isLoading }) {
         stroke="hsl(var(--background))"
         strokeWidth={2}
         content={({ x, y, width, height, name, fill, size }) => {
-          if (width < 40 || height < 30) return null
+          if (width < 40 || height < 30) return null;
           return (
             <g>
               <rect
@@ -250,23 +262,23 @@ function SubcategoryTreemap({ data, isLoading }) {
                 </>
               )}
             </g>
-          )
+          );
         }}
       />
     </ResponsiveContainer>
-  )
+  );
 }
 
 // Referral Entities List
 function ReferralEntitiesList({ data, isLoading }) {
   const entities = React.useMemo(() => {
-    if (!data) return []
+    if (!data) return [];
     return Object.entries(data)
       .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-  }, [data])
+      .sort((a, b) => b.value - a.value);
+  }, [data]);
 
-  const total = entities.reduce((sum, item) => sum + item.value, 0)
+  const total = entities.reduce((sum, item) => sum + item.value, 0);
 
   if (isLoading) {
     return (
@@ -275,7 +287,7 @@ function ReferralEntitiesList({ data, isLoading }) {
           <Skeleton key={i} className="h-8 w-full" />
         ))}
       </div>
-    )
+    );
   }
 
   if (!entities.length) {
@@ -283,23 +295,26 @@ function ReferralEntitiesList({ data, isLoading }) {
       <div className="flex items-center justify-center h-[200px] text-muted-foreground text-sm">
         Nessun dato disponibile
       </div>
-    )
+    );
   }
 
   return (
     <ScrollArea className="h-[200px] pr-4">
       <div className="space-y-2">
         {entities.map((item, index) => {
-          const percentage = total > 0 ? Math.round((item.value / total) * 100) : 0
+          const percentage =
+            total > 0 ? Math.round((item.value / total) * 100) : 0;
           return (
             <div
               key={item.name}
               className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
             >
-              <div className={`
+              <div
+                className={`
                 flex items-center justify-center size-6 rounded text-xs font-bold
-                ${index < 3 ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}
-              `}>
+                ${index < 3 ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}
+              `}
+              >
                 {index + 1}
               </div>
               <div className="flex-1 min-w-0">
@@ -311,18 +326,18 @@ function ReferralEntitiesList({ data, isLoading }) {
                 {item.value}
               </Badge>
             </div>
-          )
+          );
         })}
       </div>
     </ScrollArea>
-  )
+  );
 }
 
 // Main Services Dashboard Component
 export function ServicesCharts({ stats, isLoading }) {
-  const totalAccesses = stats?.totalAccesses || 0
-  const totalSubcategories = Object.keys(stats?.bySubcategory || {}).length
-  const totalEntities = Object.keys(stats?.byReferralEntity || {}).length
+  const totalAccesses = stats?.totalAccesses || 0;
+  const totalSubcategories = Object.keys(stats?.bySubcategory || {}).length;
+  const totalEntities = Object.keys(stats?.byReferralEntity || {}).length;
 
   return (
     <div className="space-y-4">
@@ -333,7 +348,11 @@ export function ServicesCharts({ stats, isLoading }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-2xl font-bold tabular-nums">
-                  {isLoading ? <Skeleton className="h-8 w-16" /> : totalAccesses.toLocaleString('it-IT')}
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-16" />
+                  ) : (
+                    totalAccesses.toLocaleString("it-IT")
+                  )}
                 </p>
                 <p className="text-xs text-muted-foreground">Totale Accessi</p>
               </div>
@@ -347,9 +366,15 @@ export function ServicesCharts({ stats, isLoading }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-2xl font-bold tabular-nums">
-                  {isLoading ? <Skeleton className="h-8 w-16" /> : Object.keys(stats?.byAccessType || {}).length}
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-16" />
+                  ) : (
+                    Object.keys(stats?.byAccessType || {}).length
+                  )}
                 </p>
-                <p className="text-xs text-muted-foreground">Tipi di Servizio</p>
+                <p className="text-xs text-muted-foreground">
+                  Tipi di Servizio
+                </p>
               </div>
               <IconCategory className="size-8 text-primary/20" />
             </div>
@@ -361,7 +386,11 @@ export function ServicesCharts({ stats, isLoading }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-2xl font-bold tabular-nums">
-                  {isLoading ? <Skeleton className="h-8 w-16" /> : totalSubcategories}
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-16" />
+                  ) : (
+                    totalSubcategories
+                  )}
                 </p>
                 <p className="text-xs text-muted-foreground">Sottocategorie</p>
               </div>
@@ -375,7 +404,11 @@ export function ServicesCharts({ stats, isLoading }) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-2xl font-bold tabular-nums">
-                  {isLoading ? <Skeleton className="h-8 w-16" /> : totalEntities}
+                  {isLoading ? (
+                    <Skeleton className="h-8 w-16" />
+                  ) : (
+                    totalEntities
+                  )}
                 </p>
                 <p className="text-xs text-muted-foreground">Enti Collegati</p>
               </div>
@@ -408,14 +441,19 @@ export function ServicesCharts({ stats, isLoading }) {
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
               <IconCategory className="size-4 text-violet-500" />
-              <CardTitle className="text-base">Classificazione Interventi</CardTitle>
+              <CardTitle className="text-base">
+                Classificazione Interventi
+              </CardTitle>
             </div>
             <CardDescription>
               Presa in carico, Informativa, Referral
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ClassificationStats data={stats?.byClassification} isLoading={isLoading} />
+            <ClassificationStats
+              data={stats?.byClassification}
+              isLoading={isLoading}
+            />
           </CardContent>
         </Card>
 
@@ -431,7 +469,10 @@ export function ServicesCharts({ stats, isLoading }) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <SubcategoryTreemap data={stats?.bySubcategory} isLoading={isLoading} />
+            <SubcategoryTreemap
+              data={stats?.bySubcategory}
+              isLoading={isLoading}
+            />
           </CardContent>
         </Card>
 
@@ -442,15 +483,16 @@ export function ServicesCharts({ stats, isLoading }) {
               <IconBuildingCommunity className="size-4 text-amber-500" />
               <CardTitle className="text-base">Enti di Riferimento</CardTitle>
             </div>
-            <CardDescription>
-              Partner e istituzioni coinvolte
-            </CardDescription>
+            <CardDescription>Partner e istituzioni coinvolte</CardDescription>
           </CardHeader>
           <CardContent>
-            <ReferralEntitiesList data={stats?.byReferralEntity} isLoading={isLoading} />
+            <ReferralEntitiesList
+              data={stats?.byReferralEntity}
+              isLoading={isLoading}
+            />
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }

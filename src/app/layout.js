@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 export default function Layout({ children }) {
   return (
     <html>
-      <body >
+      <body>
         {children}
         <Toaster />
       </body>

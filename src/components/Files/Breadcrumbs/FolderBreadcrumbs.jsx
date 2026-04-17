@@ -1,5 +1,6 @@
-'use client';
+"use client";
 
+import { Home } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -7,8 +8,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
-import { Home } from 'lucide-react';
+} from "@/components/ui/breadcrumb";
 
 /**
  * Folder breadcrumbs navigation component

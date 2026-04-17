@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useMemo } from 'react';
-import useSWR from 'swr';
-import { getAnagrafica } from '@/actions/anagrafica/anagrafica';
-import { getAccessAction } from '@/actions/anagrafica/access';
-import { SWR_CACHE_TIME } from '@/lib/swr-config';
+import { useMemo } from "react";
+import useSWR from "swr";
+import { getAccessAction } from "@/actions/anagrafica/access";
+import { getAnagrafica } from "@/actions/anagrafica/anagrafica";
+import { SWR_CACHE_TIME } from "@/lib/swr-config";
 
 /**
  * Stable fetcher for anagrafica data
@@ -50,13 +50,13 @@ export function useAnagrafica(id, options = {}) {
   // Memoize the merged options to prevent unnecessary re-renders
   const swrOptions = useMemo(
     () => ({ ...DEFAULT_ANAGRAFICA_OPTIONS, ...options }),
-    [options]
+    [options],
   );
 
   const { data, error, isLoading, isValidating, mutate } = useSWR(
-    id ? ['anagrafica', id] : null,
+    id ? ["anagrafica", id] : null,
     anagraficaFetcher,
-    swrOptions
+    swrOptions,
   );
 
   return {
@@ -80,13 +80,13 @@ export function useAccessi(anagraficaId, options = {}) {
   // Memoize the merged options to prevent unnecessary re-renders
   const swrOptions = useMemo(
     () => ({ ...DEFAULT_ACCESSI_OPTIONS, ...options }),
-    [options]
+    [options],
   );
 
   const { data, error, isLoading, isValidating, mutate } = useSWR(
-    anagraficaId ? ['accessi', anagraficaId] : null,
+    anagraficaId ? ["accessi", anagraficaId] : null,
     accessiFetcher,
-    swrOptions
+    swrOptions,
   );
 
   // Memoize the return object to prevent unnecessary re-renders in consumers

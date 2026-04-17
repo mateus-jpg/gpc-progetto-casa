@@ -67,7 +67,7 @@ export default function DeleteAnagraficaDialog({
 
       if (result.error) {
         toast.error(result.message);
-        setConfirmText('');
+        setConfirmText("");
         return;
       }
 
@@ -83,7 +83,9 @@ export default function DeleteAnagraficaDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={handleOpenChange}>
-      <AlertDialogContent onEscapeKeyDown={(e) => isDeleting && e.preventDefault()}>
+      <AlertDialogContent
+        onEscapeKeyDown={(e) => isDeleting && e.preventDefault()}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>
             {isShared ? "Rimuovi dalla struttura" : "Elimina scheda"}

@@ -1,17 +1,31 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import {
+  ArrowLeft,
+  Download,
+  FileIcon,
+  Loader2,
+  PencilIcon,
+  Trash2,
+  X,
+} from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import {
+  addSubcategoryToStructure,
+  getStructureCategories,
+} from "@/actions/admin/structure";
+import {
+  getAccessFileUrl,
+  updateAccessAction,
+} from "@/actions/anagrafica/access";
+import AccessHistoryTimeline from "@/components/Anagrafica/AccessHistoryTimeline";
+import AccessServicesForm from "@/components/Anagrafica/AccessServicesForm";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, PencilIcon, X, FileIcon, Download, Trash2, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { updateAccessAction, getAccessFileUrl } from "@/actions/anagrafica/access";
-import { getStructureCategories, addSubcategoryToStructure } from "@/actions/admin/structure";
-import AccessServicesForm from "@/components/Anagrafica/AccessServicesForm";
-import AccessHistoryTimeline from "@/components/Anagrafica/AccessHistoryTimeline";
 import { useAccessForm } from "@/hooks/useAccessForm";
 import { stripHtml } from "@/utils/htmlSanitizer";
 
@@ -40,11 +54,21 @@ function FileRow({ file, anagraficaId, onDelete, editMode }) {
     <div className="flex items-center gap-2 text-sm py-1">
       <FileIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
       <span className="flex-1 truncate">{file.nome || file.nomeOriginale}</span>
-      <span className="text-xs text-muted-foreground">{formatDate(file.dataCreazione)}</span>
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleDownload} disabled={downloading}>
-        {downloading
-          ? <Loader2 className="w-3 h-3 animate-spin" />
-          : <Download className="w-3 h-3" />}
+      <span className="text-xs text-muted-foreground">
+        {formatDate(file.dataCreazione)}
+      </span>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7"
+        onClick={handleDownload}
+        disabled={downloading}
+      >
+        {downloading ? (
+          <Loader2 className="w-3 h-3 animate-spin" />
+        ) : (
+          <Download className="w-3 h-3" />
+        )}
       </Button>
       {editMode && onDelete && (
         <Button
@@ -64,29 +88,39 @@ function ServiceReadView({ service, anagraficaId }) {
   const strippedNote = service.note ? stripHtml(service.note) : null;
   const subcategories = Array.isArray(service.sottoCategorie)
     ? service.sottoCategorie
-    : service.sottoCategorie ? [service.sottoCategorie] : [];
+    : service.sottoCategorie
+      ? [service.sottoCategorie]
+      : [];
 
   return (
     <div className="space-y-3">
       {subcategories.length > 0 && (
         <div>
-          <span className="text-xs text-muted-foreground block mb-1">Sottocategorie</span>
+          <span className="text-xs text-muted-foreground block mb-1">
+            Sottocategorie
+          </span>
           <div className="flex flex-wrap gap-1">
             {subcategories.map((s, i) => (
-              <Badge key={i} variant="secondary">{s}</Badge>
+              <Badge key={i} variant="secondary">
+                {s}
+              </Badge>
             ))}
           </div>
         </div>
       )}
       {service.classificazione && (
         <div>
-          <span className="text-xs text-muted-foreground block">Classificazione</span>
+          <span className="text-xs text-muted-foreground block">
+            Classificazione
+          </span>
           <p className="text-sm">{service.classificazione}</p>
         </div>
       )}
       {service.enteRiferimento && (
         <div>
-          <span className="text-xs text-muted-foreground block">Ente di riferimento</span>
+          <span className="text-xs text-muted-foreground block">
+            Ente di riferimento
+          </span>
           <p className="text-sm">{service.enteRiferimento}</p>
         </div>
       )}
@@ -98,16 +132,25 @@ function ServiceReadView({ service, anagraficaId }) {
       )}
       {service.reminderDate && (
         <div>
-          <span className="text-xs text-muted-foreground block">Promemoria</span>
+          <span className="text-xs text-muted-foreground block">
+            Promemoria
+          </span>
           <p className="text-sm">{formatDate(service.reminderDate)}</p>
         </div>
       )}
       {service.files?.length > 0 && (
         <div>
-          <span className="text-xs text-muted-foreground block mb-1">File allegati</span>
+          <span className="text-xs text-muted-foreground block mb-1">
+            File allegati
+          </span>
           <div className="border rounded-md px-3 py-1">
             {service.files.map((f, i) => (
-              <FileRow key={i} file={f} anagraficaId={anagraficaId} editMode={false} />
+              <FileRow
+                key={i}
+                file={f}
+                anagraficaId={anagraficaId}
+                editMode={false}
+              />
             ))}
           </div>
         </div>
@@ -116,7 +159,12 @@ function ServiceReadView({ service, anagraficaId }) {
   );
 }
 
-export default function AccessDetailClient({ accesso, anagraficaId, structureId, anagraficaName }) {
+export default function AccessDetailClient({
+  accesso,
+  anagraficaId,
+  structureId,
+  anagraficaName,
+}) {
   const router = useRouter();
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -163,7 +211,12 @@ export default function AccessDetailClient({ accesso, anagraficaId, structureId,
     setSaving(true);
     try {
       const servicesPayload = await prepareAccessPayload();
-      await updateAccessAction({ accessId: accesso.id, anagraficaId, services: servicesPayload, structureId });
+      await updateAccessAction({
+        accessId: accesso.id,
+        anagraficaId,
+        services: servicesPayload,
+        structureId,
+      });
       toast.success("Accesso aggiornato con successo.");
       setEditMode(false);
       router.refresh();
@@ -174,16 +227,23 @@ export default function AccessDetailClient({ accesso, anagraficaId, structureId,
     }
   };
 
-  const handleNewSubcategory = useCallback(async (categoryValue, newSubcategory) => {
-    try {
-      const result = await addSubcategoryToStructure(structureId, categoryValue, newSubcategory);
-      if (result.success && !result.alreadyExists) {
-        toast.success(`Sottocategoria "${newSubcategory}" aggiunta`);
+  const handleNewSubcategory = useCallback(
+    async (categoryValue, newSubcategory) => {
+      try {
+        const result = await addSubcategoryToStructure(
+          structureId,
+          categoryValue,
+          newSubcategory,
+        );
+        if (result.success && !result.alreadyExists) {
+          toast.success(`Sottocategoria "${newSubcategory}" aggiunta`);
+        }
+      } catch {
+        toast.error("Errore durante l'aggiunta della sottocategoria");
       }
-    } catch {
-      toast.error("Errore durante l'aggiunta della sottocategoria");
-    }
-  }, [structureId]);
+    },
+    [structureId],
+  );
 
   return (
     <div className="w-full mx-auto px-4">
@@ -197,21 +257,30 @@ export default function AccessDetailClient({ accesso, anagraficaId, structureId,
             </Link>
           </Button>
           <h1 className="text-xl font-bold text-gray-900">Dettaglio Accesso</h1>
-          <Badge variant="outline" className="text-xs text-muted-foreground font-mono hidden sm:inline-flex">
+          <Badge
+            variant="outline"
+            className="text-xs text-muted-foreground font-mono hidden sm:inline-flex"
+          >
             {accesso.id}
           </Badge>
         </div>
         <div className="flex gap-2">
           {!editMode ? (
             <Button onClick={enterEditMode} disabled={categoriesLoading}>
-              {categoriesLoading
-                ? <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                : <PencilIcon className="w-4 h-4 mr-1" />}
+              {categoriesLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-1" />
+              ) : (
+                <PencilIcon className="w-4 h-4 mr-1" />
+              )}
               Modifica
             </Button>
           ) : (
             <>
-              <Button variant="outline" onClick={handleCancel} disabled={saving}>
+              <Button
+                variant="outline"
+                onClick={handleCancel}
+                disabled={saving}
+              >
                 <X className="w-4 h-4 mr-1" /> Annulla
               </Button>
               <Button onClick={handleSave} disabled={saving}>
@@ -264,7 +333,9 @@ export default function AccessDetailClient({ accesso, anagraficaId, structureId,
             </Card>
           ))}
           {(!accesso.services || accesso.services.length === 0) && (
-            <p className="text-sm text-muted-foreground">Nessun servizio registrato per questo accesso.</p>
+            <p className="text-sm text-muted-foreground">
+              Nessun servizio registrato per questo accesso.
+            </p>
           )}
         </div>
       )}
@@ -290,7 +361,9 @@ export default function AccessDetailClient({ accesso, anagraficaId, structureId,
                   if (existing.length === 0) return null;
                   return (
                     <div className="mb-3 space-y-1">
-                      <p className="text-xs text-muted-foreground font-medium">File esistenti</p>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        File esistenti
+                      </p>
                       <div className="border rounded-md px-3 py-1">
                         {existing.map((f, i) => (
                           <FileRow
@@ -298,7 +371,9 @@ export default function AccessDetailClient({ accesso, anagraficaId, structureId,
                             file={f}
                             anagraficaId={anagraficaId}
                             editMode
-                            onDelete={(filePath) => markFileForDeletion(typeValue, filePath)}
+                            onDelete={(filePath) =>
+                              markFileForDeletion(typeValue, filePath)
+                            }
                           />
                         ))}
                       </div>
@@ -312,7 +387,10 @@ export default function AccessDetailClient({ accesso, anagraficaId, structureId,
       )}
 
       {/* History timeline */}
-      <AccessHistoryTimeline accessId={accesso.id} anagraficaId={anagraficaId} />
+      <AccessHistoryTimeline
+        accessId={accesso.id}
+        anagraficaId={anagraficaId}
+      />
     </div>
   );
 }

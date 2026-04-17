@@ -1,9 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { format, isPast, isToday, isTomorrow, differenceInDays } from "date-fns";
+import {
+  differenceInDays,
+  format,
+  isPast,
+  isToday,
+  isTomorrow,
+} from "date-fns";
 import { it } from "date-fns/locale";
-import { Bell, CalendarClock, ExternalLink, FileText, History } from "lucide-react";
+import {
+  Bell,
+  CalendarClock,
+  ExternalLink,
+  FileText,
+  History,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { getAnagraficaRemindersAction } from "@/actions/anagrafica/reminders";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,12 +76,21 @@ const TYPE_SCHEMES = {
 
 function urgencyPill(date) {
   if (isToday(date))
-    return { text: "Oggi", className: "bg-red-100 text-red-700 border border-red-200" };
+    return {
+      text: "Oggi",
+      className: "bg-red-100 text-red-700 border border-red-200",
+    };
   if (isTomorrow(date))
-    return { text: "Domani", className: "bg-orange-100 text-orange-700 border border-orange-200" };
+    return {
+      text: "Domani",
+      className: "bg-orange-100 text-orange-700 border border-orange-200",
+    };
   const days = differenceInDays(date, new Date());
   if (days > 0 && days <= 7)
-    return { text: `${days}gg`, className: "bg-yellow-100 text-yellow-700 border border-yellow-200" };
+    return {
+      text: `${days}gg`,
+      className: "bg-yellow-100 text-yellow-700 border border-yellow-200",
+    };
   return null;
 }
 
@@ -77,14 +98,15 @@ function ReminderItem({ reminder, structureId, muted = false }) {
   const date = new Date(reminder.date);
   const scheme = TYPE_SCHEMES[reminder.serviceType] ?? TYPE_SCHEMES.default;
   const urgency = !muted ? urgencyPill(date) : null;
-  const timeStr = format(date, "HH:mm") !== "00:00" ? format(date, "HH:mm") : null;
+  const timeStr =
+    format(date, "HH:mm") !== "00:00" ? format(date, "HH:mm") : null;
 
   return (
     <div
       className={cn(
         "flex rounded-md border overflow-hidden mb-2 transition-all hover:shadow-sm",
         isToday(date) && "ring-1 ring-red-300",
-        muted && "opacity-55"
+        muted && "opacity-55",
       )}
     >
       {/* Left accent bar */}
@@ -94,17 +116,24 @@ function ReminderItem({ reminder, structureId, muted = false }) {
       <div
         className={cn(
           "flex flex-col items-center justify-center px-3 py-2.5 border-r min-w-[52px]",
-          scheme.dateBg
+          scheme.dateBg,
         )}
       >
-        <span className={cn("text-2xl font-bold leading-none tabular-nums", scheme.dateText)}>
+        <span
+          className={cn(
+            "text-2xl font-bold leading-none tabular-nums",
+            scheme.dateText,
+          )}
+        >
           {format(date, "d")}
         </span>
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
           {format(date, "MMM", { locale: it })}
         </span>
         {timeStr && (
-          <span className="text-[9px] text-muted-foreground mt-1 font-mono">{timeStr}</span>
+          <span className="text-[9px] text-muted-foreground mt-1 font-mono">
+            {timeStr}
+          </span>
         )}
       </div>
 
@@ -116,7 +145,7 @@ function ReminderItem({ reminder, structureId, muted = false }) {
             <span
               className={cn(
                 "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
-                scheme.badge
+                scheme.badge,
               )}
             >
               {reminder.serviceType || "—"}
@@ -133,7 +162,7 @@ function ReminderItem({ reminder, structureId, muted = false }) {
             <span
               className={cn(
                 "text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0",
-                urgency.className
+                urgency.className,
               )}
             >
               {urgency.text}
@@ -221,10 +250,10 @@ export default function AnagraficaReminders({ anagraficaId, structureId }) {
   }, [anagraficaId]);
 
   const upcoming = reminders.filter(
-    (r) => !isPast(new Date(r.date)) || isToday(new Date(r.date))
+    (r) => !isPast(new Date(r.date)) || isToday(new Date(r.date)),
   );
   const past = reminders.filter(
-    (r) => isPast(new Date(r.date)) && !isToday(new Date(r.date))
+    (r) => isPast(new Date(r.date)) && !isToday(new Date(r.date)),
   );
 
   const urgentCount = upcoming.filter((r) => {
@@ -262,7 +291,10 @@ export default function AnagraficaReminders({ anagraficaId, structureId }) {
 
         <Tabs defaultValue="upcoming">
           <TabsList className="mb-4 h-8">
-            <TabsTrigger value="upcoming" className="flex items-center gap-1.5 text-xs h-7">
+            <TabsTrigger
+              value="upcoming"
+              className="flex items-center gap-1.5 text-xs h-7"
+            >
               <Bell className="w-3 h-3" />
               Prossimi
               {upcoming.length > 0 && (
@@ -271,7 +303,10 @@ export default function AnagraficaReminders({ anagraficaId, structureId }) {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="past" className="flex items-center gap-1.5 text-xs h-7">
+            <TabsTrigger
+              value="past"
+              className="flex items-center gap-1.5 text-xs h-7"
+            >
               <History className="w-3 h-3" />
               Passati
               {past.length > 0 && (
@@ -292,7 +327,11 @@ export default function AnagraficaReminders({ anagraficaId, structureId }) {
               <EmptyState icon={Bell} message="Nessun promemoria in arrivo" />
             ) : (
               upcoming.map((r) => (
-                <ReminderItem key={r.id} reminder={r} structureId={structureId} />
+                <ReminderItem
+                  key={r.id}
+                  reminder={r}
+                  structureId={structureId}
+                />
               ))
             )}
           </TabsContent>
@@ -306,9 +345,16 @@ export default function AnagraficaReminders({ anagraficaId, structureId }) {
             ) : past.length === 0 ? (
               <EmptyState icon={History} message="Nessun promemoria passato" />
             ) : (
-              [...past].reverse().map((r) => (
-                <ReminderItem key={r.id} reminder={r} structureId={structureId} muted />
-              ))
+              [...past]
+                .reverse()
+                .map((r) => (
+                  <ReminderItem
+                    key={r.id}
+                    reminder={r}
+                    structureId={structureId}
+                    muted
+                  />
+                ))
             )}
           </TabsContent>
         </Tabs>

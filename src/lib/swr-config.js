@@ -3,7 +3,7 @@
  * Provides global defaults for all useSWR hooks
  */
 
-import { SWR as SWR_CONFIG } from '@/config/constants';
+import { SWR as SWR_CONFIG } from "@/config/constants";
 
 /**
  * Default SWR fetcher function
@@ -13,7 +13,7 @@ export const fetcher = async (url) => {
   const res = await fetch(url);
 
   if (!res.ok) {
-    const error = new Error('An error occurred while fetching the data.');
+    const error = new Error("An error occurred while fetching the data.");
     error.info = await res.json().catch(() => ({}));
     error.status = res.status;
     throw error;
@@ -64,8 +64,8 @@ export const clearSwrCache = async (mutate) => {
   // and setting data to undefined
   await mutate(
     () => true, // Match all keys
-    undefined,  // Set data to undefined
-    { revalidate: false } // Don't revalidate, just clear
+    undefined, // Set data to undefined
+    { revalidate: false }, // Don't revalidate, just clear
   );
 };
 
@@ -82,9 +82,11 @@ export const clearStructureCache = async (mutate) => {
       if (!Array.isArray(key)) return false;
       const [type] = key;
       // Clear all anagrafica and accessi entries
-      return type === 'anagrafica' || type === 'accessi' || type === 'statistics';
+      return (
+        type === "anagrafica" || type === "accessi" || type === "statistics"
+      );
     },
     undefined,
-    { revalidate: false }
+    { revalidate: false },
   );
 };

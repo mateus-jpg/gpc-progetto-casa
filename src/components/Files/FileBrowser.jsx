@@ -1,19 +1,23 @@
-'use client';
+"use client";
 
-import { useState, useCallback } from 'react';
-import { useSWRConfig } from 'swr';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { FolderPlus, Upload, RefreshCw } from 'lucide-react';
-import FolderTree from './FolderTree/FolderTree';
-import FileListTable from './FileList/FileListTable';
-import FolderBreadcrumbs from './Breadcrumbs/FolderBreadcrumbs';
-import CreateFolderDialog from './Dialogs/CreateFolderDialog';
-import UploadFilesDialog from './Dialogs/UploadFilesDialog';
-import { useFolderTree, useFolderContents, invalidateFolderTreeCache } from '@/hooks/useFolderTree';
-import { useFolderOperations } from '@/hooks/useFolderOperations';
-import { useFileOperations } from '@/hooks/useFileOperations';
+import { FolderPlus, RefreshCw, Upload } from "lucide-react";
+import { useCallback, useState } from "react";
+import { useSWRConfig } from "swr";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useFileOperations } from "@/hooks/useFileOperations";
+import { useFolderOperations } from "@/hooks/useFolderOperations";
+import {
+  invalidateFolderTreeCache,
+  useFolderContents,
+  useFolderTree,
+} from "@/hooks/useFolderTree";
+import FolderBreadcrumbs from "./Breadcrumbs/FolderBreadcrumbs";
+import CreateFolderDialog from "./Dialogs/CreateFolderDialog";
+import UploadFilesDialog from "./Dialogs/UploadFilesDialog";
+import FileListTable from "./FileList/FileListTable";
+import FolderTree from "./FolderTree/FolderTree";
 
 /**
  * Main file browser component
@@ -81,13 +85,15 @@ export default function FileBrowser({ anagraficaId, structureId }) {
   };
 
   // Get current folder name for dialog
-  const currentFolderName = currentFolder?.nome || 'Root';
+  const currentFolderName = currentFolder?.nome || "Root";
 
   return (
     <Card className="mt-6">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-semibold">Files & Documents</CardTitle>
+          <CardTitle className="text-xl font-semibold">
+            Files & Documents
+          </CardTitle>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -169,7 +175,7 @@ export default function FileBrowser({ anagraficaId, structureId }) {
                 onFileDelete={(file) => {
                   if (
                     confirm(
-                      `Are you sure you want to delete "${file.nome}"? This action cannot be undone.`
+                      `Are you sure you want to delete "${file.nome}"? This action cannot be undone.`,
                     )
                   ) {
                     fileOps.removeFile(file.id);
@@ -186,17 +192,14 @@ export default function FileBrowser({ anagraficaId, structureId }) {
                   }
                 }}
                 onFolderRename={(folder) => {
-                  const newName = prompt(
-                    'Enter new folder name:',
-                    folder.nome
-                  );
+                  const newName = prompt("Enter new folder name:", folder.nome);
                   if (newName && newName !== folder.nome) {
                     folderOps.rename(folder.id, newName);
                   }
                 }}
                 onFileRename={(file) => {
                   // TODO: Implement file rename
-                  alert('File rename not yet implemented');
+                  alert("File rename not yet implemented");
                 }}
                 isLoading={isLoadingContents}
               />

@@ -5,19 +5,28 @@
 
 // Define the group fields that we track for history
 export const ANAGRAFICA_GROUPS = [
-  'anagrafica',
-  'nucleoFamiliare',
-  'legaleAbitativa',
-  'lavoroFormazione',
-  'vulnerabilita',
-  'referral'
+  "anagrafica",
+  "privacy",
+  "nucleoFamiliare",
+  "legaleAbitativa",
+  "lavoroFormazione",
+  "vulnerabilita",
+  "referral",
 ];
 
 // Personal/identity fields stored flat in the 'anagrafica' Firestore collection
 // These get wrapped under an 'anagrafica' key when returned to the client
 export const ANAGRAFICA_PERSONAL_FIELDS = [
-  'nome', 'cognome', 'sesso', 'dataDiNascita', 'luogoDiNascita',
-  'codiceFiscale', 'cittadinanza', 'comuneDiDomicilio', 'telefono', 'email'
+  "nome",
+  "cognome",
+  "sesso",
+  "dataDiNascita",
+  "luogoDiNascita",
+  "codiceFiscale",
+  "cittadinanza",
+  "comuneDiDomicilio",
+  "telefono",
+  "email",
 ];
 
 /**
@@ -66,7 +75,7 @@ export function computeGroupChanges(oldData, newData) {
       changedGroups.push(group);
       changes[group] = {
         before: oldGroup || null,
-        after: newGroup || null
+        after: newGroup || null,
       };
     }
   }

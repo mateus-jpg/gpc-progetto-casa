@@ -1,27 +1,22 @@
-'use client';
+"use client";
 
-import { SWRConfig } from 'swr';
-import { AppSidebar, PortalSideBar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
-import { AuthProvider } from "../../context/AuthContext";
+import { SWRConfig } from "swr";
+import { AppSidebar, PortalSideBar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { swrConfig } from "@/lib/swr-config";
-
+import { AuthProvider } from "../../context/AuthContext";
 
 export default function Layout({ children }) {
   return (
     <SWRConfig value={swrConfig}>
       <AuthProvider>
         <SidebarProvider
-          style={
-            {
-              "--sidebar-width": "calc(var(--spacing) * 72)",
-              "--header-height": "calc(var(--spacing) * 12)"
-            }
-          }>
+          style={{
+            "--sidebar-width": "calc(var(--spacing) * 72)",
+            "--header-height": "calc(var(--spacing) * 12)",
+          }}
+        >
           {/*  <PortalSideBar variant="inset" />
           <SidebarInset>
             <SiteHeader />

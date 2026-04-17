@@ -1,34 +1,37 @@
-"use server"
-import { ChevronsUpDown, ChevronDown, BriefcaseBusiness, UsersRound, Scale, HandHeart, FileSliders } from "lucide-react"
+"use server";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import clsx from "clsx";
+import {
+  BriefcaseBusiness,
+  ChevronDown,
+  ChevronsUpDown,
+  FileSliders,
+  HandHeart,
+  Scale,
+  UsersRound,
+} from "lucide-react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
-
-import clsx from "clsx"
+} from "@/components/ui/accordion";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function Otherinfo({ anagrafica }) {
-
-
   return (
     <Accordion
-
       type="single"
       collapsible
       /*  onOpenChange={setIsOpen} */
       defaultValue="item-1"
       className="flex flex-col gap-2 mt-2 "
     >
-      <AccordionItem value="item-1" >
+      <AccordionItem value="item-1">
         <AccordionTrigger className="flex items-center justify-between gap-4 px-2">
           <h4 className="text-sm font-semibold">
             Visualizza / Nascondi Altre Informazioni
           </h4>
-
 
           {/*     <ChevronDown className={clsx("transition-all duration-300 size-8", { "rotate-180": !isOpen })} />
             <span className="sr-only">Toggle</span>
@@ -49,12 +52,22 @@ export default async function Otherinfo({ anagrafica }) {
             <CardContent className="space-y-4">
               <DataRow
                 label="Composizione"
-                value={anagrafica.nucleoFamiliare?.nucleo === 'singolo' ? 'Persona singola' : 'Nucleo familiare'}
+                value={
+                  anagrafica.nucleoFamiliare?.nucleo === "singolo"
+                    ? "Persona singola"
+                    : "Nucleo familiare"
+                }
               />
-              {anagrafica.nucleoFamiliare?.nucleo === 'famiglia' && (
+              {anagrafica.nucleoFamiliare?.nucleo === "famiglia" && (
                 <>
-                  <DataRow label="Tipologia nucleo" value={anagrafica.nucleoFamiliare?.nucleoTipo} />
-                  <DataRow label="Numero figli minori" value={anagrafica.nucleoFamiliare?.figli?.toString() || '0'} />
+                  <DataRow
+                    label="Tipologia nucleo"
+                    value={anagrafica.nucleoFamiliare?.nucleoTipo}
+                  />
+                  <DataRow
+                    label="Numero figli minori"
+                    value={anagrafica.nucleoFamiliare?.figli?.toString() || "0"}
+                  />
                 </>
               )}
             </CardContent>
@@ -72,10 +85,16 @@ export default async function Otherinfo({ anagrafica }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <DataRow label="Situazione legale" value={anagrafica.legaleAbitativa?.situazioneLegale} />
+              <DataRow
+                label="Situazione legale"
+                value={anagrafica.legaleAbitativa?.situazioneLegale}
+              />
               <DataRow
                 label="Situazione abitativa"
-                value={anagrafica.legaleAbitativa?.situazioneAbitativa?.join(', ') || '-'}
+                value={
+                  anagrafica.legaleAbitativa?.situazioneAbitativa?.join(", ") ||
+                  "-"
+                }
               />
             </CardContent>
           </Card>
@@ -92,10 +111,22 @@ export default async function Otherinfo({ anagrafica }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <DataRow label="Situazione lavorativa" value={anagrafica.lavoroFormazione?.situazioneLavorativa} />
-              <DataRow label="Titolo di studio (paese origine)" value={anagrafica.lavoroFormazione?.titoloDiStudioOrigine} />
-              <DataRow label="Titolo di studio (Italia)" value={anagrafica.lavoroFormazione?.titoloDiStudioItalia} />
-              <DataRow label="Conoscenza italiano" value={anagrafica.lavoroFormazione?.conoscenzaItaliano} />
+              <DataRow
+                label="Situazione lavorativa"
+                value={anagrafica.lavoroFormazione?.situazioneLavorativa}
+              />
+              <DataRow
+                label="Titolo di studio (paese origine)"
+                value={anagrafica.lavoroFormazione?.titoloDiStudioOrigine}
+              />
+              <DataRow
+                label="Titolo di studio (Italia)"
+                value={anagrafica.lavoroFormazione?.titoloDiStudioItalia}
+              />
+              <DataRow
+                label="Conoscenza italiano"
+                value={anagrafica.lavoroFormazione?.conoscenzaItaliano}
+              />
             </CardContent>
           </Card>
 
@@ -113,14 +144,20 @@ export default async function Otherinfo({ anagrafica }) {
             <CardContent className="space-y-4">
               <DataRow
                 label="Vulnerabilità"
-                value={anagrafica.vulnerabilita?.vulnerabilita?.join(', ') || 'Nessuna'}
+                value={
+                  anagrafica.vulnerabilita?.vulnerabilita?.join(", ") ||
+                  "Nessuna"
+                }
               />
               <DataRow
                 label="Intenzione di fermarsi in Italia"
                 value={anagrafica.vulnerabilita?.intenzioneItalia}
               />
-              {anagrafica.vulnerabilita?.intenzioneItalia === 'NO' && (
-                <DataRow label="Paese di destinazione" value={anagrafica.vulnerabilita?.paeseDestinazione} />
+              {anagrafica.vulnerabilita?.intenzioneItalia === "NO" && (
+                <DataRow
+                  label="Paese di destinazione"
+                  value={anagrafica.vulnerabilita?.paeseDestinazione}
+                />
               )}
             </CardContent>
           </Card>
@@ -136,7 +173,10 @@ export default async function Otherinfo({ anagrafica }) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <DataRow label="Come ci ha conosciuto" value={anagrafica.referral?.referral} />
+              <DataRow
+                label="Come ci ha conosciuto"
+                value={anagrafica.referral?.referral}
+              />
             </CardContent>
           </Card>
           <div className="lg:col-span-2 gap-2  border-2 rounded-md bg-gray-100 pt-4 pb-2 ">
@@ -159,36 +199,86 @@ export default async function Otherinfo({ anagrafica }) {
               />
               <DataRow
                 label="Data registrazione"
-                value={anagrafica.createdAt ? formatTimestamp(anagrafica.createdAt, true) : '-'}
+                value={
+                  anagrafica.createdAt
+                    ? formatTimestamp(anagrafica.createdAt, true)
+                    : "-"
+                }
                 small
               />
               <DataRow
                 label="Ultimo aggiornamento"
-                value={anagrafica.updatedAt ? formatTimestamp(anagrafica.updatedAt, true) : '-'}
+                value={
+                  anagrafica.updatedAt
+                    ? formatTimestamp(anagrafica.updatedAt, true)
+                    : "-"
+                }
+                small
+              />
+              <DataRow
+                label="Stato registrazione"
+                value={
+                  anagrafica.registrationStatus === "draft_signature_pending"
+                    ? "Da completare"
+                    : "Completata"
+                }
+                small
+              />
+              <DataRow
+                label="Informativa cartacea raccolta"
+                value={
+                  anagrafica.privacy?.paperNoticeCollected === true ? "Sì" : "No"
+                }
+                small
+              />
+              <DataRow
+                label="Data firma informativa"
+                value={
+                  anagrafica.privacy?.paperNoticeSignedAt
+                    ? formatTimestamp(anagrafica.privacy.paperNoticeSignedAt, false)
+                    : "-"
+                }
+                small
+              />
+              <DataRow
+                label="Riferimento privacy"
+                value={anagrafica.privacy?.paperNoticeReference || "-"}
+                small
+              />
+              <DataRow
+                label="Documento firmato"
+                value={anagrafica.privacy?.paperNoticeFileName || "-"}
                 small
               />
             </CardContent>
           </div>
         </AccordionContent>
-      </AccordionItem >
+      </AccordionItem>
     </Accordion>
-  )
+  );
 }
 
 function DataRow({ label, value, small = false }) {
-  const textSize = small ? 'text-sm' : 'text-base';
+  const textSize = small ? "text-sm" : "text-base";
 
   return (
     <div className={`flex flex-col ${textSize}`}>
-      <span className="text-sm text-muted-foreground flex items-center gap-2">{label}</span>
-      <span className="text-gray-900  font-medium ">{value || '-'}</span>
+      <span className="text-sm text-muted-foreground flex items-center gap-2">
+        {label}
+      </span>
+      <span className="text-gray-900  font-medium ">{value || "-"}</span>
     </div>
   );
 }
 
 const formatTimestamp = (ts, includeTime = false) => {
-  if (!ts?._seconds) return '';
-  const date = new Date(ts._seconds * 1000);
-  const tz = { timeZone: 'Europe/Rome' };
-  return includeTime ? date.toLocaleString('it-IT', tz) : date.toLocaleDateString('it-IT', tz);
+  if (!ts) return "";
+  const date = ts?._seconds
+    ? new Date(ts._seconds * 1000)
+    : new Date(ts);
+  if (Number.isNaN(date.getTime())) return "";
+  const tz = { timeZone: "Europe/Rome" };
+  return includeTime
+    ? date.toLocaleString("it-IT", tz)
+    : date.toLocaleDateString("it-IT", tz);
 };

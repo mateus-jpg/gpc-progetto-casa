@@ -2,19 +2,19 @@
  * SWR hooks and operation hooks for structure-level file management
  */
 
-import { useState, useCallback } from 'react';
-import useSWR from 'swr';
-import { toast } from 'sonner';
+import { useCallback, useState } from "react";
+import { toast } from "sonner";
+import useSWR from "swr";
+import { deleteStructureFile } from "@/actions/files/structure-files";
 import {
-  getStructureFolderTree,
-  getStructureFolderContents,
   createStructureFolder,
-  renameStructureFolder,
   deleteStructureFolder,
-  moveStructureFolder,
+  getStructureFolderContents,
+  getStructureFolderTree,
   moveStructureFileToFolder,
-} from '@/actions/files/structure-folders';
-import { deleteStructureFile } from '@/actions/files/structure-files';
+  moveStructureFolder,
+  renameStructureFolder,
+} from "@/actions/files/structure-folders";
 
 // ---------------------------------------------------------------------------
 // SWR data hooks
@@ -26,13 +26,17 @@ import { deleteStructureFile } from '@/actions/files/structure-files';
  */
 export function useStructureFolderTree(structureId) {
   const { data, error, isLoading, mutate } = useSWR(
-    structureId ? ['structure-folder-tree', structureId] : null,
+    structureId ? ["structure-folder-tree", structureId] : null,
     async ([_, id]) => {
       const result = await getStructureFolderTree(id);
       if (result.error) throw new Error(result.message);
       return result;
     },
-    { revalidateOnFocus: false, revalidateOnReconnect: true, dedupingInterval: 30000 }
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 30000,
+    },
   );
 
   return {
@@ -52,19 +56,23 @@ export function useStructureFolderTree(structureId) {
  * @param {string} structureId - required for root
  */
 export function useStructureFolderContents(folderId, structureId = null) {
-  const key = ['structure-folder-contents', folderId || 'root', structureId];
+  const key = ["structure-folder-contents", folderId || "root", structureId];
 
   const { data, error, isLoading, mutate } = useSWR(
     key,
     async ([_, id, sid]) => {
       const result = await getStructureFolderContents({
-        folderId: id === 'root' ? null : id,
+        folderId: id === "root" ? null : id,
         structureId: sid,
       });
       if (result.error) throw new Error(result.message);
       return result;
     },
-    { revalidateOnFocus: false, revalidateOnReconnect: true, dedupingInterval: 10000 }
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 10000,
+    },
   );
 
   return {
@@ -87,16 +95,16 @@ export function useStructureFolderContents(folderId, structureId = null) {
  */
 export function invalidateStructureFolderTreeCache(mutate, structureId) {
   mutate(
-    key => {
+    (key) => {
       if (!Array.isArray(key)) return false;
       const [type, id] = key;
       return (
-        (type === 'structure-folder-tree' && id === structureId) ||
-        type === 'structure-folder-contents'
+        (type === "structure-folder-tree" && id === structureId) ||
+        type === "structure-folder-contents"
       );
     },
     undefined,
-    { revalidate: true }
+    { revalidate: true },
   );
 }
 
@@ -118,91 +126,130 @@ export function useStructureFolderOperations(structureId, onSuccess) {
   const create = useCallback(
     async (folderName, parentFolderId = null) => {
       if (!structureId || !folderName?.trim()) {
-        toast.error('Required parameters missing');
+        toast.error("Required parameters missing");
         return { success: false };
       }
       setIsCreating(true);
       try {
-        const result = await createStructureFolder({ structureId, nome: folderName.trim(), parentFolderId });
-        if (result.error) { toast.error(result.message || 'Failed to create folder'); return { success: false }; }
-        toast.success('Folder created successfully');
+        const result = await createStructureFolder({
+          structureId,
+          nome: folderName.trim(),
+          parentFolderId,
+        });
+        if (result.error) {
+          toast.error(result.message || "Failed to create folder");
+          return { success: false };
+        }
+        toast.success("Folder created successfully");
         onSuccess?.();
         return { success: true, folder: result.folder };
       } catch (err) {
-        console.error('[CREATE_STRUCTURE_FOLDER_HOOK]:', err);
-        toast.error('An error occurred while creating the folder');
+        console.error("[CREATE_STRUCTURE_FOLDER_HOOK]:", err);
+        toast.error("An error occurred while creating the folder");
         return { success: false };
       } finally {
         setIsCreating(false);
       }
     },
-    [structureId, onSuccess]
+    [structureId, onSuccess],
   );
 
   const rename = useCallback(
     async (folderId, newName) => {
-      if (!newName?.trim()) { toast.error('Folder name is required'); return { success: false }; }
+      if (!newName?.trim()) {
+        toast.error("Folder name is required");
+        return { success: false };
+      }
       setIsRenaming(true);
       try {
-        const result = await renameStructureFolder({ folderId, newName: newName.trim(), structureId });
-        if (result.error) { toast.error(result.message || 'Failed to rename folder'); return { success: false }; }
-        toast.success(result.message || 'Folder renamed successfully');
+        const result = await renameStructureFolder({
+          folderId,
+          newName: newName.trim(),
+          structureId,
+        });
+        if (result.error) {
+          toast.error(result.message || "Failed to rename folder");
+          return { success: false };
+        }
+        toast.success(result.message || "Folder renamed successfully");
         onSuccess?.();
         return { success: true };
       } catch (err) {
-        console.error('[RENAME_STRUCTURE_FOLDER_HOOK]:', err);
-        toast.error('An error occurred while renaming the folder');
+        console.error("[RENAME_STRUCTURE_FOLDER_HOOK]:", err);
+        toast.error("An error occurred while renaming the folder");
         return { success: false };
       } finally {
         setIsRenaming(false);
       }
     },
-    [structureId, onSuccess]
+    [structureId, onSuccess],
   );
 
   const remove = useCallback(
     async (folderId, cascade = false) => {
       setIsDeleting(true);
       try {
-        const result = await deleteStructureFolder({ folderId, cascade, structureId });
-        if (result.error) { toast.error(result.message || 'Failed to delete folder'); return { success: false }; }
-        toast.success(result.message || `Folder deleted (${result.deletedCount} items)`);
+        const result = await deleteStructureFolder({
+          folderId,
+          cascade,
+          structureId,
+        });
+        if (result.error) {
+          toast.error(result.message || "Failed to delete folder");
+          return { success: false };
+        }
+        toast.success(
+          result.message || `Folder deleted (${result.deletedCount} items)`,
+        );
         onSuccess?.();
         return { success: true, deletedCount: result.deletedCount };
       } catch (err) {
-        console.error('[DELETE_STRUCTURE_FOLDER_HOOK]:', err);
-        toast.error('An error occurred while deleting the folder');
+        console.error("[DELETE_STRUCTURE_FOLDER_HOOK]:", err);
+        toast.error("An error occurred while deleting the folder");
         return { success: false };
       } finally {
         setIsDeleting(false);
       }
     },
-    [structureId, onSuccess]
+    [structureId, onSuccess],
   );
 
   const move = useCallback(
     async (folderId, newParentFolderId) => {
       setIsMoving(true);
       try {
-        const result = await moveStructureFolder({ folderId, newParentFolderId, structureId });
-        if (result.error) { toast.error(result.message || 'Failed to move folder'); return { success: false }; }
-        toast.success(result.message || 'Folder moved successfully');
+        const result = await moveStructureFolder({
+          folderId,
+          newParentFolderId,
+          structureId,
+        });
+        if (result.error) {
+          toast.error(result.message || "Failed to move folder");
+          return { success: false };
+        }
+        toast.success(result.message || "Folder moved successfully");
         onSuccess?.();
         return { success: true };
       } catch (err) {
-        console.error('[MOVE_STRUCTURE_FOLDER_HOOK]:', err);
-        toast.error('An error occurred while moving the folder');
+        console.error("[MOVE_STRUCTURE_FOLDER_HOOK]:", err);
+        toast.error("An error occurred while moving the folder");
         return { success: false };
       } finally {
         setIsMoving(false);
       }
     },
-    [structureId, onSuccess]
+    [structureId, onSuccess],
   );
 
   return {
-    create, rename, remove, move,
-    isCreating, isRenaming, isDeleting, isMoving,
+    create,
+    rename,
+    remove,
+    move,
+    isCreating,
+    isRenaming,
+    isDeleting,
+    isMoving,
     isProcessing: isCreating || isRenaming || isDeleting || isMoving,
   };
 }
@@ -224,20 +271,27 @@ export function useStructureFileOperations(structureId, onSuccess) {
     async (fileId, targetFolderId) => {
       setIsMoving(true);
       try {
-        const result = await moveStructureFileToFolder({ fileId, targetFolderId, structureId });
-        if (result.error) { toast.error(result.message || 'Failed to move file'); return { success: false }; }
-        toast.success(result.message || 'File moved successfully');
+        const result = await moveStructureFileToFolder({
+          fileId,
+          targetFolderId,
+          structureId,
+        });
+        if (result.error) {
+          toast.error(result.message || "Failed to move file");
+          return { success: false };
+        }
+        toast.success(result.message || "File moved successfully");
         onSuccess?.();
         return { success: true };
       } catch (err) {
-        console.error('[MOVE_STRUCTURE_FILE_HOOK]:', err);
-        toast.error('An error occurred while moving the file');
+        console.error("[MOVE_STRUCTURE_FILE_HOOK]:", err);
+        toast.error("An error occurred while moving the file");
         return { success: false };
       } finally {
         setIsMoving(false);
       }
     },
-    [structureId, onSuccess]
+    [structureId, onSuccess],
   );
 
   const removeFile = useCallback(
@@ -245,19 +299,22 @@ export function useStructureFileOperations(structureId, onSuccess) {
       setIsDeleting(true);
       try {
         const result = await deleteStructureFile(fileId);
-        if (result.error) { toast.error(result.message || 'Failed to delete file'); return { success: false }; }
-        toast.success(result.message || 'File deleted successfully');
+        if (result.error) {
+          toast.error(result.message || "Failed to delete file");
+          return { success: false };
+        }
+        toast.success(result.message || "File deleted successfully");
         onSuccess?.();
         return { success: true };
       } catch (err) {
-        console.error('[DELETE_STRUCTURE_FILE_HOOK]:', err);
-        toast.error('An error occurred while deleting the file');
+        console.error("[DELETE_STRUCTURE_FILE_HOOK]:", err);
+        toast.error("An error occurred while deleting the file");
         return { success: false };
       } finally {
         setIsDeleting(false);
       }
     },
-    [onSuccess]
+    [onSuccess],
   );
 
   return { moveFile, removeFile, isMoving, isDeleting };
