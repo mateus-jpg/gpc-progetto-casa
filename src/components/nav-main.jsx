@@ -1,10 +1,8 @@
 "use client";
 
-import { IconCirclePlusFilled, IconMail } from "@tabler/icons-react";
+import { IconCirclePlusFilled } from "@tabler/icons-react";
 import clsx from "clsx";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -18,6 +16,10 @@ export function NavMain({ structureId, items }) {
   }
   const router = useRouter();
   const pathname = usePathname();
+
+  const getItemUrl = (item) =>
+    item.url ? `/${structureId}/${item.url}` : `/${structureId}`;
+
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
@@ -34,28 +36,28 @@ export function NavMain({ structureId, items }) {
           </SidebarMenuItem>
         </SidebarMenu>
         <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton
-                tooltip={item.title}
-                onClick={() => router.push(`/${structureId}/${item.url}`)}
-                disabled={pathname === `/${structureId}/${item.url}`}
-                isActive={pathname === `/${structureId}/${item.url}`}
-                variant={
-                  pathname === `/${structureId}/${item.url}`
-                    ? "outline"
-                    : "default"
-                }
-                className={clsx(
-                  "disabled:font-bold  disabled:text-black disabled:text",
-                  item.className,
-                )}
-              >
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
+          {items.map((item) => {
+            const itemUrl = getItemUrl(item);
+
+            return (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton
+                  tooltip={item.title}
+                  onClick={() => router.push(itemUrl)}
+                  disabled={pathname === itemUrl}
+                  isActive={pathname === itemUrl}
+                  variant={pathname === itemUrl ? "outline" : "default"}
+                  className={clsx(
+                    "disabled:font-bold  disabled:text-black disabled:text",
+                    item.className,
+                  )}
+                >
+                  {item.icon && <item.icon />}
+                  <span>{item.title}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            );
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

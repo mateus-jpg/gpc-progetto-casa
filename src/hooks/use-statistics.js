@@ -2,7 +2,14 @@
 
 import { useMemo } from "react";
 import useSWR from "swr";
-import { getMonthlyStatistics, getStatistics } from "@/actions/statistics";
+import {
+  getMonthlyStatistics,
+  getStatistics,
+  getStatisticsForStructures,
+  getStructureStatusFlowAnalytics,
+  getStructureUpcomingItems,
+  getTrendStatistics,
+} from "@/actions/statistics";
 import { SWR_CACHE_TIME } from "@/lib/swr-config";
 
 /**
@@ -25,6 +32,55 @@ async function monthlyStatsFetcher([, structureId, months]) {
   const parsed = JSON.parse(result);
   if (!parsed.success) {
     throw new Error(parsed.error || "Failed to fetch monthly statistics");
+  }
+  return parsed.data;
+}
+
+/**
+ * Stable fetcher for trend statistics
+ */
+async function trendStatsFetcher([, structureId, period, limit]) {
+  const result = await getTrendStatistics(structureId, period, limit);
+  const parsed = JSON.parse(result);
+  if (!parsed.success) {
+    throw new Error(parsed.error || "Failed to fetch trend statistics");
+  }
+  return parsed.data;
+}
+
+/**
+ * Stable fetcher for several structure statistics documents
+ */
+async function structuresStatisticsFetcher([, structureIdsKey]) {
+  const structureIds = structureIdsKey ? structureIdsKey.split("|") : [];
+  const result = await getStatisticsForStructures(structureIds);
+  const parsed = JSON.parse(result);
+  if (!parsed.success) {
+    throw new Error(parsed.error || "Failed to fetch structures statistics");
+  }
+  return parsed.data;
+}
+
+/**
+ * Stable fetcher for upcoming operational items
+ */
+async function structureUpcomingFetcher([, structureId, daysAhead, limit]) {
+  const result = await getStructureUpcomingItems(structureId, daysAhead, limit);
+  const parsed = JSON.parse(result);
+  if (!parsed.success) {
+    throw new Error(parsed.error || "Failed to fetch upcoming items");
+  }
+  return parsed.data;
+}
+
+/**
+ * Stable fetcher for status-flow analytics
+ */
+async function structureStatusFlowFetcher([, structureId]) {
+  const result = await getStructureStatusFlowAnalytics(structureId);
+  const parsed = JSON.parse(result);
+  if (!parsed.success) {
+    throw new Error(parsed.error || "Failed to fetch status flow analytics");
   }
   return parsed.data;
 }
@@ -89,6 +145,148 @@ export function useMonthlyStatistics(structureId, months = 6, options = {}) {
 
   return {
     monthlyStats: data || [],
+    error,
+    isLoading,
+    isValidating,
+    mutate,
+  };
+}
+
+/**
+ * Hook for fetching weekly, monthly, or yearly statistics for trends.
+ *
+ * @param {string} structureId - The structure document ID
+ * @param {"weekly"|"monthly"|"yearly"} period - Trend granularity
+ * @param {number} limit - Number of periods to fetch
+ * @param {Object} options - Additional SWR options
+ * @returns {Object} { trendStats, error, isLoading, isValidating, mutate }
+ */
+export function useTrendStatistics(
+  structureId,
+  period = "monthly",
+  limit = 12,
+  options = {},
+) {
+  const swrOptions = useMemo(
+    () => ({ ...DEFAULT_STATS_OPTIONS, ...options }),
+    [options],
+  );
+
+  const { data, error, isLoading, isValidating, mutate } = useSWR(
+    structureId ? ["statistics-trend", structureId, period, limit] : null,
+    trendStatsFetcher,
+    swrOptions,
+  );
+
+  return {
+    trendStats: data || [],
+    error,
+    isLoading,
+    isValidating,
+    mutate,
+  };
+}
+
+/**
+ * Hook for fetching statistics for multiple structures.
+ *
+ * @param {string[]} structureIds - Structure document IDs
+ * @param {Object} options - Additional SWR options
+ * @returns {Object} { statsByStructure, error, isLoading, isValidating, mutate }
+ */
+export function useStructuresStatistics(structureIds = [], options = {}) {
+  const swrOptions = useMemo(
+    () => ({ ...DEFAULT_STATS_OPTIONS, ...options }),
+    [options],
+  );
+
+  const structureIdsKey = useMemo(
+    () => [...new Set(structureIds.filter(Boolean))].sort().join("|"),
+    [structureIds],
+  );
+
+  const { data, error, isLoading, isValidating, mutate } = useSWR(
+    structureIdsKey ? ["statistics-structures", structureIdsKey] : null,
+    structuresStatisticsFetcher,
+    swrOptions,
+  );
+
+  return {
+    statsByStructure: data || {},
+    error,
+    isLoading,
+    isValidating,
+    mutate,
+  };
+}
+
+/**
+ * Hook for fetching upcoming reminders and expiring files for a structure.
+ *
+ * @param {string} structureId - Structure document ID
+ * @param {number} daysAhead - Upcoming window in days
+ * @param {number} limit - Max items per list
+ * @param {Object} options - Additional SWR options
+ * @returns {Object} { upcomingItems, error, isLoading, isValidating, mutate }
+ */
+export function useStructureUpcomingItems(
+  structureId,
+  daysAhead = 30,
+  limit = 8,
+  options = {},
+) {
+  const swrOptions = useMemo(
+    () => ({ ...DEFAULT_STATS_OPTIONS, ...options }),
+    [options],
+  );
+
+  const { data, error, isLoading, isValidating, mutate } = useSWR(
+    structureId
+      ? ["structure-upcoming-items", structureId, daysAhead, limit]
+      : null,
+    structureUpcomingFetcher,
+    swrOptions,
+  );
+
+  return {
+    upcomingItems: data || {
+      daysAhead,
+      reminders: [],
+      expiringFiles: [],
+    },
+    error,
+    isLoading,
+    isValidating,
+    mutate,
+  };
+}
+
+/**
+ * Hook for fetching status-flow analytics for a structure.
+ *
+ * @param {string} structureId - Structure document ID
+ * @param {Object} options - Additional SWR options
+ * @returns {Object} { statusFlow, error, isLoading, isValidating, mutate }
+ */
+export function useStructureStatusFlowAnalytics(structureId, options = {}) {
+  const swrOptions = useMemo(
+    () => ({ ...DEFAULT_STATS_OPTIONS, ...options }),
+    [options],
+  );
+
+  const { data, error, isLoading, isValidating, mutate } = useSWR(
+    structureId ? ["structure-status-flow", structureId] : null,
+    structureStatusFlowFetcher,
+    swrOptions,
+  );
+
+  return {
+    statusFlow: data || {
+      blockedThresholdDays: 30,
+      monthStart: null,
+      updatedAt: null,
+      fields: [],
+    },
     error,
     isLoading,
     isValidating,

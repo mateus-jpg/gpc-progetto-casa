@@ -4,20 +4,12 @@ import { Skeleton } from "@mui/material";
 import {
   IconAdjustmentsHeart,
   IconBell,
-  IconCamera,
   IconCategoryPlus,
-  IconChartBar,
   IconDashboard,
-  IconDatabase,
-  IconFileAi,
-  IconFileDescription,
   IconFileWord,
   IconFolder,
   IconHelp,
   IconInfoCircle,
-  IconInnerShadowTop,
-  IconListDetails,
-  IconReport,
   IconSearch,
   IconSettings,
   IconTableExport,
@@ -26,9 +18,7 @@ import {
 } from "@tabler/icons-react";
 import { useParams } from "next/navigation";
 import * as React from "react";
-import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import { StructureSwitcher } from "@/components/structure-switcher";
 import {
@@ -46,6 +36,11 @@ import { NavStructures } from "../nav-structures";
 
 const data = {
   navMain: [
+    {
+      title: "Dashboard",
+      url: "",
+      icon: IconDashboard,
+    },
     {
       title: "Anagrafica",
       url: "anagrafica",
@@ -192,7 +187,7 @@ export function StructureSidebar({ ...props }) {
         console.log(structure);
       }
     }
-  }, [structureId, availableStructures]);
+  }, [structureId, availableStructures, setCurrentStructure]);
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>

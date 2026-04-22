@@ -1,4 +1,5 @@
 export { BirthPlaceMap } from "./birth-place-map";
+export { DashboardInsights } from "./dashboard-insights";
 export {
   AdditionalStatsCards,
   DemographicsCharts,

@@ -74,7 +74,7 @@ function normalizeDate(date) {
 function calculateAgeRange(dataDiNascita) {
   if (!dataDiNascita) return null;
   const birthDate = normalizeDate(dataDiNascita);
-  if (!birthDate || isNaN(birthDate)) return null;
+  if (!birthDate || Number.isNaN(birthDate.getTime())) return null;
 
   const age = differenceInYears(new Date(), birthDate);
   if (age < 18) return "<18";
@@ -98,7 +98,230 @@ function updateCategory(counterObj, key, amount = 1) {
 
 function processArrayCategory(counterObj, values, amount = 1) {
   if (!Array.isArray(values)) return;
-  values.forEach((value) => updateCategory(counterObj, value, amount));
+  values.forEach((value) => {
+    updateCategory(counterObj, value, amount);
+  });
+}
+
+function normalizeRegistrationStatus(status) {
+  return status === "draft_signature_pending" ? "Firma in attesa" : "Attiva";
+}
+
+const HISTORY_FIELD_LABELS = {
+  "anagrafica.sesso": "Genere",
+  "anagrafica.comuneDiDomicilio": "Comune di domicilio",
+  "privacy.paperNoticeCollected": "Privacy raccolta",
+  "privacy.paperNoticeSignedAt": "Firma privacy",
+  "nucleoFamiliare.nucleoTipo": "Tipo nucleo",
+  "nucleoFamiliare.nucleo": "Composizione nucleo",
+  "nucleoFamiliare.figli": "Figli",
+  "legaleAbitativa.situazioneLegale": "Situazione legale",
+  "legaleAbitativa.situazioneAbitativa": "Situazione abitativa",
+  "lavoroFormazione.situazioneLavorativa": "Situazione lavorativa",
+  "lavoroFormazione.titoloDiStudioOrigine": "Studio origine",
+  "lavoroFormazione.titoloDiStudioItalia": "Studio Italia",
+  "lavoroFormazione.conoscenzaItaliano": "Livello italiano",
+  "vulnerabilita.vulnerabilita": "Vulnerabilita",
+  "vulnerabilita.intenzioneItalia": "Intenzione Italia",
+  "referral.referral": "Referral",
+  services: "Accessi e servizi",
+};
+
+const TRACKED_TRANSITION_FIELDS = [
+  "nucleoFamiliare.nucleoTipo",
+  "nucleoFamiliare.nucleo",
+  "legaleAbitativa.situazioneLegale",
+  "legaleAbitativa.situazioneAbitativa",
+  "lavoroFormazione.situazioneLavorativa",
+  "lavoroFormazione.conoscenzaItaliano",
+  "vulnerabilita.intenzioneItalia",
+  "referral.referral",
+];
+
+const HISTORY_METADATA_FIELDS = new Set([
+  "anagraficaId",
+  "structureId",
+  "updatedAt",
+  "updatedBy",
+  "createdAt",
+  "createdBy",
+  "supersededAt",
+  "supersededBy",
+]);
+
+function isPlainObject(value) {
+  return (
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    typeof value.toDate !== "function"
+  );
+}
+
+function normalizeHistoryValue(value) {
+  if (value === undefined || value === null || value === "") {
+    return "Non compilato";
+  }
+
+  if (typeof value?.toDate === "function" || value?._seconds) {
+    const dateValue = normalizeDate(value);
+    return dateValue && !Number.isNaN(dateValue.getTime())
+      ? dateValue.toISOString().split("T")[0]
+      : "Non compilato";
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) return "Nessuno";
+    return value
+      .map((item) => normalizeHistoryValue(item))
+      .sort()
+      .join(", ");
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "Si" : "No";
+  }
+
+  if (isPlainObject(value)) {
+    return JSON.stringify(value);
+  }
+
+  return String(value);
+}
+
+function getNestedValue(value, path) {
+  return path.reduce((current, key) => {
+    if (!current || typeof current !== "object") return undefined;
+    return current[key];
+  }, value);
+}
+
+function getHistoryFieldLabel(path) {
+  if (HISTORY_FIELD_LABELS[path]) return HISTORY_FIELD_LABELS[path];
+  const [, ...fieldParts] = path.split(".");
+  return fieldParts.length > 0 ? fieldParts.join(" / ") : path;
+}
+
+function valuesDiffer(before, after) {
+  return JSON.stringify(before ?? null) !== JSON.stringify(after ?? null);
+}
+
+function collectChangedFieldPaths(before, after, prefix = "") {
+  if (!isPlainObject(before) || !isPlainObject(after)) {
+    return valuesDiffer(before, after) && prefix ? [prefix] : [];
+  }
+
+  const keys = new Set([
+    ...Object.keys(before || {}),
+    ...Object.keys(after || {}),
+  ]);
+  const paths = [];
+
+  keys.forEach((key) => {
+    if (HISTORY_METADATA_FIELDS.has(key)) return;
+    const nextPrefix = prefix ? `${prefix}.${key}` : key;
+    const beforeValue = before?.[key];
+    const afterValue = after?.[key];
+    paths.push(
+      ...collectChangedFieldPaths(beforeValue, afterValue, nextPrefix),
+    );
+  });
+
+  return paths;
+}
+
+function encodeTransitionKey(field, before, after) {
+  return [field, before, after]
+    .map((part) => encodeURIComponent(part))
+    .join("::");
+}
+
+function extractHistorySignals(historyData = {}) {
+  const groups = new Set(historyData.changedGroups || []);
+  const fields = new Set();
+  const transitions = [];
+  const changes = historyData.changes || {};
+
+  Object.entries(changes).forEach(([group, change]) => {
+    groups.add(group);
+    collectChangedFieldPaths(change?.before, change?.after, group).forEach(
+      (path) => {
+        fields.add(getHistoryFieldLabel(path));
+      },
+    );
+  });
+
+  TRACKED_TRANSITION_FIELDS.forEach((path) => {
+    const [group, ...fieldPath] = path.split(".");
+    const change = changes[group];
+    if (!change) return;
+
+    const beforeValue = getNestedValue(change.before, fieldPath);
+    const afterValue = getNestedValue(change.after, fieldPath);
+    if (!valuesDiffer(beforeValue, afterValue)) return;
+
+    const fieldLabel = getHistoryFieldLabel(path);
+    transitions.push({
+      field: fieldLabel,
+      before: normalizeHistoryValue(beforeValue),
+      after: normalizeHistoryValue(afterValue),
+    });
+  });
+
+  if (fields.size === 0 && groups.has("services")) {
+    fields.add(HISTORY_FIELD_LABELS.services);
+  }
+
+  return {
+    groups: [...groups].filter(Boolean),
+    fields: [...fields].filter(Boolean),
+    transitions,
+  };
+}
+
+function applyHistoryStats(stats, historyData, amount = 1) {
+  stats.totalHistoryEvents = Math.max(
+    0,
+    (stats.totalHistoryEvents || 0) + amount,
+  );
+  stats.byHistoryChangeType = { ...stats.byHistoryChangeType };
+  stats.byHistoryGroup = { ...stats.byHistoryGroup };
+  stats.byHistoryField = { ...stats.byHistoryField };
+  stats.byStatusTransition = { ...stats.byStatusTransition };
+  stats.byTransitionField = { ...stats.byTransitionField };
+
+  updateCategory(stats.byHistoryChangeType, historyData.changeType, amount);
+
+  const signals = extractHistorySignals(historyData);
+  signals.groups.forEach((group) => {
+    updateCategory(stats.byHistoryGroup, group, amount);
+  });
+  signals.fields.forEach((field) => {
+    updateCategory(stats.byHistoryField, field, amount);
+  });
+  signals.transitions.forEach((transition) => {
+    updateCategory(stats.byTransitionField, transition.field, amount);
+    updateCategory(
+      stats.byStatusTransition,
+      encodeTransitionKey(
+        transition.field,
+        transition.before,
+        transition.after,
+      ),
+      amount,
+    );
+  });
+
+  const changedAt = normalizeDate(historyData.changedAt);
+  const previousLast = normalizeDate(stats.lastHistoryEventAt);
+  if (
+    amount > 0 &&
+    changedAt &&
+    !Number.isNaN(changedAt.getTime()) &&
+    (!previousLast || changedAt > previousLast)
+  ) {
+    stats.lastHistoryEventAt = admin.firestore.Timestamp.fromDate(changedAt);
+  }
 }
 
 // ============================================================================
@@ -121,10 +344,16 @@ async function updatePersonalStats(docRef, anagraficaData, increment = true) {
       byAgeRange: { ...statsData?.byAgeRange },
       byCittadinanza: { ...statsData?.byCittadinanza },
       byBirthPlace: { ...statsData?.byBirthPlace },
+      byRegistrationStatus: { ...statsData?.byRegistrationStatus },
       updatedAt: admin.firestore.Timestamp.now(),
     };
 
     updateCategory(newStats.byGender, anagraficaData.anagrafica?.sesso, amount);
+    updateCategory(
+      newStats.byRegistrationStatus,
+      normalizeRegistrationStatus(anagraficaData.registrationStatus),
+      amount,
+    );
     updateCategory(
       newStats.byAgeRange,
       calculateAgeRange(anagraficaData.anagrafica?.dataDiNascita),
@@ -274,11 +503,13 @@ async function updateAccessStats(docRef, data, increment = true) {
       totalFiles: statsData?.totalFiles || 0,
       filesWithExpiration: statsData?.filesWithExpiration || 0,
       totalReminders: statsData?.totalReminders || 0,
+      totalServices: statsData?.totalServices || 0,
       updatedAt: admin.firestore.Timestamp.now(),
     };
 
     const services = data.services || [];
     for (const service of services) {
+      newStats.totalServices = Math.max(0, newStats.totalServices + amount);
       updateCategory(newStats.byAccessType, service.tipoAccesso, amount);
       processArrayCategory(
         newStats.bySubcategory,
@@ -325,6 +556,25 @@ async function updateAccessStats(docRef, data, increment = true) {
     await docRef.set(newStats, { merge: true });
   } catch (error) {
     console.error("Error updating access stats:", error);
+  }
+}
+
+async function updateHistoryStats(docRef, historyData, increment = true) {
+  try {
+    const docSnap = await docRef.get();
+    const statsData = docSnap.exists ? docSnap.data() : {};
+    const amount = increment ? 1 : -1;
+
+    const newStats = {
+      ...statsData,
+      updatedAt: admin.firestore.Timestamp.now(),
+    };
+
+    applyHistoryStats(newStats, historyData, amount);
+
+    await docRef.set(newStats, { merge: true });
+  } catch (error) {
+    console.error("Error updating history stats:", error);
   }
 }
 
@@ -555,7 +805,28 @@ exports.onAnagraficaUpdate = onDocumentUpdated(
     const personalChanged =
       JSON.stringify(beforeData.anagrafica) !==
       JSON.stringify(afterData.anagrafica);
+    const registrationStatusChanged =
+      normalizeRegistrationStatus(beforeData.registrationStatus) !==
+      normalizeRegistrationStatus(afterData.registrationStatus);
+
     if (personalChanged) {
+      for (const structureId of afterStructures) {
+        if (beforeStructures.has(structureId)) {
+          await updatePersonalStats(
+            db.collection("statistics").doc(structureId),
+            beforeData,
+            false,
+          );
+          await updatePersonalStats(
+            db.collection("statistics").doc(structureId),
+            afterData,
+            true,
+          );
+        }
+      }
+    }
+
+    if (!personalChanged && registrationStatusChanged) {
       for (const structureId of afterStructures) {
         if (beforeStructures.has(structureId)) {
           await updatePersonalStats(
@@ -741,6 +1012,99 @@ exports.onAccessUpdate = onDocumentUpdated(
 );
 
 // ============================================================================
+// TRIGGERS - HISTORY
+// ============================================================================
+
+async function updateHistoryStatsForStructure(structureId, historyData) {
+  if (!structureId || !historyData) return;
+
+  const changedAt = normalizeDate(historyData.changedAt) || new Date();
+
+  await Promise.all([
+    updateHistoryStats(
+      db.collection("statistics").doc(structureId),
+      historyData,
+      true,
+    ),
+    updateHistoryStats(
+      db
+        .collection("statistics")
+        .doc(structureId)
+        .collection("daily")
+        .doc(getDailyId(changedAt)),
+      historyData,
+      true,
+    ),
+    updateHistoryStats(
+      db
+        .collection("statistics")
+        .doc(structureId)
+        .collection("weekly")
+        .doc(getWeekId(changedAt)),
+      historyData,
+      true,
+    ),
+    updateHistoryStats(
+      db
+        .collection("statistics")
+        .doc(structureId)
+        .collection("monthly")
+        .doc(getMonthId(changedAt)),
+      historyData,
+      true,
+    ),
+  ]);
+}
+
+exports.onAnagraficaHistoryCreate = onDocumentCreated(
+  {
+    document: "anagrafica/{personId}/history/{historyId}",
+    region: "europe-west1",
+  },
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+
+    await updateHistoryStatsForStructure(data.changedByStructure, data);
+  },
+);
+
+exports.onAnagraficaDataHistoryCreate = onDocumentCreated(
+  {
+    document: "anagrafica_data/{dataId}/history/{historyId}",
+    region: "europe-west1",
+  },
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+
+    let structureId = data.changedByStructure;
+    if (!structureId && event.params?.dataId) {
+      const structureSnap = await db
+        .collection("anagrafica_data")
+        .doc(event.params.dataId)
+        .get();
+      structureId = structureSnap.data()?.structureId;
+    }
+
+    await updateHistoryStatsForStructure(structureId, data);
+  },
+);
+
+exports.onAccessHistoryCreate = onDocumentCreated(
+  {
+    document: "accessi/{accessId}/history/{historyId}",
+    region: "europe-west1",
+  },
+  async (event) => {
+    const data = event.data?.data();
+    if (!data) return;
+
+    await updateHistoryStatsForStructure(data.changedByStructure, data);
+  },
+);
+
+// ============================================================================
 // TRIGGERS - REMINDERS
 // ============================================================================
 
@@ -839,6 +1203,7 @@ exports.recalculateStats = onRequest(
         byAgeRange: {},
         byCittadinanza: {},
         byBirthPlace: {},
+        byRegistrationStatus: {},
 
         // Structure-Specific Stats (from anagrafica_data collection)
         byFamilyType: {},
@@ -863,12 +1228,22 @@ exports.recalculateStats = onRequest(
         totalFiles: 0,
         filesWithExpiration: 0,
         totalReminders: 0,
+        totalServices: 0,
 
         // Reminder Stats
         totalRemindersCreated: 0,
         activeReminders: 0,
         completedReminders: 0,
         remindersByServiceType: {},
+
+        // History / lifecycle stats
+        totalHistoryEvents: 0,
+        byHistoryChangeType: {},
+        byHistoryGroup: {},
+        byHistoryField: {},
+        byStatusTransition: {},
+        byTransitionField: {},
+        lastHistoryEventAt: null,
 
         recalculatedAt: admin.firestore.Timestamp.now(),
         updatedAt: admin.firestore.Timestamp.now(),
@@ -894,15 +1269,19 @@ exports.recalculateStats = onRequest(
         stats.totalPersons++;
         increment(stats.byGender, data.anagrafica?.sesso);
         increment(
+          stats.byRegistrationStatus,
+          normalizeRegistrationStatus(data.registrationStatus),
+        );
+        increment(
           stats.byAgeRange,
           calculateAgeRange(data.anagrafica?.dataDiNascita),
         );
         increment(stats.byBirthPlace, data.anagrafica?.luogoDiNascita);
 
         if (Array.isArray(data.anagrafica?.cittadinanza)) {
-          data.anagrafica.cittadinanza.forEach((c) =>
-            increment(stats.byCittadinanza, c),
-          );
+          data.anagrafica.cittadinanza.forEach((c) => {
+            increment(stats.byCittadinanza, c);
+          });
         }
       });
 
@@ -937,9 +1316,9 @@ exports.recalculateStats = onRequest(
 
         increment(stats.byLegalStatus, data.legaleAbitativa?.situazioneLegale);
         if (Array.isArray(data.legaleAbitativa?.situazioneAbitativa)) {
-          data.legaleAbitativa.situazioneAbitativa.forEach((s) =>
-            increment(stats.byHousingStatus, s),
-          );
+          data.legaleAbitativa.situazioneAbitativa.forEach((s) => {
+            increment(stats.byHousingStatus, s);
+          });
         }
 
         increment(
@@ -960,9 +1339,9 @@ exports.recalculateStats = onRequest(
         );
 
         if (Array.isArray(data.vulnerabilita?.vulnerabilita)) {
-          data.vulnerabilita.vulnerabilita.forEach((v) =>
-            increment(stats.byVulnerability, v),
-          );
+          data.vulnerabilita.vulnerabilita.forEach((v) => {
+            increment(stats.byVulnerability, v);
+          });
         }
         increment(
           stats.byIntenzioneItalia,
@@ -985,12 +1364,13 @@ exports.recalculateStats = onRequest(
 
         const services = data.services || [];
         services.forEach((service) => {
+          stats.totalServices++;
           increment(stats.byAccessType, service.tipoAccesso);
 
           if (Array.isArray(service.sottoCategorie)) {
-            service.sottoCategorie.forEach((sub) =>
-              increment(stats.bySubcategory, sub),
-            );
+            service.sottoCategorie.forEach((sub) => {
+              increment(stats.bySubcategory, sub);
+            });
           }
 
           if (service.classificazione) {
@@ -1035,6 +1415,33 @@ exports.recalculateStats = onRequest(
           stats.completedReminders++;
         }
       });
+
+      // ==================================================================
+      // PHASE 5: HISTORY STATS from anagrafica, structure, and access logs
+      // ==================================================================
+      async function applyHistoryCollection(historyRef, shouldFilter = true) {
+        const historyQuery = shouldFilter
+          ? historyRef.where("changedByStructure", "==", structureId)
+          : historyRef;
+        const historySnap = await historyQuery.get();
+        historySnap.docs.forEach((doc) => {
+          applyHistoryStats(stats, doc.data(), true);
+        });
+      }
+
+      for (const doc of anagraficaSnap.docs) {
+        const data = doc.data();
+        if (data.deletedAt) continue;
+        await applyHistoryCollection(doc.ref.collection("history"), true);
+      }
+
+      for (const doc of structureDataSnap.docs) {
+        await applyHistoryCollection(doc.ref.collection("history"), false);
+      }
+
+      for (const doc of accessSnap.docs) {
+        await applyHistoryCollection(doc.ref.collection("history"), true);
+      }
 
       // ==================================================================
       // FINAL SAVE
