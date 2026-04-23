@@ -1,15 +1,6 @@
 "use server";
 
-import clsx from "clsx";
-import {
-  BriefcaseBusiness,
-  ChevronDown,
-  ChevronsUpDown,
-  FileSliders,
-  HandHeart,
-  Scale,
-  UsersRound,
-} from "lucide-react";
+import { FileSliders } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -17,8 +8,13 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { sanitizeVulnerabilities } from "@/utils/vulnerability";
 
 export default async function Otherinfo({ anagrafica }) {
+  const vulnerabilities = sanitizeVulnerabilities(
+    anagrafica.vulnerabilita?.vulnerabilita,
+  );
+
   return (
     <Accordion
       type="single"
@@ -144,10 +140,7 @@ export default async function Otherinfo({ anagrafica }) {
             <CardContent className="space-y-4">
               <DataRow
                 label="Vulnerabilità"
-                value={
-                  anagrafica.vulnerabilita?.vulnerabilita?.join(", ") ||
-                  "Nessuna"
-                }
+                value={vulnerabilities.join(", ") || "Nessuna"}
               />
               <DataRow
                 label="Intenzione di fermarsi in Italia"
@@ -227,7 +220,9 @@ export default async function Otherinfo({ anagrafica }) {
               <DataRow
                 label="Informativa cartacea raccolta"
                 value={
-                  anagrafica.privacy?.paperNoticeCollected === true ? "Sì" : "No"
+                  anagrafica.privacy?.paperNoticeCollected === true
+                    ? "Sì"
+                    : "No"
                 }
                 small
               />
@@ -235,7 +230,10 @@ export default async function Otherinfo({ anagrafica }) {
                 label="Data firma informativa"
                 value={
                   anagrafica.privacy?.paperNoticeSignedAt
-                    ? formatTimestamp(anagrafica.privacy.paperNoticeSignedAt, false)
+                    ? formatTimestamp(
+                        anagrafica.privacy.paperNoticeSignedAt,
+                        false,
+                      )
                     : "-"
                 }
                 small
@@ -273,9 +271,7 @@ function DataRow({ label, value, small = false }) {
 
 const formatTimestamp = (ts, includeTime = false) => {
   if (!ts) return "";
-  const date = ts?._seconds
-    ? new Date(ts._seconds * 1000)
-    : new Date(ts);
+  const date = ts?._seconds ? new Date(ts._seconds * 1000) : new Date(ts);
   if (Number.isNaN(date.getTime())) return "";
   const tz = { timeZone: "Europe/Rome" };
   return includeTime

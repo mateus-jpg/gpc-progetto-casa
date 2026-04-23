@@ -4,6 +4,7 @@ import {
   SHAREABLE_STRUCTURE_DATA_FIELDS,
   sanitizeSharedDataGrants,
 } from "@/utils/anagraficaSharing";
+import { sanitizeVulnerabilities } from "@/utils/vulnerability";
 
 export const adminDb = admin.firestore();
 const STRUCTURE_DATA_GROUPS = SHAREABLE_STRUCTURE_DATA_FIELDS.filter(
@@ -101,7 +102,9 @@ export function sanitizePrivacyMetadata(privacy = {}) {
       .slice(0, 255);
   }
 
-  const paperNoticeUploadedAt = normalizeDateInput(privacy.paperNoticeUploadedAt);
+  const paperNoticeUploadedAt = normalizeDateInput(
+    privacy.paperNoticeUploadedAt,
+  );
   if (paperNoticeUploadedAt) {
     sanitized.paperNoticeUploadedAt = paperNoticeUploadedAt;
   }
@@ -124,7 +127,9 @@ export function buildPrivacyPayload(
 
   return {
     paperNoticeCollected:
-      normalized.paperNoticeCollected ?? previous?.paperNoticeCollected ?? false,
+      normalized.paperNoticeCollected ??
+      previous?.paperNoticeCollected ??
+      false,
     paperNoticeSignedAt:
       normalized.paperNoticeSignedAt ?? previous?.paperNoticeSignedAt ?? null,
     paperNoticeReference:
@@ -150,7 +155,9 @@ export function buildPrivacyPayload(
 
 export function getComparablePrivacyFields(privacy = {}) {
   const paperNoticeSignedAt = normalizeDateInput(privacy.paperNoticeSignedAt);
-  const paperNoticeUploadedAt = normalizeDateInput(privacy.paperNoticeUploadedAt);
+  const paperNoticeUploadedAt = normalizeDateInput(
+    privacy.paperNoticeUploadedAt,
+  );
 
   return {
     paperNoticeCollected: privacy.paperNoticeCollected === true,
@@ -243,13 +250,24 @@ export function extractStructureGroups(body = {}) {
 }
 
 export function sanitizeAnagraficaPayload(body = {}) {
+  const structureGroups = extractStructureGroups(body);
+
+  if (structureGroups.vulnerabilita) {
+    structureGroups.vulnerabilita = {
+      ...structureGroups.vulnerabilita,
+      vulnerabilita: sanitizeVulnerabilities(
+        structureGroups.vulnerabilita.vulnerabilita,
+      ),
+    };
+  }
+
   return {
     anagrafica:
       body.anagrafica && typeof body.anagrafica === "object"
         ? { ...body.anagrafica }
         : {},
     privacy: sanitizePrivacyMetadata(body.privacy),
-    structureGroups: extractStructureGroups(body),
+    structureGroups,
   };
 }
 

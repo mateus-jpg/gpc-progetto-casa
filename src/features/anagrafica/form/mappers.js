@@ -1,3 +1,4 @@
+import { sanitizeVulnerabilities } from "@/utils/vulnerability";
 import { createEmptyAnagraficaFormState } from "./defaults";
 
 export function parseMaybeDate(value) {
@@ -40,6 +41,12 @@ export function normalizeReferralPayload(referral = {}) {
 export function prepareAnagraficaPayload(formData) {
   return {
     ...formData,
+    vulnerabilita: {
+      ...formData.vulnerabilita,
+      vulnerabilita: sanitizeVulnerabilities(
+        formData.vulnerabilita?.vulnerabilita,
+      ),
+    },
     referral: normalizeReferralPayload(formData.referral),
   };
 }
@@ -80,6 +87,7 @@ export function transformAnagraficaApiToFormState(data) {
     vulnerabilita: {
       ...initialState.vulnerabilita,
       ...data.vulnerabilita,
+      vulnerabilita: sanitizeVulnerabilities(data.vulnerabilita?.vulnerabilita),
     },
     referral: {
       ...initialState.referral,

@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Status, StatusIndicator } from "@/components/ui/shadcn-io/status";
 import { verifyStructureAdmin } from "@/utils/server-auth";
+import { hasEffectiveVulnerabilities } from "@/utils/vulnerability";
 
 export default async function AnagraficaViewPage({ params }) {
   const { id, structureId } = await params;
@@ -62,6 +63,9 @@ export default async function AnagraficaViewPage({ params }) {
 
   const isRegistrationPending =
     anagrafica.registrationStatus === "draft_signature_pending";
+  const hasVulnerabilities = hasEffectiveVulnerabilities(
+    anagrafica.vulnerabilita?.vulnerabilita,
+  );
 
   return (
     <div className="w-full mx-auto px-4">
@@ -73,7 +77,7 @@ export default async function AnagraficaViewPage({ params }) {
               {/*  <IconUser className="w-6 h-6" />  */}
               {anagrafica.anagrafica?.nome} {anagrafica.anagrafica?.cognome}
             </h1>
-            {anagrafica.vulnerabilita?.vulnerabilita?.length > 0 && (
+            {hasVulnerabilities && (
               <Status status="offline">
                 <StatusIndicator className="w-3 h-3" />
                 <h3 className="text-sm font-medium text-red-600">

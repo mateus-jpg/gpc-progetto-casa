@@ -1,7 +1,67 @@
 {
   "indexes": [
     {
-      "collectionGroup": "folders",
+      "collectionGroup": "accessi",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "anagraficaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "anagrafica",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "canBeAccessedBy",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "audit_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "actorUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "audit_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "resourceId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "resourceType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "files",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -13,8 +73,78 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "parentFolderId",
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "files",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "anagraficaId",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "accessoId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "files",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "anagraficaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "folderId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "files",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "anagraficaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "accessoId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "folderId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
         }
       ]
     },
@@ -49,13 +179,35 @@
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "parentFolderId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nome",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "folders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "anagraficaId",
+          "order": "ASCENDING"
+        },
+        {
           "fieldPath": "isDefaultCategory",
           "order": "ASCENDING"
         }
       ]
     },
     {
-      "collectionGroup": "files",
+      "collectionGroup": "reminders",
       "queryScope": "COLLECTION",
       "fields": [
         {
@@ -63,25 +215,17 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "deleted",
+          "fieldPath": "date",
           "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "folderId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
         }
       ]
     },
     {
-      "collectionGroup": "files",
+      "collectionGroup": "structureFiles",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "anagraficaId",
+          "fieldPath": "structureId",
           "order": "ASCENDING"
         },
         {
@@ -91,15 +235,19 @@
         {
           "fieldPath": "deleted",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
         }
       ]
     },
     {
-      "collectionGroup": "files",
+      "collectionGroup": "structureFolders",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "anagraficaId",
+          "fieldPath": "structureId",
           "order": "ASCENDING"
         },
         {
@@ -107,17 +255,25 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
+          "fieldPath": "depth",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nome",
+          "order": "ASCENDING"
         }
       ]
     },
     {
-      "collectionGroup": "files",
+      "collectionGroup": "structureFolders",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "anagraficaId",
+          "fieldPath": "structureId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "parentFolderId",
           "order": "ASCENDING"
         },
         {
@@ -125,72 +281,8 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "accessoId",
+          "fieldPath": "nome",
           "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "anagrafica",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "canBeAccessedBy",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "deletedAt",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "accessi",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "anagraficaId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "audit_logs",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "actorUid",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "timestamp",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "audit_logs",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "resourceId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "resourceType",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "timestamp",
-          "order": "DESCENDING"
         }
       ]
     }
