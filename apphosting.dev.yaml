@@ -81,3 +81,15 @@ env:
     availability:
       - BUILD
       - RUNTIME
+
+  - variable: VERTEX_AI_LOCATION
+    value: europe-west4
+    availability:
+      - BUILD
+      - RUNTIME
+      
+  - variable: VERTEX_AI_MODEL
+    value: gemini-2.5-flash
+    availability:
+      - BUILD
+      - RUNTIME

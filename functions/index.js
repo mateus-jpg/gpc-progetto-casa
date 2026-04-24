@@ -629,7 +629,7 @@ async function updateReminderStats(
 // ============================================================================
 
 exports.onAnagraficaCreate = onDocumentCreated(
-  { document: "anagrafica/{personId}", region: "europe-west1" },
+  { document: "anagrafica/{personId}", region: "europe-west8" },
   async (event) => {
     const data = event.data?.data();
     if (!data) return;
@@ -678,7 +678,7 @@ exports.onAnagraficaCreate = onDocumentCreated(
 );
 
 exports.onAnagraficaUpdate = onDocumentUpdated(
-  { document: "anagrafica/{personId}", region: "europe-west1" },
+  { document: "anagrafica/{personId}", region: "europe-west8" },
   async (event) => {
     const beforeData = event.data?.before?.data();
     const afterData = event.data?.after?.data();
@@ -850,7 +850,7 @@ exports.onAnagraficaUpdate = onDocumentUpdated(
 // ============================================================================
 
 exports.onAnagraficaDataCreate = onDocumentCreated(
-  { document: "anagrafica_data/{dataId}", region: "europe-west1" },
+  { document: "anagrafica_data/{dataId}", region: "europe-west8" },
   async (event) => {
     const data = event.data?.data();
     if (!data || !data.structureId) return;
@@ -896,7 +896,7 @@ exports.onAnagraficaDataCreate = onDocumentCreated(
 );
 
 exports.onAnagraficaDataUpdate = onDocumentUpdated(
-  { document: "anagrafica_data/{dataId}", region: "europe-west1" },
+  { document: "anagrafica_data/{dataId}", region: "europe-west8" },
   async (event) => {
     const beforeData = event.data?.before?.data();
     const afterData = event.data?.after?.data();
@@ -938,7 +938,7 @@ exports.onAnagraficaDataUpdate = onDocumentUpdated(
 // ============================================================================
 
 exports.onAccessCreate = onDocumentCreated(
-  { document: "accessi/{accessId}", region: "europe-west1" },
+  { document: "accessi/{accessId}", region: "europe-west8" },
   async (event) => {
     const data = event.data?.data();
     if (!data) return;
@@ -985,7 +985,7 @@ exports.onAccessCreate = onDocumentCreated(
 );
 
 exports.onAccessUpdate = onDocumentUpdated(
-  { document: "accessi/{accessId}", region: "europe-west1" },
+  { document: "accessi/{accessId}", region: "europe-west8" },
   async (event) => {
     const beforeData = event.data?.before?.data();
     const afterData = event.data?.after?.data();
@@ -1059,7 +1059,7 @@ async function updateHistoryStatsForStructure(structureId, historyData) {
 exports.onAnagraficaHistoryCreate = onDocumentCreated(
   {
     document: "anagrafica/{personId}/history/{historyId}",
-    region: "europe-west1",
+    region: "europe-west8",
   },
   async (event) => {
     const data = event.data?.data();
@@ -1072,7 +1072,7 @@ exports.onAnagraficaHistoryCreate = onDocumentCreated(
 exports.onAnagraficaDataHistoryCreate = onDocumentCreated(
   {
     document: "anagrafica_data/{dataId}/history/{historyId}",
-    region: "europe-west1",
+    region: "europe-west8",
   },
   async (event) => {
     const data = event.data?.data();
@@ -1094,7 +1094,7 @@ exports.onAnagraficaDataHistoryCreate = onDocumentCreated(
 exports.onAccessHistoryCreate = onDocumentCreated(
   {
     document: "accessi/{accessId}/history/{historyId}",
-    region: "europe-west1",
+    region: "europe-west8",
   },
   async (event) => {
     const data = event.data?.data();
@@ -1109,7 +1109,7 @@ exports.onAccessHistoryCreate = onDocumentCreated(
 // ============================================================================
 
 exports.onReminderWrite = onDocumentWritten(
-  { document: "reminders/{reminderId}", region: "europe-west1" },
+  { document: "reminders/{reminderId}", region: "europe-west8" },
   async (event) => {
     const beforeData = event.data?.before?.data();
     const afterData = event.data?.after?.data();
@@ -1169,7 +1169,7 @@ exports.onReminderWrite = onDocumentWritten(
 // ============================================================================
 
 exports.recalculateStats = onRequest(
-  { region: "europe-west1", cors: false, timeoutSeconds: 540, memory: "1GiB" },
+  { region: "europe-west8", cors: false, timeoutSeconds: 540, memory: "1GiB" },
   async (req, res) => {
     if (req.method !== "POST") {
       res.status(405).json({ error: "Method not allowed" });
