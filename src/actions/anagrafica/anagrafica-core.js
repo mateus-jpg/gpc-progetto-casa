@@ -112,6 +112,14 @@ export function sanitizePrivacyMetadata(privacy = {}) {
   return sanitized;
 }
 
+export function sanitizeInternalNotes(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim().slice(0, 5000);
+}
+
 export function buildPrivacyPayload(
   privacy = {},
   userUid,
@@ -251,6 +259,7 @@ export function extractStructureGroups(body = {}) {
 
 export function sanitizeAnagraficaPayload(body = {}) {
   const structureGroups = extractStructureGroups(body);
+  const internalNotes = sanitizeInternalNotes(body.internalNotes);
 
   if (structureGroups.vulnerabilita) {
     structureGroups.vulnerabilita = {
@@ -266,6 +275,7 @@ export function sanitizeAnagraficaPayload(body = {}) {
       body.anagrafica && typeof body.anagrafica === "object"
         ? { ...body.anagrafica }
         : {},
+    internalNotes,
     privacy: sanitizePrivacyMetadata(body.privacy),
     structureGroups,
   };

@@ -1,6 +1,3 @@
-import { invalidateAnagraficaCaches } from "@/lib/cache";
-import { logDataCreate } from "@/utils/audit";
-import { verifyUserPermissions } from "@/utils/server-auth";
 import {
   buildPrivacyPayload,
   buildRegistrationState,
@@ -8,18 +5,21 @@ import {
   REGISTRATION_STATUS,
   sanitizeAnagraficaPayload,
 } from "@/actions/anagrafica/anagrafica-core";
+import { invalidateAnagraficaCaches } from "@/lib/cache";
+import { logDataCreate } from "@/utils/audit";
+import { verifyUserPermissions } from "@/utils/server-auth";
 import {
   buildDraftPrivacyInput,
   buildDraftRegistrationAuditDetails,
   buildDraftRegistrationResponse,
   buildRegistrationStructureData,
 } from "../domain/registration";
+import { createRegistrationHistoryEntries } from "../infrastructure/registration-history-repository";
 import {
   createOrLinkGlobalAnagrafica,
   getAllowedStructures,
   upsertStructureDataForRegistration,
 } from "../infrastructure/registration-repository";
-import { createRegistrationHistoryEntries } from "../infrastructure/registration-history-repository";
 
 export async function createRegistrationDraftUseCase({
   body,
@@ -28,6 +28,7 @@ export async function createRegistrationDraftUseCase({
   const structureId = body.registeredByStructure;
   const {
     anagrafica: incomingAnagrafica,
+    internalNotes,
     privacy: incomingPrivacy,
     structureGroups: incomingStructureGroups,
   } = sanitizeAnagraficaPayload(body);
@@ -42,6 +43,7 @@ export async function createRegistrationDraftUseCase({
     canBeAccessedBy: [structureId],
     structureIds: [structureId],
     sharedDataGrants: [],
+    internalNotes,
     privacy: buildPrivacyPayload(
       buildDraftPrivacyInput(incomingPrivacy),
       userUid,

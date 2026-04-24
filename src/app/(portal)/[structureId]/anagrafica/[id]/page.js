@@ -10,6 +10,7 @@ import AccessInfo from "@/components/Anagrafica/AccessInfo";
 import AnagraficaReminders from "@/components/Anagrafica/AnagraficaReminders";
 import DownloadPdfButton from "@/components/Anagrafica/DownloadPdfButton";
 import HistoryTimeline from "@/components/Anagrafica/HistoryTimeline";
+import OperatorNotesCard from "@/components/Anagrafica/OperatorNotesCard";
 import Otherinfo from "@/components/Anagrafica/Otherinfo";
 import OtherStructuresInfo from "@/components/Anagrafica/OtherStructuresInfo";
 import ReminderDialog from "@/components/Anagrafica/ReminderDialog";
@@ -167,41 +168,46 @@ export default async function AnagraficaViewPage({ params }) {
               Files & Documents
             </Link>
           </Button>
-          {isRegistrationPending ? (
-            <Button asChild>
-              <Link href={`/${structureId}/anagrafica/${anagrafica.id}/registrazione`}>
-                Completa Registrazione
-              </Link>
-            </Button>
-          ) : (
-            <>
-              <ReminderDialog
-                anagraficaId={anagrafica.id}
-                structureId={structureId}
-              />
-              <DownloadPdfButton
-                anagrafica={anagrafica}
-                accesses={anagraficaAccesses?.accessi || []}
-                anagraficaId={anagrafica.id}
-                structureId={structureId}
-                structureName={structureName}
-              />
-              {canManageSharing && (
-                <ShareAnagraficaDialog
+          {isRegistrationPending
+            ? <Button asChild>
+                <Link
+                  href={`/${structureId}/anagrafica/${anagrafica.id}/registrazione`}
+                >
+                  Completa Registrazione
+                </Link>
+              </Button>
+            : <>
+                <ReminderDialog
                   anagraficaId={anagrafica.id}
                   structureId={structureId}
-                  anagraficaName={`${anagrafica.anagrafica?.nome || ""} ${anagrafica.anagrafica?.cognome || ""}`.trim()}
                 />
-              )}
-              {/* <EventDialog anagraficaId={anagrafica.id} structureId={structureId} /> */}
-              <AccessDialog
-                anagraficaId={anagrafica.id}
-                structureId={structureId}
-              />
-            </>
-          )}
+                <DownloadPdfButton
+                  anagrafica={anagrafica}
+                  accesses={anagraficaAccesses?.accessi || []}
+                  anagraficaId={anagrafica.id}
+                  structureId={structureId}
+                  structureName={structureName}
+                />
+                {canManageSharing && (
+                  <ShareAnagraficaDialog
+                    anagraficaId={anagrafica.id}
+                    structureId={structureId}
+                    anagraficaName={`${anagrafica.anagrafica?.nome || ""} ${anagrafica.anagrafica?.cognome || ""}`.trim()}
+                  />
+                )}
+                {/* <EventDialog anagraficaId={anagrafica.id} structureId={structureId} /> */}
+                <AccessDialog
+                  anagraficaId={anagrafica.id}
+                  structureId={structureId}
+                />
+              </>}
         </div>
       </div>
+      <OperatorNotesCard
+        anagraficaId={anagrafica.id}
+        structureId={structureId}
+        notes={anagrafica.internalNotes || ""}
+      />
 
       {/* Other Info Section */}
       <Otherinfo anagrafica={anagrafica} />

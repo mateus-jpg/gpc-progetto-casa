@@ -145,7 +145,7 @@ export default function EditAnagraficaPage() {
       router.push(`/${structureId}/anagrafica/${id}`);
     } catch (err) {
       console.error("Errore update anagrafica:", err);
-      toast.error("Errore durante l'aggiornamento: " + err.message);
+      toast.error(`Errore durante l'aggiornamento: ${err.message}`);
     } finally {
       setIsSaving(false);
     }

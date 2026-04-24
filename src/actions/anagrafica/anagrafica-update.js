@@ -13,8 +13,8 @@ import {
   getStructureDataQuery,
   getStructureDataRef,
   markLegacyStructureDataDocsSuperseded,
-  sanitizeAnagraficaPayload,
   STRUCTURE_DATA_FIELDS,
+  sanitizeAnagraficaPayload,
 } from "./anagrafica-core";
 import { getAnagraficaInternalShared } from "./anagrafica-read";
 import { createHistoryEntry } from "./history";
@@ -34,6 +34,7 @@ export async function updateAnagraficaInternalShared(
   const anagraficaRef = adminDb.collection("anagrafica").doc(anagraficaId);
   const {
     anagrafica: incomingAnagrafica,
+    internalNotes: incomingInternalNotes,
     privacy: incomingPrivacy,
     structureGroups: incomingStructureGroups,
   } = sanitizeAnagraficaPayload(body);
@@ -111,6 +112,10 @@ export async function updateAnagraficaInternalShared(
       );
     }
 
+    if (typeof incomingInternalNotes === "string") {
+      globalUpdate.internalNotes = incomingInternalNotes;
+    }
+
     Object.assign(structureUpdate, incomingStructureGroups);
 
     globalUpdate.updatedAt = new Date();
@@ -123,6 +128,10 @@ export async function updateAnagraficaInternalShared(
 
     const oldAnagrafica = anagraficaData.anagrafica || {};
     const oldPrivacy = anagraficaData.privacy || {};
+    const oldInternalNotes =
+      typeof anagraficaData.internalNotes === "string"
+        ? anagraficaData.internalNotes
+        : "";
     const newAnagrafica = incomingAnagrafica
       ? { ...oldAnagrafica, ...incomingAnagrafica }
       : oldAnagrafica;
@@ -130,13 +139,19 @@ export async function updateAnagraficaInternalShared(
       incomingPrivacy && Object.keys(incomingPrivacy).length > 0
         ? buildPrivacyPayload(incomingPrivacy, userUid, userMail, oldPrivacy)
         : oldPrivacy;
+    const newInternalNotes =
+      typeof incomingInternalNotes === "string"
+        ? incomingInternalNotes
+        : oldInternalNotes;
 
     const oldGlobalWrapped = {
       anagrafica: oldAnagrafica,
+      internalNotes: oldInternalNotes,
       privacy: getComparablePrivacyFields(oldPrivacy),
     };
     const newGlobalWrapped = {
       anagrafica: newAnagrafica,
+      internalNotes: newInternalNotes,
       privacy: getComparablePrivacyFields(newPrivacy),
     };
     const { changedGroups: globalChangedGroups, changes: globalChanges } =
@@ -238,7 +253,7 @@ export async function updateAnagraficaInternalShared(
     );
   }
 
-  const globalGroupNames = ["anagrafica", "privacy"];
+  const globalGroupNames = ["anagrafica", "internalNotes", "privacy"];
   const globalGroups = result.changedGroups.filter((g) =>
     globalGroupNames.includes(g),
   );
@@ -320,11 +335,7 @@ export async function updateAnagraficaInternalShared(
   return await getAnagraficaInternalShared(anagraficaId, userUid, structureId);
 }
 
-export async function updateAnagraficaShared(
-  anagraficaId,
-  body,
-  structureId,
-) {
+export async function updateAnagraficaShared(anagraficaId, body, structureId) {
   const { userUid, headers: hdr } = await requireUser();
   const userMail = hdr.get("x-user-email");
   const result = await updateAnagraficaInternalShared(

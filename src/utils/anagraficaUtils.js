@@ -6,6 +6,7 @@
 // Define the group fields that we track for history
 export const ANAGRAFICA_GROUPS = [
   "anagrafica",
+  "internalNotes",
   "privacy",
   "nucleoFamiliare",
   "legaleAbitativa",

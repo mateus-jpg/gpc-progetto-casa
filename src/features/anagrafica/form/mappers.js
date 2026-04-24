@@ -41,6 +41,10 @@ export function normalizeReferralPayload(referral = {}) {
 export function prepareAnagraficaPayload(formData) {
   return {
     ...formData,
+    internalNotes:
+      typeof formData.internalNotes === "string"
+        ? formData.internalNotes.trim()
+        : "",
     vulnerabilita: {
       ...formData.vulnerabilita,
       vulnerabilita: sanitizeVulnerabilities(
@@ -94,6 +98,8 @@ export function transformAnagraficaApiToFormState(data) {
       ...data.referral,
       referralAltro: "",
     },
+    internalNotes:
+      typeof data.internalNotes === "string" ? data.internalNotes : "",
     privacy: {
       ...initialState.privacy,
       ...data.privacy,

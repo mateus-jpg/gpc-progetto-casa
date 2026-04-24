@@ -12,6 +12,7 @@ export default function PrivacyComplianceSection({
   formData,
   handleChange,
   requirePaperNotice = false,
+  order = 7,
 }) {
   const privacy = formData.privacy || {};
   const onChange = (field, value) => handleChange("privacy", field, value);
@@ -21,7 +22,7 @@ export default function PrivacyComplianceSection({
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <span className="w-6 h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
-            7
+            {order}
           </span>
           <ShieldCheck className="w-5 h-5 text-emerald-700" />
           Privacy e Informativa

@@ -45,6 +45,7 @@ export function createEmptyAnagraficaFormState({
       referral: "",
       referralAltro: "",
     },
+    internalNotes: "",
     privacy: {
       paperNoticeCollected: false,
       paperNoticeSignedAt: null,

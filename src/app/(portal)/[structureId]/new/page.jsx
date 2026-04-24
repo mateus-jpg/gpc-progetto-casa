@@ -37,7 +37,7 @@ export default function AnagraficaForm({ params }) {
       const resultStr = await createRegistrationDraft(payload);
       const result = JSON.parse(resultStr);
       if (result.error) {
-        toast.error("Errore durante il salvataggio: " + result.message);
+        toast.error(`Errore durante il salvataggio: ${result.message}`);
         return;
       }
       toast.success(
@@ -46,7 +46,7 @@ export default function AnagraficaForm({ params }) {
       router.push(`/${structureId}/anagrafica/${result.id}/registrazione`);
     } catch (err) {
       console.error("Errore submit anagrafica:", err);
-      toast.error("Errore durante il salvataggio: " + err.message);
+      toast.error(`Errore durante il salvataggio: ${err.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -117,7 +117,7 @@ export default function AnagraficaForm({ params }) {
                     Salvataggio...
                   </>
                 ) : (
-                  <>Salva bozza e continua alla firma</>
+                  "Salva bozza e continua alla firma"
                 )}
               </Button>
             </div>

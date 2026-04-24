@@ -1,11 +1,11 @@
 "use server";
 
-import admin from "@/lib/firebase/firebaseAdmin";
+import { createRegistrationDraftUseCase } from "@/features/anagrafica/application/create-registration-draft";
 import { invalidateAnagraficaCaches } from "@/lib/cache";
+import admin from "@/lib/firebase/firebaseAdmin";
 import { computeGroupChanges } from "@/utils/anagraficaUtils";
 import { logDataCreate } from "@/utils/audit";
 import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
-import { createRegistrationDraftUseCase } from "@/features/anagrafica/application/create-registration-draft";
 import { createAccessInternal } from "./access";
 import {
   adminDb,
@@ -41,18 +41,22 @@ async function createOrLinkGlobalAnagrafica({
   structureId,
   codiceFiscale,
 }) {
-  const existingDoc = await findExistingAnagraficaByCodiceFiscale(codiceFiscale);
+  const existingDoc =
+    await findExistingAnagraficaByCodiceFiscale(codiceFiscale);
 
   if (existingDoc) {
     const anagraficaId = existingDoc.id;
     const currentAccess = existingDoc.data().canBeAccessedBy || [];
 
     if (!currentAccess.includes(structureId)) {
-      await adminDb.collection("anagrafica").doc(anagraficaId).update({
-        canBeAccessedBy: admin.firestore.FieldValue.arrayUnion(structureId),
-        structureIds: admin.firestore.FieldValue.arrayUnion(structureId),
-        updatedAt: new Date(),
-      });
+      await adminDb
+        .collection("anagrafica")
+        .doc(anagraficaId)
+        .update({
+          canBeAccessedBy: admin.firestore.FieldValue.arrayUnion(structureId),
+          structureIds: admin.firestore.FieldValue.arrayUnion(structureId),
+          updatedAt: new Date(),
+        });
     }
 
     return {
@@ -184,24 +188,17 @@ async function createRegistrationHistoryEntries({
 
 function getAllowedStructures(existingDoc, structureId) {
   return existingDoc
-    ? [
-        ...new Set([
-          ...(existingDoc.data().canBeAccessedBy || []),
-          structureId,
-        ]),
-      ]
+    ? [...new Set([...(existingDoc.data().canBeAccessedBy || []), structureId])]
     : [structureId];
 }
 
-async function createActiveRegistrationRecord({
-  body,
-  services = [],
-}) {
+async function createActiveRegistrationRecord({ body, services = [] }) {
   const { userUid, headers: hdr } = await requireUser();
   const userMail = hdr?.get?.("x-user-email") || null;
   const structureId = body.registeredByStructure;
   const {
     anagrafica: incomingAnagrafica,
+    internalNotes,
     privacy: incomingPrivacy,
     structureGroups: incomingStructureGroups,
   } = sanitizeAnagraficaPayload(body);
@@ -222,12 +219,9 @@ async function createActiveRegistrationRecord({
     canBeAccessedBy: [structureId],
     structureIds: [structureId],
     sharedDataGrants: [],
+    internalNotes,
     privacy: buildPrivacyPayload(incomingPrivacy, userUid, userMail),
-    ...buildRegistrationState(
-      REGISTRATION_STATUS.ACTIVE,
-      userUid,
-      userMail,
-    ),
+    ...buildRegistrationState(REGISTRATION_STATUS.ACTIVE, userUid, userMail),
     registeredBy: userUid,
     registeredByMail: userMail,
     registeredByStructure: structureId,

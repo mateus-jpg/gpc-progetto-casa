@@ -66,7 +66,7 @@ const transformDataForExport = (data) => {
     intenzioneItalia: row.vulnerabilita?.intenzioneItalia || "",
     paeseDestinazione: row.vulnerabilita?.paeseDestinazione || "",
     referral: row.referral?.referral || "",
-    note: row.notes || "",
+    note: row.internalNotes || row.notes || "",
     createdAt: formatTimestamp(row.createdAt, true),
     updatedAt: formatTimestamp(row.updatedAt, true),
   }));
