@@ -18,7 +18,6 @@ import {
 } from "lucide-react";
 import { MaterialReactTable } from "material-react-table";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 import FolderActionsMenu from "@/components/Files/FolderActionsMenu";
 import { Button } from "@/components/ui/button";
 import {
@@ -91,9 +90,10 @@ function FileNameCell({ row, onFolderOpen, draggedItem }) {
   const canDrop = draggedItem && !draggedItem.isFolder && isFolder;
 
   return (
-    <div
+    <button
+      type="button"
       className={cn(
-        "flex items-center gap-2",
+        "flex items-center gap-2 text-left",
         !isFolder && "cursor-pointer hover:text-primary",
         canDrop && "bg-accent/50 rounded p-1",
       )}
@@ -113,7 +113,7 @@ function FileNameCell({ row, onFolderOpen, draggedItem }) {
       <span className="truncate" title={row.original.nome}>
         {row.original.nome}
       </span>
-    </div>
+    </button>
   );
 }
 
@@ -200,6 +200,13 @@ export default function FileListTable({
   // Define columns
   const columns = useMemo(
     () => [
+      {
+        id: "isFolder",
+        accessorFn: (row) => row.isFolder,
+        header: "",
+        size: 0,
+        enableHiding: true,
+      },
       {
         accessorKey: "nome",
         header: "Name",
@@ -311,6 +318,9 @@ export default function FileListTable({
         enableBottomToolbar={true}
         enableTopToolbar={true}
         initialState={{
+          columnVisibility: {
+            isFolder: false,
+          },
           pagination: { pageSize: 20, pageIndex: 0 },
           sorting: [
             { id: "isFolder", desc: true }, // Folders first
