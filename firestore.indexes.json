@@ -29,6 +29,42 @@
       ]
     },
     {
+      "collectionGroup": "anagrafica",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "canBeAccessedBy",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "deletedAt",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "assessments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "caseRecordId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "audit_logs",
       "queryScope": "COLLECTION",
       "fields": [
@@ -61,6 +97,100 @@
       ]
     },
     {
+      "collectionGroup": "care_plans",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "caseRecordId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "version",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "case_records",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "structureId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastActivityAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "files",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "anagraficaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "folderId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "files",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "anagraficaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "accessoId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "files",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "anagraficaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "folderId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "files",
       "queryScope": "COLLECTION",
       "fields": [
@@ -109,11 +239,11 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "folderId",
+          "fieldPath": "deleted",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "deleted",
+          "fieldPath": "folderId",
           "order": "ASCENDING"
         },
         {
@@ -145,6 +275,60 @@
         {
           "fieldPath": "createdAt",
           "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "folders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "anagraficaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "parentFolderId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nome",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "folders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "anagraficaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "parentFolderId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "folders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "anagraficaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isDefaultCategory",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -171,15 +355,11 @@
       ]
     },
     {
-      "collectionGroup": "folders",
+      "collectionGroup": "intake_requests",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "anagraficaId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "parentFolderId",
+          "fieldPath": "caseRecordId",
           "order": "ASCENDING"
         },
         {
@@ -187,22 +367,44 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "nome",
-          "order": "ASCENDING"
+          "fieldPath": "requestDate",
+          "order": "DESCENDING"
         }
       ]
     },
     {
-      "collectionGroup": "folders",
+      "collectionGroup": "monitoring_checkpoints",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "anagraficaId",
+          "fieldPath": "caseRecordId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "isDefaultCategory",
+          "fieldPath": "deleted",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "reviewedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "plan_interventions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "caseRecordId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
         }
       ]
     },
@@ -217,6 +419,24 @@
         {
           "fieldPath": "date",
           "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "social_diary_entries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "caseRecordId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "eventAt",
+          "order": "DESCENDING"
         }
       ]
     },
@@ -251,11 +471,11 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "deleted",
+          "fieldPath": "parentFolderId",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "depth",
+          "fieldPath": "deleted",
           "order": "ASCENDING"
         },
         {
@@ -273,11 +493,11 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "parentFolderId",
+          "fieldPath": "deleted",
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "deleted",
+          "fieldPath": "depth",
           "order": "ASCENDING"
         },
         {

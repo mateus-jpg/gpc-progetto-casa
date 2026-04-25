@@ -1307,13 +1307,13 @@ export function DashboardInsights({
             </div>
           </div>
 
-          <AttentionScorePanel
+          {/* <AttentionScorePanel
             score={attentionScore}
             level={attentionLevel}
             summary={attentionSummary}
             factors={attentionFactors}
             isLoading={isLoading}
-          />
+          /> */}
         </div>
       </section>
 
