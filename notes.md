@@ -7,7 +7,7 @@ TODO :
 - [x] Pagina Anagrafica
 - [ ] Accessi 
 - [ ] Dashboard 
-- [ ] Altro
+- [x] Altro
 
 
 ## Pagina anagrafica
