@@ -1,12 +1,12 @@
 "use server";
 
-import { unstable_cache } from "next/cache";
-import path from "path";
+import path from "node:path";
 import { v4 as uuidv4 } from "uuid";
 import { invalidateStructureFilesCache } from "@/lib/cache";
 import admin from "@/lib/firebase/firebaseAdmin";
 import { logDataCreate, logDataDelete, logFileAccess } from "@/utils/audit";
 import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
+import { resolveExistingStorageObject } from "@/utils/storage";
 
 const adminDb = admin.firestore();
 const adminStorage = admin.storage();
@@ -213,9 +213,16 @@ export async function getStructureFileUrl(fileId) {
 
     await verifyUserPermissions({ userUid, structureId: fileData.structureId });
 
-    const bucket = adminStorage.bucket();
+    const storageObject = await resolveExistingStorageObject(
+      adminStorage,
+      fileData.path,
+    );
+    if (!storageObject) {
+      throw new Error("File not found in storage");
+    }
+
     const originalName = fileData.nomeOriginale || fileData.nome;
-    const [url] = await bucket.file(fileData.path).getSignedUrl({
+    const [url] = await storageObject.file.getSignedUrl({
       action: "read",
       expires: Date.now() + 3600000,
       responseDisposition: `attachment; filename="${originalName}"`,
@@ -232,8 +239,12 @@ export async function getStructureFileUrl(fileId) {
     await logFileAccess({
       actorUid: userUid,
       resourceId: fileData.structureId,
-      filePath: fileData.path,
-      details: { fileId, fileName: fileData.nome },
+      filePath: storageObject.path,
+      details: {
+        fileId,
+        fileName: fileData.nome,
+        bucket: storageObject.bucket.name,
+      },
     });
 
     return {

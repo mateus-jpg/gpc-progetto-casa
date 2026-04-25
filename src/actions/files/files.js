@@ -1,12 +1,13 @@
 "use server";
 
+import path from "node:path";
 import { unstable_cache } from "next/cache";
-import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { CACHE_TAGS, invalidateFilesCache, REVALIDATE } from "@/lib/cache";
 import admin from "@/lib/firebase/firebaseAdmin";
 import { logDataCreate, logDataDelete, logFileAccess } from "@/utils/audit";
 import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
+import { resolveExistingStorageObject } from "@/utils/storage";
 import { getAnagraficaInternal } from "../anagrafica/anagrafica";
 import { createFolderInternal } from "./folders";
 
@@ -17,7 +18,15 @@ async function deleteStorageObject(filePath) {
   if (!filePath) return;
 
   try {
-    await adminStorage.bucket().file(filePath).delete();
+    const storageObject = await resolveExistingStorageObject(
+      adminStorage,
+      filePath,
+    );
+    if (!storageObject) {
+      return;
+    }
+
+    await storageObject.file.delete();
   } catch (error) {
     const notFound =
       error?.code === 404 ||
@@ -471,9 +480,16 @@ export async function getFileUrl(fileId) {
     await getAnagraficaInternal(fileData.anagraficaId, userUid);
 
     // 4. GENERATE SIGNED URL
-    const bucket = adminStorage.bucket();
+    const storageObject = await resolveExistingStorageObject(
+      adminStorage,
+      fileData.path,
+    );
+    if (!storageObject) {
+      throw new Error("File not found in storage");
+    }
+
     const originalName = fileData.nomeOriginale || fileData.nome;
-    const [url] = await bucket.file(fileData.path).getSignedUrl({
+    const [url] = await storageObject.file.getSignedUrl({
       action: "read",
       expires: Date.now() + 3600000, // 1 hour
       responseDisposition: `attachment; filename="${originalName}"`,
@@ -492,11 +508,12 @@ export async function getFileUrl(fileId) {
     await logFileAccess({
       actorUid: userUid,
       resourceId: fileData.anagraficaId,
-      filePath: fileData.path,
+      filePath: storageObject.path,
       details: {
         fileId,
         fileName: fileData.nome,
         category: fileData.category,
+        bucket: storageObject.bucket.name,
       },
     });
 

@@ -1,8 +1,8 @@
 "use server";
 
-import { randomUUID } from "crypto";
+import { randomUUID } from "node:crypto";
+import path from "node:path";
 import { unstable_cache } from "next/cache";
-import path from "path";
 import { createFolderInternal } from "@/actions/files/folders";
 import {
   CACHE_TAGS,
@@ -24,6 +24,10 @@ import {
 } from "@/utils/fileValidation";
 import { stripHtml } from "@/utils/htmlSanitizer";
 import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
+import {
+  normalizeStorageObjectPath,
+  resolveExistingStorageObject,
+} from "@/utils/storage";
 
 const adminDb = admin.firestore();
 const adminStorage = admin.storage();
@@ -65,7 +69,15 @@ async function deleteStorageObject(filePath) {
   if (!filePath) return;
 
   try {
-    await adminStorage.bucket().file(filePath).delete();
+    const storageObject = await resolveExistingStorageObject(
+      adminStorage,
+      filePath,
+    );
+    if (!storageObject) {
+      return;
+    }
+
+    await storageObject.file.delete();
   } catch (error) {
     const notFound =
       error?.code === 404 ||
@@ -83,10 +95,11 @@ function normalizeAnagraficaFilePath(anagraficaId, filePath) {
     return null;
   }
 
-  const normalizedPath = path.posix.normalize(filePath);
+  const normalizedPath = normalizeStorageObjectPath(filePath);
   const expectedPrefix = `files/${anagraficaId}/`;
 
   if (
+    !normalizedPath ||
     !normalizedPath.startsWith(expectedPrefix) ||
     normalizedPath.includes("..")
   ) {
@@ -488,37 +501,34 @@ export async function getAccessFileUrl({ anagraficaId, filePath }) {
     throw new Error("Invalid anagraficaId format");
   }
 
-  // Security: Normalize path to prevent path traversal attacks (../ sequences)
-  const normalizedPath = path.posix.normalize(filePath);
-  const expectedPrefix = `files/${anagraficaId}/`;
-
-  // Security: Check that normalized path starts with expected prefix
-  // and doesn't contain dangerous sequences after normalization
-  if (
-    !normalizedPath.startsWith(expectedPrefix) ||
-    normalizedPath.includes("..")
-  ) {
+  const normalizedPath = normalizeAnagraficaFilePath(anagraficaId, filePath);
+  if (!normalizedPath) {
     throw new Error("Invalid file path for this anagrafica");
   }
 
   await getAuthorizedAnagraficaRecord(anagraficaId, userUid);
 
-  // Generate Signed URL
-  // Valid for 1 hour
-  // Security: Use the normalized path to prevent path traversal
-  const [url] = await adminStorage
-    .bucket()
-    .file(normalizedPath)
-    .getSignedUrl({
-      action: "read",
-      expires: Date.now() + 1000 * 60 * 60, // 1 hour
-    });
+  const storageObject = await resolveExistingStorageObject(
+    adminStorage,
+    normalizedPath,
+  );
+  if (!storageObject) {
+    throw new Error("File not found in storage");
+  }
+
+  const [url] = await storageObject.file.getSignedUrl({
+    action: "read",
+    expires: Date.now() + 1000 * 60 * 60, // 1 hour
+  });
 
   // Audit log: file access
   await logFileAccess({
     actorUid: userUid,
     resourceId: anagraficaId,
-    filePath: normalizedPath,
+    filePath: storageObject.path,
+    details: {
+      bucket: storageObject.bucket.name,
+    },
   });
 
   return { success: true, url };
