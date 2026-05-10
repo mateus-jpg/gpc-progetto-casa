@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { invalidateStructureFilesCache } from "@/lib/cache";
 import admin from "@/lib/firebase/firebaseAdmin";
 import { logDataCreate, logDataDelete, logFileAccess } from "@/utils/audit";
+import { validateFileSignature } from "@/utils/fileValidation";
 import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
 import { resolveExistingStorageObject } from "@/utils/storage";
 
@@ -34,6 +35,14 @@ function validateFile(file, maxSizeMB = 10) {
 
   if (!allowedTypes.includes(file.type))
     throw new Error(`File type ${file.type} not allowed`);
+
+  const buffer =
+    file.buffer instanceof ArrayBuffer ? Buffer.from(file.buffer) : file.buffer;
+
+  if (!buffer || !validateFileSignature(buffer, file.type)) {
+    throw new Error("File content does not match the declared type");
+  }
+
   return true;
 }
 
@@ -221,7 +230,9 @@ export async function getStructureFileUrl(fileId) {
       throw new Error("File not found in storage");
     }
 
-    const originalName = fileData.nomeOriginale || fileData.nome;
+    const originalName = (fileData.nomeOriginale || fileData.nome || "file")
+      .replace(/[\r\n"]/g, "_")
+      .slice(0, 255);
     const [url] = await storageObject.file.getSignedUrl({
       action: "read",
       expires: Date.now() + 3600000,
@@ -288,6 +299,14 @@ export async function deleteStructureFile(fileId) {
       deletedBy: userUid,
       updatedAt: new Date(),
     });
+
+    const storageObject = await resolveExistingStorageObject(
+      adminStorage,
+      fileData.path,
+    );
+    if (storageObject) {
+      await storageObject.file.delete();
+    }
 
     invalidateStructureFilesCache(fileData.structureId);
 

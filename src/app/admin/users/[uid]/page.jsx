@@ -57,7 +57,7 @@ export default function UserDetailPage() {
         toast.error(result.error || "Failed to load user");
         router.push("/admin/users");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to load user");
       router.push("/admin/users");
     } finally {
@@ -91,7 +91,7 @@ export default function UserDetailPage() {
       } else {
         toast.error(result.error || "Failed to update user");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to update user");
     } finally {
       setSaving(false);

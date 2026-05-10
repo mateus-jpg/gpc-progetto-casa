@@ -8,7 +8,6 @@ import {
   listAllStructures,
   removeUserFromStructure,
 } from "@/actions/admin/users";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,7 +25,7 @@ import {
 } from "@/components/ui/select";
 
 export function UserStructuresManager({ user, onUpdate }) {
-  const [loading, setLoading] = useState(false);
+  const [_loading, _setLoading] = useState(false);
   const [structures, setStructures] = useState([]);
   const [loadingStructures, setLoadingStructures] = useState(true);
   const [selectedStructure, setSelectedStructure] = useState("");
@@ -41,7 +40,7 @@ export function UserStructuresManager({ user, onUpdate }) {
         } else {
           toast.error("Failed to load structures");
         }
-      } catch (error) {
+      } catch (_error) {
         toast.error("Failed to load structures");
       } finally {
         setLoadingStructures(false);
@@ -74,7 +73,7 @@ export function UserStructuresManager({ user, onUpdate }) {
       } else {
         toast.error(result.error || "Failed to add structure");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to add structure");
     } finally {
       setActionInProgress(null);
@@ -92,7 +91,7 @@ export function UserStructuresManager({ user, onUpdate }) {
       } else {
         toast.error(result.error || "Failed to remove structure");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to remove structure");
     } finally {
       setActionInProgress(null);
@@ -115,7 +114,7 @@ export function UserStructuresManager({ user, onUpdate }) {
       <CardContent className="space-y-4">
         {/* Current structures */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Current Structures</label>
+          <p className="text-sm font-medium">Current Structures</p>
           {userStructureIds.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               User has no structure access.
@@ -150,7 +149,7 @@ export function UserStructuresManager({ user, onUpdate }) {
 
         {/* Add new structure */}
         <div className="space-y-2 pt-4 border-t">
-          <label className="text-sm font-medium">Add Structure</label>
+          <p className="text-sm font-medium">Add Structure</p>
           {loadingStructures ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />

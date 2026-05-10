@@ -64,7 +64,7 @@ const SelectedTags = memo(function SelectedTags({ values, onRemove }) {
  */
 function truncateText(text, maxLength = 50) {
   if (!text) return "";
-  return text.length > maxLength ? text.slice(0, maxLength) + "…" : text;
+  return text.length > maxLength ? `${text.slice(0, maxLength)}…` : text;
 }
 
 /**

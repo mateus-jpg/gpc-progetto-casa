@@ -252,7 +252,7 @@ function MetricCard({
   );
 }
 
-function AttentionScorePanel({ score, level, summary, factors, isLoading }) {
+function _AttentionScorePanel({ score, level, summary, factors, isLoading }) {
   return (
     <div className="rounded-lg border bg-background p-4">
       <div className="flex items-start justify-between gap-3">
@@ -1251,13 +1251,13 @@ export function DashboardInsights({
   );
   const attentionLevel =
     attentionScore >= 70 ? "Alta" : attentionScore >= 35 ? "Media" : "Bassa";
-  const attentionSummary =
+  const _attentionSummary =
     attentionLevel === "Alta"
       ? "Molti segnali richiedono controllo operativo: promemoria, firme, scadenze o vulnerabilità pesano sulla struttura."
       : attentionLevel === "Media"
         ? "Ci sono alcuni segnali da monitorare: il punteggio cresce quando aumentano attività aperte e scadenze."
         : "La pressione operativa appare contenuta rispetto alle persone seguite e ai documenti tracciati.";
-  const attentionFactors = [
+  const _attentionFactors = [
     {
       label: "Promemoria aperti",
       value: numberFormatter.format(activeReminders),

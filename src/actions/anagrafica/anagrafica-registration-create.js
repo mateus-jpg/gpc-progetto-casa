@@ -2,14 +2,12 @@
 
 import { createRegistrationDraftUseCase } from "@/features/anagrafica/application/create-registration-draft";
 import { invalidateAnagraficaCaches } from "@/lib/cache";
-import admin from "@/lib/firebase/firebaseAdmin";
 import { computeGroupChanges } from "@/utils/anagraficaUtils";
 import { logDataCreate } from "@/utils/audit";
 import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
 import { createAccessInternal } from "./access";
 import {
   adminDb,
-  buildPrivacyPayload,
   buildRegistrationState,
   buildStructureDataPayload,
   choosePreferredStructureDataDoc,
@@ -36,6 +34,15 @@ async function findExistingAnagraficaByCodiceFiscale(codiceFiscale) {
   return querySnap.empty ? null : querySnap.docs[0];
 }
 
+function getExistingAccessList(data = {}) {
+  return [
+    ...new Set([
+      ...(Array.isArray(data.canBeAccessedBy) ? data.canBeAccessedBy : []),
+      ...(Array.isArray(data.structureIds) ? data.structureIds : []),
+    ]),
+  ];
+}
+
 async function createOrLinkGlobalAnagrafica({
   globalData,
   structureId,
@@ -46,17 +53,14 @@ async function createOrLinkGlobalAnagrafica({
 
   if (existingDoc) {
     const anagraficaId = existingDoc.id;
-    const currentAccess = existingDoc.data().canBeAccessedBy || [];
+    const currentAccess = getExistingAccessList(existingDoc.data());
 
     if (!currentAccess.includes(structureId)) {
-      await adminDb
-        .collection("anagrafica")
-        .doc(anagraficaId)
-        .update({
-          canBeAccessedBy: admin.firestore.FieldValue.arrayUnion(structureId),
-          structureIds: admin.firestore.FieldValue.arrayUnion(structureId),
-          updatedAt: new Date(),
-        });
+      const error = new Error(
+        "A record with this fiscal code already exists. Use the sharing workflow instead of automatically linking it.",
+      );
+      error.code = "EXISTING_ANAGRAFICA_REQUIRES_SHARE";
+      throw error;
     }
 
     return {
@@ -188,7 +192,7 @@ async function createRegistrationHistoryEntries({
 
 function getAllowedStructures(existingDoc, structureId) {
   return existingDoc
-    ? [...new Set([...(existingDoc.data().canBeAccessedBy || []), structureId])]
+    ? [...new Set([...getExistingAccessList(existingDoc.data()), structureId])]
     : [structureId];
 }
 
@@ -199,15 +203,8 @@ async function createActiveRegistrationRecord({ body, services = [] }) {
   const {
     anagrafica: incomingAnagrafica,
     internalNotes,
-    privacy: incomingPrivacy,
     structureGroups: incomingStructureGroups,
   } = sanitizeAnagraficaPayload(body);
-
-  if (incomingPrivacy.paperNoticeCollected !== true) {
-    throw new Error(
-      "Conferma di aver raccolto l'informativa privacy cartacea firmata prima di salvare la scheda.",
-    );
-  }
 
   await verifyUserPermissions({
     userUid,
@@ -220,7 +217,6 @@ async function createActiveRegistrationRecord({ body, services = [] }) {
     structureIds: [structureId],
     sharedDataGrants: [],
     internalNotes,
-    privacy: buildPrivacyPayload(incomingPrivacy, userUid, userMail),
     ...buildRegistrationState(REGISTRATION_STATUS.ACTIVE, userUid, userMail),
     registeredBy: userUid,
     registeredByMail: userMail,

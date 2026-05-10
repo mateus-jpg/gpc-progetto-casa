@@ -51,6 +51,7 @@ next-env.d.ts
 
 secret.*
 
+doc in revisione/
 js_scripts/
 *.zip
 firebase-debug.log

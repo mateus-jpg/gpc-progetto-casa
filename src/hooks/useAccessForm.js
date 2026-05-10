@@ -190,7 +190,7 @@ export function useAccessForm(categories = null, initialData = null) {
           const date = new Date(state.reminderDate);
           if (state.reminderTime) {
             const [hours, minutes] = state.reminderTime.split(":");
-            date.setHours(parseInt(hours), parseInt(minutes));
+            date.setHours(parseInt(hours, 10), parseInt(minutes, 10));
           }
           cleanedState.reminderDate = date.toISOString();
         }

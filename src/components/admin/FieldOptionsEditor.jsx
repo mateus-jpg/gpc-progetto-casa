@@ -133,22 +133,27 @@ export function FieldOptionsEditor({
 
       {/* Default options checkboxes */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto p-2 border rounded-lg bg-muted/30">
-        {defaultOptions.map((option, index) => (
-          <label
-            key={`${option}-${index}`}
-            className="flex items-center gap-2 text-sm p-1.5 rounded hover:bg-muted cursor-pointer"
-          >
-            <Checkbox
-              checked={selectedDefaults.includes(option)}
-              onCheckedChange={(checked) =>
-                toggleDefaultOption(option, checked)
-              }
-            />
-            <span className="truncate" title={option}>
-              {option}
-            </span>
-          </label>
-        ))}
+        {defaultOptions.map((option) => {
+          const optionId = `default-option-${option.replace(/\W+/g, "-").toLowerCase()}`;
+          return (
+            <label
+              key={option}
+              htmlFor={optionId}
+              className="flex items-center gap-2 text-sm p-1.5 rounded hover:bg-muted cursor-pointer"
+            >
+              <Checkbox
+                id={optionId}
+                checked={selectedDefaults.includes(option)}
+                onCheckedChange={(checked) =>
+                  toggleDefaultOption(option, checked)
+                }
+              />
+              <span className="truncate" title={option}>
+                {option}
+              </span>
+            </label>
+          );
+        })}
       </div>
 
       {/* Custom options */}
@@ -156,9 +161,9 @@ export function FieldOptionsEditor({
         <div className="space-y-2">
           <Label className="text-sm font-medium">Opzioni Personalizzate</Label>
           <div className="space-y-1">
-            {customOptions.map((option, index) => (
+            {customOptions.map((option) => (
               <div
-                key={`custom-${index}`}
+                key={option}
                 className="flex items-center justify-between p-2 border rounded"
               >
                 <span className="text-sm">{option}</span>

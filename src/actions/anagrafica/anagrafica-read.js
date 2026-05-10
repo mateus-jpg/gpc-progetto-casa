@@ -120,10 +120,7 @@ export async function getAnagraficaInternalShared(
  * Recupera l'anagrafica con caching (Server Action)
  * Permission check runs fresh on every call (not cached)
  */
-export async function getAnagraficaShared(
-  anagraficaId,
-  structureId = null,
-) {
+export async function getAnagraficaShared(anagraficaId, structureId = null) {
   const { userUid } = await requireUser();
   const anagraficaData = await getAnagraficaInternalShared(
     anagraficaId,

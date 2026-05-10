@@ -24,13 +24,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const SERVICES_SKELETON_KEYS = [
+  "accesses",
+  "categories",
+  "files",
+  "reminders",
+  "operators",
+];
 
 // Color palette for services
 const SERVICE_COLORS = [
@@ -58,7 +62,7 @@ function AccessTypeChart({ data, isLoading }) {
     if (!data) return [];
     return Object.entries(data)
       .map(([name, value], index) => ({
-        name: name.length > 25 ? name.substring(0, 25) + "..." : name,
+        name: name.length > 25 ? `${name.substring(0, 25)}...` : name,
         fullName: name,
         value,
         fill: SERVICE_COLORS[index % SERVICE_COLORS.length],
@@ -118,8 +122,8 @@ function AccessTypeChart({ data, isLoading }) {
           }}
         />
         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-          {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.fill} />
+          {chartData.map((entry) => (
+            <Cell key={entry.name} fill={entry.fill} />
           ))}
         </Bar>
       </BarChart>
@@ -195,7 +199,7 @@ function SubcategoryTreemap({ data, isLoading }) {
     if (!data) return [];
     return Object.entries(data)
       .map(([name, value], index) => ({
-        name: name.length > 20 ? name.substring(0, 20) + "..." : name,
+        name: name.length > 20 ? `${name.substring(0, 20)}...` : name,
         fullName: name,
         size: value,
         fill: SERVICE_COLORS[index % SERVICE_COLORS.length],
@@ -283,8 +287,8 @@ function ReferralEntitiesList({ data, isLoading }) {
   if (isLoading) {
     return (
       <div className="space-y-2">
-        {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-8 w-full" />
+        {SERVICES_SKELETON_KEYS.map((key) => (
+          <Skeleton key={key} className="h-8 w-full" />
         ))}
       </div>
     );
@@ -302,7 +306,7 @@ function ReferralEntitiesList({ data, isLoading }) {
     <ScrollArea className="h-[200px] pr-4">
       <div className="space-y-2">
         {entities.map((item, index) => {
-          const percentage =
+          const _percentage =
             total > 0 ? Math.round((item.value / total) * 100) : 0;
           return (
             <div

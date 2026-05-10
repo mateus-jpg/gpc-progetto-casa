@@ -30,7 +30,7 @@ export function StructureUsersTable() {
     try {
       const result = await getUsersByStructure(structureId);
       setUsers(result);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to load users");
     } finally {
       setLoading(false);
@@ -59,7 +59,7 @@ export function StructureUsersTable() {
       if (!res.success) throw new Error(res.error);
 
       toast.success(`User ${action}d successfully`);
-    } catch (error) {
+    } catch (_error) {
       toast.error(`Failed to ${action} user`);
       fetchUsers(); // Revert on error
     }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Eye, Loader2, Users } from "lucide-react";
+import { Eye, Loader2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -30,7 +30,7 @@ export function ProjectsTable() {
       } else {
         toast.error("Failed to fetch projects");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to fetch projects. Please try again.");
     } finally {
       setLoading(false);

@@ -3,7 +3,7 @@ export function generateICS(events) {
 
   const formatDate = (date) => {
     // YYYYMMDDTHHMMSSZ
-    return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    return `${date.toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
   };
 
   const formatAllDayDate = (date) => {
@@ -27,7 +27,7 @@ export function generateICS(events) {
     icsContent.push("BEGIN:VEVENT");
     // Escape special characters in SUMMARY and DESCRIPTION: , ; \
     // Newlines should be escaped as \n
-    const escape = (str) => {
+    const escapeIcsText = (str) => {
       if (!str) return "";
       return str
         .replace(/\\/g, "\\\\")
@@ -36,8 +36,8 @@ export function generateICS(events) {
         .replace(/\n/g, "\\n");
     };
 
-    icsContent.push(`SUMMARY:${escape(event.title)}`);
-    icsContent.push(`DESCRIPTION:${escape(event.description || "")}`);
+    icsContent.push(`SUMMARY:${escapeIcsText(event.title)}`);
+    icsContent.push(`DESCRIPTION:${escapeIcsText(event.description || "")}`);
 
     // DTSTAMP is required
     icsContent.push(`DTSTAMP:${formatDate(new Date())}`);
@@ -91,7 +91,7 @@ export function generateGoogleCalendarUrl(event) {
 
   const formatDate = (date) => {
     // YYYYMMDDTHHMMSSZ (UTC)
-    return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    return `${date.toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
   };
 
   const formatAllDayDate = (date) => {

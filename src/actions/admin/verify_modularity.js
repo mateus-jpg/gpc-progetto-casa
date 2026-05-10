@@ -1,12 +1,7 @@
 "use server";
 
-import {
-  createAnagrafica,
-  getAnagraficaInternal,
-  updateAnagraficaInternal,
-} from "@/actions/anagrafica/anagrafica";
+import { getAnagraficaInternal } from "@/actions/anagrafica/anagrafica";
 import admin from "@/lib/firebase/firebaseAdmin";
-import { requireUser } from "@/utils/server-auth";
 
 // Mock user requirement by bypassing or ensuring we run this in a context where we can force it?
 // Since `requireUser` reads headers, we can't easily run this as a standalone script unless called from a client or we mock `requireUser`.
@@ -25,7 +20,7 @@ export async function verifyAnagraficaModularity() {
     console.log("Starting Verification...");
     const db = admin.firestore();
     const testRunId = Date.now();
-    const userUid = "TEST_USER_ADMIN"; // Assuming we can mock permissions or use a real admin ID if needed in `verifyUserPermissions`?
+    const _userUid = "TEST_USER_ADMIN"; // Assuming we can mock permissions or use a real admin ID if needed in `verifyUserPermissions`?
     // `verifyUserPermissions` checks DB. validating a fake user is hard.
     // I'll grab a REAL user from the DB first.
 

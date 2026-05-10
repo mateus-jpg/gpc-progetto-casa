@@ -1,10 +1,8 @@
 "use client";
 
 import {
-  IconCreditCard,
   IconDotsVertical,
   IconLogout,
-  IconNotification,
   IconSettings,
   IconUserCircle,
   IconUserPlus,

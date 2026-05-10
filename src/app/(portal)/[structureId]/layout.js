@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { StructureSidebar } from "@/components/structure/StructureSidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarInset } from "@/components/ui/sidebar";
 import { collections } from "@/utils/database";
 import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
 
@@ -16,7 +16,7 @@ async function validateStructureAccess(structureId) {
     await verifyUserPermissions({ userUid, structureId });
 
     return { valid: true };
-  } catch (error) {
+  } catch (_error) {
     return { valid: false, reason: "no_access" };
   }
 }

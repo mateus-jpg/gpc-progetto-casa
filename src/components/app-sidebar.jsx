@@ -2,28 +2,20 @@
 
 import {
   IconBell,
-  IconCamera,
   IconChartBar,
-  IconDashboard,
   IconDatabase,
-  IconFileAi,
   IconFileDescription,
   IconFileWord,
   IconFolder,
   IconHelp,
-  IconInnerShadowTop,
-  IconListDetails,
   IconReport,
   IconSearch,
   IconSettings,
   IconUsers,
   IconUsersGroup,
 } from "@tabler/icons-react";
-import * as React from "react";
 
-import { NavDocuments } from "@/components/nav-documents";
 import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
@@ -36,7 +28,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/context/AuthContext";
 import Logo from "./Logo";
-import { NavStructures, NavStrutture } from "./nav-structures";
+import { NavStructures } from "./nav-structures";
 
 const data = {
   navMain: [
@@ -144,7 +136,7 @@ const data = {
 };
 
 export function PortalSideBar({ ...props }) {
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -155,7 +147,7 @@ export function PortalSideBar({ ...props }) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
+              <a href="/dashboard">
                 <Logo className="!size-8" size={89} />
                 <span className="text-base font-semibold">GPC - OBT</span>
               </a>

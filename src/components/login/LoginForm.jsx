@@ -14,7 +14,7 @@ export function LoginForm({ className, ...props }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const router = useRouter();
+  const _router = useRouter();
 
   useEffect(() => {
     const cleanup = async () => {
@@ -103,12 +103,12 @@ export function LoginForm({ className, ...props }) {
             <Label htmlFor="password" className="text-sm font-medium">
               Password
             </Label>
-            <a
-              href="#"
+            <button
+              type="button"
               className="text-xs text-muted-foreground underline-offset-4 hover:underline"
             >
               Password dimenticata?
-            </a>
+            </button>
           </div>
           <Input
             id="password"

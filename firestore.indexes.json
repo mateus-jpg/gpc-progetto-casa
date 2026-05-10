@@ -505,6 +505,94 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "objectives",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "structureId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "anagraficaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "definedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yak_evaluations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "structureId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "anagraficaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "itemId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "recordedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yak_evaluations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "structureId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "anagraficaId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "source",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "recordedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yak_evaluations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "structureId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "subjectType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "itemId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "recordedAt",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

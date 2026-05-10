@@ -7,7 +7,6 @@ import {
   IconMan,
   IconScale,
   IconSchool,
-  IconUserQuestion,
   IconUsers,
   IconWoman,
 } from "@tabler/icons-react";
@@ -19,9 +18,6 @@ import {
   Label,
   Pie,
   PieChart,
-  RadialBar,
-  RadialBarChart,
-  ResponsiveContainer,
   XAxis,
   YAxis,
 } from "recharts";
@@ -39,7 +35,8 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+const DEMOGRAPHICS_SKELETON_KEYS = ["gender", "age", "housing"];
 
 // Color palettes for different chart types
 const COLORS = {
@@ -88,7 +85,7 @@ function GenderChart({ data, isLoading }) {
     return Object.entries(data).map(([name, value]) => ({
       name,
       value,
-      fill: COLORS.gender[name] || COLORS.gender["Altro"],
+      fill: COLORS.gender[name] || COLORS.gender.Altro,
     }));
   }, [data]);
 
@@ -96,9 +93,9 @@ function GenderChart({ data, isLoading }) {
 
   const chartConfig = {
     value: { label: "Persone" },
-    Maschio: { label: "Maschio", color: COLORS.gender["Maschio"] },
-    Femmina: { label: "Femmina", color: COLORS.gender["Femmina"] },
-    Altro: { label: "Altro", color: COLORS.gender["Altro"] },
+    Maschio: { label: "Maschio", color: COLORS.gender.Maschio },
+    Femmina: { label: "Femmina", color: COLORS.gender.Femmina },
+    Altro: { label: "Altro", color: COLORS.gender.Altro },
   };
 
   if (isLoading) {
@@ -219,8 +216,8 @@ function AgeChart({ data, isLoading }) {
           content={<ChartTooltipContent hideLabel />}
         />
         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-          {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.fill} />
+          {chartData.map((entry) => (
+            <Cell key={entry.name} fill={entry.fill} />
           ))}
         </Bar>
       </BarChart>
@@ -234,7 +231,7 @@ function JobStatusChart({ data, isLoading }) {
     if (!data) return [];
     return Object.entries(data)
       .map(([name, value]) => ({
-        name: name.length > 15 ? name.substring(0, 15) + "..." : name,
+        name: name.length > 15 ? `${name.substring(0, 15)}...` : name,
         fullName: name,
         value,
         fill: COLORS.status[name] || "hsl(215, 14%, 65%)",
@@ -260,7 +257,7 @@ function JobStatusChart({ data, isLoading }) {
   return (
     <div className="h-[200px] w-full">
       <div className="space-y-3">
-        {chartData.map((item, index) => {
+        {chartData.map((item, _index) => {
           const percentage =
             total > 0 ? Math.round((item.value / total) * 100) : 0;
           return (
@@ -304,7 +301,7 @@ function ItalianLevelChart({ data, isLoading }) {
       }));
   }, [data]);
 
-  const total = chartData.reduce((sum, item) => sum + item.value, 0);
+  const _total = chartData.reduce((sum, item) => sum + item.value, 0);
 
   const chartConfig = {
     value: { label: "Persone" },
@@ -339,8 +336,8 @@ function ItalianLevelChart({ data, isLoading }) {
           content={<ChartTooltipContent hideLabel />}
         />
         <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-          {chartData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.fill} />
+          {chartData.map((entry) => (
+            <Cell key={entry.name} fill={entry.fill} />
           ))}
         </Bar>
       </BarChart>
@@ -451,8 +448,8 @@ export function AdditionalStatsCards({ stats, isLoading }) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-3">
-        {[...Array(3)].map((_, i) => (
-          <Card key={i}>
+        {DEMOGRAPHICS_SKELETON_KEYS.map((key) => (
+          <Card key={key}>
             <CardHeader className="pb-2">
               <Skeleton className="h-5 w-32" />
             </CardHeader>

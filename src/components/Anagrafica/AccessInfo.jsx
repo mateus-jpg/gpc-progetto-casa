@@ -2,9 +2,8 @@
 
 import { ExternalLink, FileIcon } from "lucide-react";
 import { MaterialReactTable } from "material-react-table";
-import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { getAccessFileUrl } from "@/actions/anagrafica/access";
 import {
@@ -13,7 +12,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Tooltip,
   TooltipContent,
@@ -22,8 +20,6 @@ import {
 } from "@/components/ui/tooltip";
 
 export default function AccessInfo({ accesses }) {
-  if (!accesses) return null;
-
   const params = useParams();
   const structureId = params?.structureId;
 
@@ -46,7 +42,7 @@ export default function AccessInfo({ accesses }) {
     [accesses],
   );
 
-  const handleDownloadFile = async (anagraficaId, file) => {
+  const handleDownloadFile = useCallback(async (anagraficaId, file) => {
     try {
       const response = await getAccessFileUrl({
         anagraficaId,
@@ -57,10 +53,10 @@ export default function AccessInfo({ accesses }) {
       } else {
         toast.error("Impossibile recuperare il file.");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Errore durante il download del file.");
     }
-  };
+  }, []);
 
   const columns = useMemo(
     () => [
@@ -129,8 +125,8 @@ export default function AccessInfo({ accesses }) {
           if (!Array.isArray(files) || files.length === 0) return "-";
           return (
             <div className="flex flex-col gap-1">
-              {files.map((f, i) => (
-                <TooltipProvider key={i}>
+              {files.map((f) => (
+                <TooltipProvider key={f.path || f.nomeOriginale || f.nome}>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <button
@@ -140,7 +136,7 @@ export default function AccessInfo({ accesses }) {
                       >
                         <FileIcon className="w-4 h-4" />
                         {f.nome.length > 15
-                          ? f.nome.slice(0, 15) + "..."
+                          ? `${f.nome.slice(0, 15)}...`
                           : f.nome}
                       </button>
                     </TooltipTrigger>
@@ -191,8 +187,10 @@ export default function AccessInfo({ accesses }) {
         size: 200,
       },
     ],
-    [],
+    [handleDownloadFile, structureId],
   );
+
+  if (!accesses) return null;
 
   return (
     <Accordion

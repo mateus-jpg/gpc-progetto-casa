@@ -30,7 +30,7 @@ export function ProjectStructuresTable({ projectId }) {
       } else {
         toast.error("Failed to fetch structures");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to fetch structures. Please try again.");
     } finally {
       setLoading(false);

@@ -43,7 +43,7 @@ export function AddExistingStructureToProjectDialog({ projectId }) {
       } else {
         toast.error(result.error || "Failed to fetch structures");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to fetch structures");
     } finally {
       setFetchingStructures(false);
@@ -77,7 +77,7 @@ export function AddExistingStructureToProjectDialog({ projectId }) {
       } else {
         toast.error(result.error || "Failed to add structure");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("An error occurred");
     } finally {
       setLoading(false);

@@ -1,6 +1,5 @@
 import { IconArrowLeft } from "@tabler/icons-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { getStructureCategories } from "@/actions/admin/structure";
 import { CategoriesManager } from "@/components/admin/CategoriesManager";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ export default async function CategoriesAdminPage({ params }) {
   try {
     const { userUid } = await requireUser();
     await verifyStructureAdmin({ userUid, structureId });
-  } catch (e) {
+  } catch (_e) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh]">
         <h1 className="text-xl font-bold text-destructive">Accesso Negato</h1>

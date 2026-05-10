@@ -50,7 +50,7 @@ export function AddUserToProjectDialog({ projectId }) {
         );
         setAvailableUsers(available);
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to fetch users");
     } finally {
       setFetchingUsers(false);
@@ -81,7 +81,7 @@ export function AddUserToProjectDialog({ projectId }) {
       } else {
         toast.error(result.error || "Failed to add user");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("An error occurred");
     } finally {
       setLoading(false);

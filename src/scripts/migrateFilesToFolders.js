@@ -26,8 +26,8 @@ const dryRun = args.includes("--dry-run");
 const batchSizeArg = args.find((arg) => arg.startsWith("--batch-size="));
 const limitArg = args.find((arg) => arg.startsWith("--limit="));
 
-const BATCH_SIZE = batchSizeArg ? parseInt(batchSizeArg.split("=")[1]) : 10;
-const LIMIT = limitArg ? parseInt(limitArg.split("=")[1]) : null;
+const BATCH_SIZE = batchSizeArg ? parseInt(batchSizeArg.split("=")[1], 10) : 10;
+const LIMIT = limitArg ? parseInt(limitArg.split("=")[1], 10) : null;
 
 console.log("=".repeat(80));
 console.log("FILE TO FOLDERS MIGRATION SCRIPT");
@@ -50,7 +50,7 @@ async function createDefaultFolders(anagraficaId, structureIds) {
   if (dryRun) {
     console.log(`  [DRY RUN] Would create 9 default folders`);
     // Create mock folder IDs for dry run
-    for (const [key, value] of Object.entries(FILE_CATEGORIES)) {
+    for (const [_key, value] of Object.entries(FILE_CATEGORIES)) {
       const mockId = `folder_${anagraficaId}_${value}`;
       folderMap[value] = mockId;
       folders.push({ id: mockId, category: value });

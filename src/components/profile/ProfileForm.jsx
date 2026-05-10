@@ -41,7 +41,7 @@ export function ProfileForm({ profile, onUpdate }) {
       } else {
         toast.error(result.error || "Failed to update profile");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to update profile");
     } finally {
       setSaving(false);

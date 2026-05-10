@@ -29,7 +29,7 @@ export default function AccessServicesForm({
     categories && categories.length > 0 ? categories : DefaultAccessTypes;
 
   // Track pending "altro" values that haven't been saved yet
-  const [pendingAltro, setPendingAltro] = useState({});
+  const [_pendingAltro, setPendingAltro] = useState({});
 
   // Handle adding a new subcategory from the "Altro" text input
   const handleSaveAltroAsSubcategory = useCallback(
@@ -192,7 +192,7 @@ export default function AccessServicesForm({
             {/* Files */}
             <div className="space-y-2">
               <Label>Allegati</Label>
-              {existingFilesRenderer && existingFilesRenderer(type.value)}
+              {existingFilesRenderer?.(type.value)}
               <Dropzone
                 onDrop={(acceptedFiles) => {
                   const newFiles = acceptedFiles.map((file) => ({
@@ -218,7 +218,7 @@ export default function AccessServicesForm({
                 <div className="mt-4 space-y-3">
                   {typeState.files.map((fileObj, idx) => (
                     <div
-                      key={idx}
+                      key={`${fileObj.file.name}-${fileObj.file.lastModified || fileObj.file.size}`}
                       className="border rounded-md p-3 bg-muted/30 grid gap-3"
                     >
                       <div className="flex justify-between items-center">

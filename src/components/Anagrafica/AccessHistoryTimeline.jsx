@@ -45,9 +45,11 @@ function ServiceDiff({ before, after }) {
             Nessun servizio
           </p>
         ) : (
-          beforeServices.map((svc, i) => (
+          beforeServices.map((svc) => (
             <div
-              key={i}
+              key={
+                svc.id || `${svc.tipoAccesso || "service"}-${svc.note || ""}`
+              }
               className="bg-red-50 border border-red-200 rounded p-2 mb-2"
             >
               <p className="font-medium text-xs">{svc.tipoAccesso || "-"}</p>
@@ -69,9 +71,9 @@ function ServiceDiff({ before, after }) {
         <p className="font-medium text-xs text-muted-foreground uppercase mb-2">
           Dopo
         </p>
-        {afterServices.map((svc, i) => (
+        {afterServices.map((svc) => (
           <div
-            key={i}
+            key={svc.id || `${svc.tipoAccesso || "service"}-${svc.note || ""}`}
             className="bg-green-50 border border-green-200 rounded p-2 mb-2"
           >
             <p className="font-medium text-xs">{svc.tipoAccesso || "-"}</p>
@@ -100,7 +102,10 @@ function HistoryEntry({ entry }) {
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <CollapsibleTrigger asChild>
-        <button className="w-full flex items-center gap-3 py-3 px-4 hover:bg-muted/50 rounded-lg text-left transition-colors">
+        <button
+          type="button"
+          className="w-full flex items-center gap-3 py-3 px-4 hover:bg-muted/50 rounded-lg text-left transition-colors"
+        >
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
             <IconHistory className="w-4 h-4 text-primary" />
           </div>

@@ -2,6 +2,12 @@ import { headers } from "next/headers";
 import { arraysIntersect, getUserDocument } from "./database";
 import { logger } from "./logger";
 
+function normalizeIdArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string" && value) return [value];
+  return [];
+}
+
 /**
  * Extracts the user UID from headers.
  * Throws an error if not found.
@@ -54,9 +60,10 @@ export async function verifyUserPermissions({
     };
   }
 
-  const userStructures =
-    operatorData.structureIds || operatorData.structureId || [];
-  const userProjects = operatorData.projectIds || [];
+  const userStructures = normalizeIdArray(
+    operatorData.structureIds || operatorData.structureId,
+  );
+  const userProjects = normalizeIdArray(operatorData.projectIds);
 
   // 1. If projectId is provided, check if user has access to this specific project
   if (projectId && !userProjects.includes(projectId)) {
@@ -260,7 +267,7 @@ export async function verifyProjectMembership({ userUid, projectId }) {
     return true;
   }
 
-  const userProjects = operatorData.projectIds || [];
+  const userProjects = normalizeIdArray(operatorData.projectIds);
 
   if (userProjects.includes(projectId)) {
     return true;

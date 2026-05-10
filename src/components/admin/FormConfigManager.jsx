@@ -25,13 +25,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Collapsible,
   CollapsibleContent,
@@ -48,7 +42,6 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
-  getChildFields,
   getParentFieldId,
   SECTION_DEFINITIONS,
 } from "@/data/formConfigDefaults";
@@ -193,7 +186,7 @@ export function FormConfigManager({ structureId, initialConfig }) {
         toast.success("Configurazione salvata con successo");
         setHasChanges(false);
       } else {
-        toast.error("Errore: " + result.error);
+        toast.error(`Errore: ${result.error}`);
       }
     } catch (error) {
       console.error(error);
@@ -212,7 +205,7 @@ export function FormConfigManager({ structureId, initialConfig }) {
         toast.success("Configurazione ripristinata");
         window.location.reload();
       } else {
-        toast.error("Errore: " + result.error);
+        toast.error(`Errore: ${result.error}`);
       }
     } catch (error) {
       console.error(error);
@@ -525,8 +518,9 @@ function FieldConfigRow({
               className="h-8 w-48"
             />
           ) : (
-            <span
-              className={`font-medium ${!parentIsHidden ? "cursor-text hover:text-primary" : ""}`}
+            <button
+              type="button"
+              className={`font-medium bg-transparent border-0 p-0 text-left ${!parentIsHidden ? "cursor-text hover:text-primary" : ""}`}
               onClick={() => {
                 if (!parentIsHidden) {
                   setLabelValue(fieldConfig?.label || "");
@@ -535,7 +529,7 @@ function FieldConfigRow({
               }}
             >
               {displayLabel}
-            </span>
+            </button>
           )}
           <span className="text-xs text-muted-foreground">
             ({fieldDef.type})

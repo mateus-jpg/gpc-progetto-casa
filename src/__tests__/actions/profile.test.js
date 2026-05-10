@@ -74,7 +74,6 @@ vi.mock("@/lib/utils", () => ({
 
 import { getProfile, updateProfile } from "@/actions/profile";
 import { auth } from "@/lib/firebase/firebaseAdmin";
-import { collections } from "@/utils/database";
 import { requireUser } from "@/utils/server-auth";
 
 describe("Profile Actions", () => {

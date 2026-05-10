@@ -1,8 +1,7 @@
 "use client";
 
-import * as React from "react";
 import { useCallback, useMemo, useRef, useState } from "react";
-import Map, {
+import MapLibreMap, {
   FullscreenControl,
   Layer,
   NavigationControl,
@@ -420,7 +419,7 @@ export function BirthPlaceMap({ stats, isLoading }) {
         <div className="grid grid-cols-1 @3xl/card:grid-cols-[1fr_280px]">
           {/* Map */}
           <div className="min-h-[300px] @3xl/card:min-h-[400px] relative">
-            <Map
+            <MapLibreMap
               ref={mapRef}
               {...viewState}
               onMove={(evt) => setViewState(evt.viewState)}
@@ -436,7 +435,7 @@ export function BirthPlaceMap({ stats, isLoading }) {
                 <Layer {...heatmapLayer} />
                 <Layer {...circleLayer} />
               </Source>
-            </Map>
+            </MapLibreMap>
 
             {/* Legend */}
             <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm rounded-lg p-3 shadow-lg border text-xs">

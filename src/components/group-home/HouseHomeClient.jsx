@@ -55,17 +55,17 @@ export function HouseHomeClient({ initialData, structureId }) {
               Metriche e azioni operative della casa
             </CardTitle>
             <p className="max-w-3xl text-sm text-muted-foreground">
-              Il setup completo della casa vive nell'area amministrativa della
-              struttura. Qui teniamo le azioni operative del gruppo e le
-              metriche che rifiniremo nei prossimi passaggi.
+              La scheda tecnica della casa raccoglie contratto, utenze,
+              dotazioni, manutenzioni e regole comuni. Qui teniamo anche le
+              azioni operative del gruppo e le metriche di convivenza.
             </p>
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <Button asChild variant="outline">
-              <Link href={`/${structureId}/admin`}>
+              <Link href={`/${structureId}/scheda-casa`}>
                 <IconHomeCog className="size-4" />
-                Setup casa
+                Scheda casa
               </Link>
             </Button>
             <Button

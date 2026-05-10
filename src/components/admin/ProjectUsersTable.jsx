@@ -44,7 +44,7 @@ export function ProjectUsersTable({ projectId }) {
       } else {
         toast.error("Failed to fetch users");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to fetch users. Please try again.");
     } finally {
       setLoading(false);
@@ -71,7 +71,7 @@ export function ProjectUsersTable({ projectId }) {
       } else {
         toast.error(result.error || "Failed to update admin status");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("An error occurred");
     } finally {
       setActionLoading(null);
@@ -88,7 +88,7 @@ export function ProjectUsersTable({ projectId }) {
       } else {
         toast.error(result.error || "Failed to remove user");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("An error occurred");
     } finally {
       setActionLoading(null);

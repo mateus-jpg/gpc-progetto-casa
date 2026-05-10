@@ -1443,7 +1443,10 @@ exports.recalculateStats = onRequest(
       // ==================================================================
       // PHASE 5: HISTORY STATS from anagrafica, structure, and access logs
       // ==================================================================
-      async function applyHistoryCollection(historyRef, shouldFilter = true) {
+      const applyHistoryCollection = async (
+        historyRef,
+        shouldFilter = true,
+      ) => {
         const historyQuery = shouldFilter
           ? historyRef.where("changedByStructure", "==", structureId)
           : historyRef;
@@ -1451,7 +1454,7 @@ exports.recalculateStats = onRequest(
         historySnap.docs.forEach((doc) => {
           applyHistoryStats(stats, doc.data(), true);
         });
-      }
+      };
 
       for (const doc of anagraficaSnap.docs) {
         const data = doc.data();
@@ -1503,12 +1506,15 @@ exports.cleanupOldAuditLogs = onSchedule(
 
     let deletedCount = 0;
 
-    while (true) {
+    let hasMoreAuditLogs = true;
+
+    while (hasMoreAuditLogs) {
       const batchDeleted = await deleteExpiredAuditLogsBatch(cutoffTimestamp);
       if (batchDeleted === 0) {
-        break;
+        hasMoreAuditLogs = false;
+      } else {
+        deletedCount += batchDeleted;
       }
-      deletedCount += batchDeleted;
     }
 
     console.log(

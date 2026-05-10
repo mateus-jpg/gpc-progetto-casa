@@ -17,7 +17,7 @@ export default async function StructureAdminPage({ params }) {
     const { userUid } = await requireUser();
     // Uses the new stricter check that looks for Admin status
     await verifyStructureAdmin({ userUid, structureId });
-  } catch (e) {
+  } catch (_e) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh]">
         <h1 className="text-xl font-bold text-destructive">Access Denied</h1>

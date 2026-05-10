@@ -4,7 +4,6 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
 import {
   createContext,
   useCallback,

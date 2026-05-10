@@ -264,7 +264,10 @@ export async function shareAnagraficaWithStructures(
         .map((grant) => [grant.targetStructureId, grant.sharedFields]),
     );
 
-    const operatorDoc = await adminDb.collection("operators").doc(userUid).get();
+    const operatorDoc = await adminDb
+      .collection("operators")
+      .doc(userUid)
+      .get();
     if (!operatorDoc.exists) {
       return { success: false, error: "User not found" };
     }
@@ -473,7 +476,10 @@ export async function getAvailableStructuresForSharing(
       };
     }
 
-    const operatorDoc = await adminDb.collection("operators").doc(userUid).get();
+    const operatorDoc = await adminDb
+      .collection("operators")
+      .doc(userUid)
+      .get();
     if (!operatorDoc.exists) {
       return { success: false, error: "User not found" };
     }

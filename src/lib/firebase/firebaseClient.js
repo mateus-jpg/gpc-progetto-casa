@@ -1,9 +1,5 @@
 import { getApps, initializeApp } from "firebase/app";
-import {
-  FacebookAuthProvider,
-  GoogleAuthProvider,
-  getAuth,
-} from "firebase/auth";
+import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {

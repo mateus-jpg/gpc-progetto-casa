@@ -39,7 +39,6 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 export function CategoriesManager({ structureId, initialCategories }) {
   const [categories, setCategories] = useState(initialCategories || []);
@@ -57,13 +56,13 @@ export function CategoriesManager({ structureId, initialCategories }) {
   };
 
   // Generate a value from a label
-  const labelToValue = (label) => {
+  const labelToValue = useCallback((label) => {
     return label
       .toLowerCase()
       .replace(/[^a-z0-9\s]/g, "")
       .replace(/\s+/g, "_")
       .substring(0, 30);
-  };
+  }, []);
 
   // Add a new category
   const handleAddCategory = useCallback(() => {
@@ -87,7 +86,7 @@ export function CategoriesManager({ structureId, initialCategories }) {
     setNewCategoryLabel("");
     setHasChanges(true);
     setOpenCategories((prev) => ({ ...prev, [newValue]: true }));
-  }, [newCategoryLabel, categories]);
+  }, [newCategoryLabel, categories, labelToValue]);
 
   // Remove a category
   const handleRemoveCategory = useCallback((categoryValue) => {
@@ -128,7 +127,7 @@ export function CategoriesManager({ structureId, initialCategories }) {
           }
 
           // Add before "Altro" if it exists
-          const altroIndex = existingSubcats.findIndex((s) => s === "Altro");
+          const altroIndex = existingSubcats.indexOf("Altro");
           const newSubcats = [...existingSubcats];
           if (altroIndex !== -1) {
             newSubcats.splice(altroIndex, 0, newSubcategory.trim());
@@ -190,7 +189,7 @@ export function CategoriesManager({ structureId, initialCategories }) {
         toast.success("Categorie salvate con successo");
         setHasChanges(false);
       } else {
-        toast.error("Errore: " + result.error);
+        toast.error(`Errore: ${result.error}`);
       }
     } catch (error) {
       console.error(error);
@@ -209,7 +208,7 @@ export function CategoriesManager({ structureId, initialCategories }) {
         // Reload page to get fresh defaults
         window.location.reload();
       } else {
-        toast.error("Errore: " + result.error);
+        toast.error(`Errore: ${result.error}`);
       }
     } catch (error) {
       console.error(error);
@@ -457,9 +456,9 @@ function CategoryCard({
 
             {/* Subcategories list */}
             <div className="space-y-2">
-              {category.subCategories?.map((sub, index) => (
+              {category.subCategories?.map((sub) => (
                 <SubcategoryItem
-                  key={`${sub}-${index}`}
+                  key={sub}
                   subcategory={sub}
                   onUpdate={(newValue) => onUpdateSubcategory(sub, newValue)}
                   onRemove={() => onRemoveSubcategory(sub)}
@@ -512,9 +511,11 @@ function SubcategoryItem({ subcategory, onUpdate, onRemove, isAltro }) {
           className="h-8 flex-1"
         />
       ) : (
-        <div
-          className={`flex-1 px-3 py-1.5 text-sm rounded border border-transparent hover:border-border cursor-text ${isAltro ? "font-medium text-primary" : ""}`}
+        <button
+          type="button"
+          className={`flex-1 px-3 py-1.5 text-sm rounded border border-transparent hover:border-border cursor-text text-left bg-transparent ${isAltro ? "font-medium text-primary" : ""}`}
           onClick={() => !isAltro && setEditing(true)}
+          disabled={isAltro}
         >
           {subcategory}
           {isAltro && (
@@ -522,7 +523,7 @@ function SubcategoryItem({ subcategory, onUpdate, onRemove, isAltro }) {
               (sempre disponibile)
             </span>
           )}
-        </div>
+        </button>
       )}
       {!isAltro && (
         <Button

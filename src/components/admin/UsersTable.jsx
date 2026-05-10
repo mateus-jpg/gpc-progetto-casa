@@ -28,7 +28,7 @@ export function UsersTable() {
       const result = await listAllUsers(100, token);
       setUsers((prev) => (token ? [...prev, ...result.users] : result.users));
       setPageToken(result.pageToken);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to fetch users. Please try again.");
     } finally {
       setLoading(false);

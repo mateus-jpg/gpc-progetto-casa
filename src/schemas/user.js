@@ -1,10 +1,5 @@
 import { z } from "zod";
-import {
-  emailSchema,
-  phoneSchema,
-  safeStringSchema,
-  uidSchema,
-} from "./common";
+import { emailSchema, phoneSchema, safeStringSchema } from "./common";
 
 /**
  * User validation schemas for admin operations

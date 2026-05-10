@@ -107,7 +107,7 @@ export default function FamilyUnitSection({ formData, handleChange }) {
                         max={fieldConfig.max ?? 10}
                         value={data.figli}
                         onChange={(e) =>
-                          onChange("figli", parseInt(e.target.value) || 0)
+                          onChange("figli", parseInt(e.target.value, 10) || 0)
                         }
                         placeholder="0"
                         required={fieldConfig.isRequired}

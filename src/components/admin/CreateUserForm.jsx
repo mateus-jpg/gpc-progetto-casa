@@ -50,7 +50,7 @@ export function CreateUserForm() {
         } else {
           toast.error("Failed to load structures");
         }
-      } catch (error) {
+      } catch (_error) {
         toast.error("Failed to load structures");
       } finally {
         setLoadingStructures(false);
@@ -114,7 +114,7 @@ export function CreateUserForm() {
       } else {
         toast.error(result.error || "Failed to create user");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to create user");
     } finally {
       setLoading(false);

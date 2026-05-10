@@ -6,7 +6,7 @@ import { PasswordChangeForm } from "@/components/profile/PasswordChangeForm";
 // Mock Firebase Auth
 const mockReauthenticateWithCredential = vi.fn();
 const mockUpdatePassword = vi.fn();
-const mockCredential = vi.fn();
+const _mockCredential = vi.fn();
 
 vi.mock("firebase/auth", () => ({
   EmailAuthProvider: {

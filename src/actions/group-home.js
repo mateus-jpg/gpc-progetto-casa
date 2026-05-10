@@ -3,13 +3,16 @@
 import { revalidatePath } from "next/cache";
 import admin from "@/lib/firebase/firebaseAdmin";
 import {
-  APPLIANCE_DEFAULTS,
   ASSESSMENT_ITEM_MAP,
   ASSESSMENT_ITEMS,
   COMMON_SPACE_OPTIONS,
   GRP_ITEMS,
 } from "@/lib/group-home/catalog";
 import { serializeFirestoreData } from "@/lib/utils";
+import {
+  requireScopedDocument,
+  requireAnagraficaAccess as requireSharedAnagraficaAccess,
+} from "@/utils/resource-guards";
 import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
 
 const db = admin.firestore();
@@ -21,10 +24,22 @@ const COLLECTIONS = {
   houseProfiles: "house_profiles",
   individualMonitorings: "individual_monitorings",
   interventions: "interventions",
+  objectives: "objectives",
   pattiAccoglienza: "patti_accoglienza",
   personalProjects: "personal_projects",
   selfAssessments: "self_assessments",
 };
+
+const INDIVIDUAL_EVIDENCE_SOURCES = new Set([
+  "intervento",
+  "attivita_gruppo_individuale",
+]);
+
+const GROUP_EVIDENCE_SOURCES = new Set([
+  "attivita_gruppo",
+  "valutazione_gruppo",
+  "autovalutazione_gruppo",
+]);
 
 function ensureString(value) {
   return String(value || "").trim();
@@ -48,6 +63,41 @@ function ensureNumber(value) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function getAreaIdFromItemId(itemId) {
+  return ensureString(itemId).split("-")[0] || "";
+}
+
+function getSubjectTypeFromItemId(itemId, fallback = "person") {
+  return ensureString(itemId).startsWith("GRP-") ? "group" : fallback;
+}
+
+function isKnownEvaluationItem(itemId) {
+  return Boolean(
+    ASSESSMENT_ITEM_MAP[itemId] || GRP_ITEMS.some((item) => item.id === itemId),
+  );
+}
+
+function normalizeEvaluationValue(rawValue) {
+  const value = ensureString(rawValue);
+
+  if (value === "na") {
+    return {
+      isNotApplicable: true,
+      value: null,
+    };
+  }
+
+  const parsed = Number(value);
+  if ([0, 1, 2, 3].includes(parsed)) {
+    return {
+      isNotApplicable: false,
+      value: parsed,
+    };
+  }
+
+  return null;
+}
+
 function sortByDateDesc(entries, key) {
   return [...entries].sort((a, b) => {
     const aTime = new Date(a?.[key] || a?.updatedAt || 0).getTime();
@@ -65,28 +115,20 @@ function serializeDoc(doc) {
 }
 
 function createDefaultHouseAppliances(appliances = []) {
-  const normalizedMap = new Map(
-    (Array.isArray(appliances) ? appliances : []).map((item) => [
-      ensureString(item?.name),
-      {
-        functioning: Boolean(item?.functioning),
-        notes: ensureString(item?.notes),
-        ownership: ensureString(item?.ownership),
-        present: Boolean(item?.present),
-      },
-    ]),
-  );
-
-  return APPLIANCE_DEFAULTS.map((name) => {
-    const existing = normalizedMap.get(name);
-    return {
-      name,
-      present: existing?.present || false,
-      functioning: existing?.functioning || false,
-      ownership: existing?.ownership || "",
-      notes: existing?.notes || "",
-    };
-  });
+  return (Array.isArray(appliances) ? appliances : [])
+    .map((item, index) => ({
+      functioning: Boolean(item?.functioning),
+      id: ensureString(item?.id) || `appliance-${index}`,
+      name: ensureString(item?.name),
+      notes: ensureString(item?.notes),
+      ownership: ensureString(item?.ownership),
+      present: item?.present !== false,
+    }))
+    .filter(
+      (item) =>
+        item.name &&
+        (item.present || item.functioning || item.notes || item.ownership),
+    );
 }
 
 function normalizeResponses(responses = {}) {
@@ -134,7 +176,9 @@ function normalizeGoalsByArea(goalsByArea = {}) {
 }
 
 function normalizeHouseProfileInput(payload = {}) {
-  const commonSpaces = ensureStringArray(payload.commonSpaces).filter(
+  const commonSpaces = ensureStringArray(
+    payload.commonAreas?.commonSpaces,
+  ).filter(
     (value) => COMMON_SPACE_OPTIONS.includes(value) || value === "Altro",
   );
 
@@ -572,30 +616,44 @@ async function ensureStructureAccess(structureId) {
 }
 
 async function ensureAnagraficaAccess(structureId, anagraficaId) {
-  const userUid = await ensureStructureAccess(structureId);
-  const anagraficaRef = db.collection("anagrafica").doc(anagraficaId);
-  const anagraficaSnap = await anagraficaRef.get();
-
-  if (!anagraficaSnap.exists) {
-    throw new Error("Scheda persona non trovata");
-  }
-
-  const anagraficaData = anagraficaSnap.data() || {};
-  const allowedStructures =
-    anagraficaData.canBeAccessedBy || anagraficaData.structureIds || [];
-
-  await verifyUserPermissions({ userUid, allowedStructures, structureId });
-
-  if (!allowedStructures.includes(structureId)) {
-    throw new Error("La persona non appartiene a questa casa");
-  }
+  const { userUid } = await requireUser();
+  const { anagrafica } = await requireSharedAnagraficaAccess({
+    userUid,
+    anagraficaId,
+    structureId,
+  });
 
   return {
     userUid,
-    anagrafica: serializeFirestoreData({
-      id: anagraficaSnap.id,
-      ...anagraficaData,
-    }),
+    anagrafica,
+  };
+}
+
+async function resolveScopedEntryRef({
+  collectionName,
+  entryId,
+  structureId,
+  anagraficaId = null,
+  userUid,
+}) {
+  if (!entryId) {
+    return {
+      ref: db.collection(collectionName).doc(),
+      previousData: {},
+    };
+  }
+
+  const { ref, data } = await requireScopedDocument({
+    collectionName,
+    documentId: entryId,
+    structureId,
+    anagraficaId,
+    userUid,
+  });
+
+  return {
+    ref,
+    previousData: data || {},
   };
 }
 
@@ -621,6 +679,15 @@ async function getStructureResidentsInternal(structureId) {
     .sort((a, b) => a.name.localeCompare(b.name, "it"));
 }
 
+async function getStructureProjectId(structureId) {
+  if (!structureId) return null;
+
+  const snapshot = await db.collection("structures").doc(structureId).get();
+  if (!snapshot.exists) return null;
+
+  return ensureString(snapshot.data()?.projectId) || null;
+}
+
 function revalidateGroupHomePaths(
   structureId,
   anagraficaId = null,
@@ -635,26 +702,85 @@ function revalidateGroupHomePaths(
   }
 }
 
+function buildEvaluationRow({
+  anagraficaId = null,
+  entryId,
+  itemId,
+  note = "",
+  operatorName = "",
+  operatorUid = "",
+  projectId = null,
+  recordedAt,
+  source,
+  structureId,
+  subjectType = null,
+  value,
+}) {
+  const normalizedItemId = ensureString(itemId);
+  const normalizedValue = normalizeEvaluationValue(value);
+
+  if (
+    !normalizedItemId ||
+    !normalizedValue ||
+    !isKnownEvaluationItem(normalizedItemId)
+  ) {
+    return null;
+  }
+
+  const inferredSubjectType = getSubjectTypeFromItemId(
+    normalizedItemId,
+    subjectType || "person",
+  );
+
+  return {
+    anagraficaId: inferredSubjectType === "group" ? null : anagraficaId,
+    areaId: getAreaIdFromItemId(normalizedItemId),
+    isNotApplicable: normalizedValue.isNotApplicable,
+    itemId: normalizedItemId,
+    note: ensureString(note),
+    operatorName: ensureString(operatorName),
+    operatorUid: ensureString(operatorUid),
+    projectId,
+    recordedAt,
+    source,
+    sourceEntryId: entryId,
+    structureId,
+    subjectType: inferredSubjectType,
+    value: normalizedValue.value,
+  };
+}
+
 function buildEvaluationRows({
   anagraficaId = null,
   entryId,
+  operatorName = "",
+  operatorUid = "",
+  projectId = null,
   recordedAt,
   responses = {},
   source,
   structureId,
+  subjectType = null,
 }) {
   return Object.entries(responses)
     .filter(([, response]) => response?.value)
-    .map(([itemId, response]) => ({
-      anagraficaId,
-      itemId,
-      note: ensureString(response.note),
-      recordedAt,
-      source,
-      sourceEntryId: entryId,
-      structureId,
-      value: ensureString(response.value),
-    }));
+    .map(([itemId, response]) =>
+      buildEvaluationRow({
+        anagraficaId,
+        entryId,
+        itemId,
+        note: response.note,
+        operatorName,
+        operatorUid,
+        projectId,
+        recordedAt,
+        source,
+        structureId,
+        subjectType,
+        value: response.value,
+      }),
+    )
+    .filter(Boolean);
 }
 
 async function replaceEvaluationRows(sourceEntryId, rows = []) {
@@ -662,6 +788,11 @@ async function replaceEvaluationRows(sourceEntryId, rows = []) {
     .collection(COLLECTIONS.evaluations)
     .where("sourceEntryId", "==", sourceEntryId)
     .get();
+
+  const projectId =
+    rows.find((row) => row.projectId)?.projectId ||
+    (await getStructureProjectId(rows[0]?.structureId));
+  const now = new Date().toISOString();
 
   const batch = db.batch();
   existing.docs.forEach((doc) => {
@@ -671,8 +802,9 @@ async function replaceEvaluationRows(sourceEntryId, rows = []) {
     const ref = db.collection(COLLECTIONS.evaluations).doc();
     batch.set(ref, {
       ...row,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      projectId: row.projectId || projectId || null,
+      createdAt: now,
+      updatedAt: now,
     });
   });
 
@@ -691,6 +823,8 @@ async function replaceAssessmentEvaluationRows({
     buildEvaluationRows({
       anagraficaId,
       entryId,
+      operatorName: entry.operatorName,
+      operatorUid: entry.updatedBy || entry.createdBy,
       recordedAt: entry.compiledAt,
       responses: entry.responses,
       source,
@@ -710,6 +844,8 @@ async function replaceInterventionEvaluationRows({
     buildEvaluationRows({
       anagraficaId,
       entryId,
+      operatorName: entry.operatorName,
+      operatorUid: entry.updatedBy || entry.createdBy,
       recordedAt: entry.happenedAt,
       responses: Object.fromEntries(
         (entry.items || []).map((item) => [
@@ -730,24 +866,33 @@ async function replaceGroupActivityEvaluationRows({
 }) {
   const grpRows = buildEvaluationRows({
     entryId,
+    operatorName: entry.operatorName,
+    operatorUid: entry.updatedBy || entry.createdBy,
     recordedAt: entry.happenedAt,
     responses: entry.grpResponses,
     source: "attivita_gruppo",
     structureId,
+    subjectType: "group",
   });
 
   const individualRows = (entry.individualItems || [])
     .filter((item) => item.value)
-    .map((item) => ({
-      anagraficaId: item.anagraficaId,
-      itemId: item.itemId,
-      note: item.note,
-      recordedAt: entry.happenedAt,
-      source: "attivita_gruppo_individuale",
-      sourceEntryId: entryId,
-      structureId,
-      value: item.value,
-    }));
+    .map((item) =>
+      buildEvaluationRow({
+        anagraficaId: item.anagraficaId,
+        entryId,
+        itemId: item.itemId,
+        note: item.note,
+        operatorName: entry.operatorName,
+        operatorUid: entry.updatedBy || entry.createdBy,
+        recordedAt: entry.happenedAt,
+        source: "attivita_gruppo_individuale",
+        structureId,
+        subjectType: "person",
+        value: item.value,
+      }),
+    )
+    .filter(Boolean);
 
   await replaceEvaluationRows(entryId, [...grpRows, ...individualRows]);
 }
@@ -755,25 +900,247 @@ async function replaceGroupActivityEvaluationRows({
 async function replaceGroupEvaluationRows({ entry, entryId, structureId }) {
   const operatorRows = buildEvaluationRows({
     entryId,
+    operatorName: entry.operatorName,
+    operatorUid: entry.updatedBy || entry.createdBy,
     recordedAt: entry.evaluatedAt,
     responses: entry.grpResponses,
     source: "valutazione_gruppo",
     structureId,
+    subjectType: "group",
   });
   const selfRows = buildEvaluationRows({
     entryId,
+    operatorName: entry.operatorName,
+    operatorUid: entry.updatedBy || entry.createdBy,
     recordedAt: entry.evaluatedAt,
     responses: entry.groupSelfResponses,
     source: "autovalutazione_gruppo",
     structureId,
+    subjectType: "group",
   });
 
   await replaceEvaluationRows(entryId, [...operatorRows, ...selfRows]);
 }
 
+function buildObjectiveRows({ entry, personalProjectId, projectId }) {
+  const rows = [];
+  const createdBy = entry.createdBy || "";
+  const updatedBy = entry.updatedBy || createdBy;
+
+  Object.entries(entry.goalsByArea || {}).forEach(([areaId, goals]) => {
+    if (!Array.isArray(goals)) return;
+
+    goals.forEach((goal, index) => {
+      rows.push({
+        id: `${personalProjectId}__${areaId}__${index}`,
+        anagraficaId: entry.anagraficaId,
+        areaId,
+        createdBy,
+        definedAt: entry.actionsSharedAt || entry.compilationDate || "",
+        dueAt: null,
+        linkedItemIds: ensureStringArray(goal.linkedItemIds).filter(
+          (itemId) => ASSESSMENT_ITEM_MAP[itemId],
+        ),
+        personalProjectId,
+        projectId,
+        status: "open",
+        structureId: entry.structureId,
+        successIndicators: ensureString(goal.successIndicators),
+        text: ensureString(goal.goal),
+        timeframe: ensureString(goal.timeframe),
+        updatedBy,
+        verifiedAt: null,
+      });
+    });
+  });
+
+  const otherGoals = ensureString(entry.otherGoals);
+  if (otherGoals) {
+    rows.push({
+      id: `${personalProjectId}__ALTRO__0`,
+      anagraficaId: entry.anagraficaId,
+      areaId: "ALTRO",
+      createdBy,
+      definedAt: entry.actionsSharedAt || entry.compilationDate || "",
+      dueAt: null,
+      linkedItemIds: [],
+      personalProjectId,
+      projectId,
+      status: "open",
+      structureId: entry.structureId,
+      successIndicators: "",
+      text: otherGoals,
+      timeframe: "",
+      updatedBy,
+      verifiedAt: null,
+    });
+  }
+
+  return rows;
+}
+
+async function replaceObjectiveRows(personalProjectId, rows = []) {
+  const existing = await db
+    .collection(COLLECTIONS.objectives)
+    .where("personalProjectId", "==", personalProjectId)
+    .get();
+  const existingById = new Map(
+    existing.docs.map((doc) => [doc.id, doc.data() || {}]),
+  );
+  const projectId =
+    rows.find((row) => row.projectId)?.projectId ||
+    (await getStructureProjectId(rows[0]?.structureId));
+  const now = new Date().toISOString();
+  const batch = db.batch();
+  const nextIds = new Set(rows.map((row) => row.id));
+
+  existing.docs.forEach((doc) => {
+    if (!nextIds.has(doc.id)) {
+      batch.delete(doc.ref);
+    }
+  });
+
+  rows.forEach((row) => {
+    const previousData = existingById.get(row.id) || {};
+    const ref = db.collection(COLLECTIONS.objectives).doc(row.id);
+
+    batch.set(ref, {
+      ...row,
+      createdAt: previousData.createdAt || now,
+      createdBy: previousData.createdBy || row.createdBy,
+      projectId: row.projectId || projectId || null,
+      status: previousData.status || row.status,
+      updatedAt: now,
+      updatedBy: row.updatedBy,
+      verifiedAt: previousData.verifiedAt || row.verifiedAt,
+    });
+  });
+
+  await batch.commit();
+}
+
+function normalizeTimestampMillis(value) {
+  if (!value) return 0;
+  if (typeof value.toMillis === "function") return value.toMillis();
+  if (typeof value.toDate === "function") return value.toDate().getTime();
+
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeEvaluationEvidenceRow(row = {}) {
+  const rawValue = row.value;
+  const normalizedValue =
+    row.isNotApplicable === true
+      ? null
+      : rawValue === null ||
+          rawValue === undefined ||
+          rawValue === "" ||
+          rawValue === "na"
+        ? null
+        : Number.isFinite(Number(rawValue))
+          ? Number(rawValue)
+          : null;
+
+  return {
+    ...row,
+    isNotApplicable: row.isNotApplicable === true || rawValue === "na",
+    value: normalizedValue,
+  };
+}
+
+function getPeriodBounds(options = {}) {
+  return {
+    end: normalizeTimestampMillis(options.periodEnd),
+    start: normalizeTimestampMillis(options.periodStart),
+  };
+}
+
+function isInsidePeriod(row, { end, start }) {
+  const recordedAt = normalizeTimestampMillis(row.recordedAt);
+  if (start && recordedAt < start) return false;
+  if (end && recordedAt > end) return false;
+  return true;
+}
+
+function buildMonitoringEvidence({
+  items,
+  options = {},
+  rows = [],
+  touchSources = INDIVIDUAL_EVIDENCE_SOURCES,
+}) {
+  const periodBounds = getPeriodBounds(options);
+  const sortedRows = rows
+    .map(normalizeEvaluationEvidenceRow)
+    .sort(
+      (left, right) =>
+        normalizeTimestampMillis(left.recordedAt) -
+        normalizeTimestampMillis(right.recordedAt),
+    );
+
+  return items.map((item) => {
+    const itemRows = sortedRows.filter((row) => row.itemId === item.id);
+    const periodRows = itemRows.filter((row) =>
+      isInsidePeriod(row, periodBounds),
+    );
+    const latest = itemRows.at(-1) || null;
+
+    return {
+      areaId: item.areaId || "GRP",
+      itemId: item.id,
+      latest,
+      silent: periodRows.length === 0,
+      touchCount: periodRows.filter((row) => touchSources.has(row.source))
+        .length,
+      trajectory: periodRows,
+    };
+  });
+}
+
 export async function getStructureResidents(structureId) {
   await ensureStructureAccess(structureId);
   return await getStructureResidentsInternal(structureId);
+}
+
+export async function getPersonMonitoringEvidence(
+  structureId,
+  anagraficaId,
+  options = {},
+) {
+  await ensureAnagraficaAccess(structureId, anagraficaId);
+
+  const snapshot = await db
+    .collection(COLLECTIONS.evaluations)
+    .where("anagraficaId", "==", anagraficaId)
+    .get();
+  const rows = snapshot.docs
+    .map((doc) => serializeDoc(doc))
+    .filter((row) => row.structureId === structureId);
+
+  return buildMonitoringEvidence({
+    items: ASSESSMENT_ITEMS,
+    options,
+    rows,
+  });
+}
+
+export async function getGroupMonitoringEvidence(structureId, options = {}) {
+  await ensureStructureAccess(structureId);
+
+  const snapshot = await db
+    .collection(COLLECTIONS.evaluations)
+    .where("structureId", "==", structureId)
+    .get();
+  const rows = snapshot.docs
+    .map((doc) => serializeDoc(doc))
+    .filter((row) => row.subjectType === "group");
+
+  return buildMonitoringEvidence({
+    items: GRP_ITEMS.map((item) => ({ ...item, areaId: "GRP" })),
+    options,
+    rows,
+    touchSources: GROUP_EVIDENCE_SOURCES,
+  });
 }
 
 export async function getJourneyPersonSummary(structureId, anagraficaId) {
@@ -817,7 +1184,7 @@ export async function upsertHouseProfile(structureId, payload) {
     updatedBy: userUid,
   };
 
-  await ref.set(nextData, { merge: true });
+  await ref.set(nextData);
   revalidateGroupHomePaths(structureId);
 
   return {
@@ -864,6 +1231,14 @@ export async function upsertPersonalProject(
   };
 
   await ref.set(nextData, { merge: true });
+  await replaceObjectiveRows(
+    docId,
+    buildObjectiveRows({
+      entry: nextData,
+      personalProjectId: docId,
+      projectId: previousData.projectId || null,
+    }),
+  );
   revalidateGroupHomePaths(
     structureId,
     anagraficaId,
@@ -904,11 +1279,13 @@ async function saveAssessmentEntry(
 ) {
   const { userUid } = await ensureAnagraficaAccess(structureId, anagraficaId);
   const normalized = normalizeAssessmentEntryInput(payload);
-  const ref = entryId
-    ? db.collection(collectionName).doc(entryId)
-    : db.collection(collectionName).doc();
-  const existing = entryId ? await ref.get() : null;
-  const previousData = existing?.exists ? existing.data() || {} : {};
+  const { ref, previousData } = await resolveScopedEntryRef({
+    collectionName,
+    entryId,
+    structureId,
+    anagraficaId,
+    userUid,
+  });
 
   const nextData = {
     ...previousData,
@@ -1052,11 +1429,12 @@ async function saveGroupActivity(structureId, payload, entryId = null) {
   const userUid = await ensureStructureAccess(structureId);
   const residents = await getStructureResidentsInternal(structureId);
   const normalized = normalizeGroupActivityInput(payload, residents);
-  const ref = entryId
-    ? db.collection(COLLECTIONS.groupActivities).doc(entryId)
-    : db.collection(COLLECTIONS.groupActivities).doc();
-  const existing = entryId ? await ref.get() : null;
-  const previousData = existing?.exists ? existing.data() || {} : {};
+  const { ref, previousData } = await resolveScopedEntryRef({
+    collectionName: COLLECTIONS.groupActivities,
+    entryId,
+    structureId,
+    userUid,
+  });
 
   const nextData = {
     ...previousData,
@@ -1108,11 +1486,12 @@ export async function listGroupEvaluations(structureId) {
 async function saveGroupEvaluation(structureId, payload, entryId = null) {
   const userUid = await ensureStructureAccess(structureId);
   const normalized = normalizeGroupEvaluationInput(payload);
-  const ref = entryId
-    ? db.collection(COLLECTIONS.groupEvaluations).doc(entryId)
-    : db.collection(COLLECTIONS.groupEvaluations).doc();
-  const existing = entryId ? await ref.get() : null;
-  const previousData = existing?.exists ? existing.data() || {} : {};
+  const { ref, previousData } = await resolveScopedEntryRef({
+    collectionName: COLLECTIONS.groupEvaluations,
+    entryId,
+    structureId,
+    userUid,
+  });
 
   const nextData = {
     ...previousData,
@@ -1170,11 +1549,13 @@ export async function listPattiAccoglienza(structureId, anagraficaId) {
 async function savePatto(structureId, anagraficaId, payload, entryId = null) {
   const { userUid } = await ensureAnagraficaAccess(structureId, anagraficaId);
   const normalized = normalizePattoInput(payload);
-  const ref = entryId
-    ? db.collection(COLLECTIONS.pattiAccoglienza).doc(entryId)
-    : db.collection(COLLECTIONS.pattiAccoglienza).doc();
-  const existing = entryId ? await ref.get() : null;
-  const previousData = existing?.exists ? existing.data() || {} : {};
+  const { ref, previousData } = await resolveScopedEntryRef({
+    collectionName: COLLECTIONS.pattiAccoglienza,
+    entryId,
+    structureId,
+    anagraficaId,
+    userUid,
+  });
 
   const nextData = {
     ...previousData,
@@ -1188,12 +1569,6 @@ async function savePatto(structureId, anagraficaId, payload, entryId = null) {
   };
 
   await ref.set(nextData, { merge: true });
-  await replaceInterventionEvaluationRows({
-    anagraficaId,
-    entry: nextData,
-    entryId: ref.id,
-    structureId,
-  });
 
   return {
     success: true,
@@ -1249,11 +1624,13 @@ async function saveIntervention(
 ) {
   const { userUid } = await ensureAnagraficaAccess(structureId, anagraficaId);
   const normalized = normalizeInterventionInput(payload);
-  const ref = entryId
-    ? db.collection(COLLECTIONS.interventions).doc(entryId)
-    : db.collection(COLLECTIONS.interventions).doc();
-  const existing = entryId ? await ref.get() : null;
-  const previousData = existing?.exists ? existing.data() || {} : {};
+  const { ref, previousData } = await resolveScopedEntryRef({
+    collectionName: COLLECTIONS.interventions,
+    entryId,
+    structureId,
+    anagraficaId,
+    userUid,
+  });
 
   const nextData = {
     ...previousData,
@@ -1267,6 +1644,12 @@ async function saveIntervention(
   };
 
   await ref.set(nextData, { merge: true });
+  await replaceInterventionEvaluationRows({
+    anagraficaId,
+    entry: nextData,
+    entryId: ref.id,
+    structureId,
+  });
 
   return {
     success: true,

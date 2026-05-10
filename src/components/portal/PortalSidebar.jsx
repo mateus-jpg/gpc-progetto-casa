@@ -1,28 +1,7 @@
 "use client";
 
-import {
-  IconBell,
-  IconCamera,
-  IconChartBar,
-  IconDashboard,
-  IconDatabase,
-  IconFileAi,
-  IconFileDescription,
-  IconFileWord,
-  IconFolder,
-  IconHelp,
-  IconInnerShadowTop,
-  IconListDetails,
-  IconReport,
-  IconSearch,
-  IconSettings,
-  IconUsers,
-} from "@tabler/icons-react";
 import Link from "next/link";
 import * as React from "react";
-import { NavDocuments } from "@/components/nav-documents";
-import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import { StructureSwitcher } from "@/components/structure-switcher";
 import {
@@ -37,7 +16,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import Logo from "../Logo";
 
-const data = {
+const _data = {
   navMain: [],
   navClouds: [
     /* {
@@ -126,7 +105,7 @@ export function PortalSideBar({ ...props }) {
     } else {
       setCurrentStructure(null);
     }
-  }, [availableStructures]);
+  }, [availableStructures, setCurrentStructure]);
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>

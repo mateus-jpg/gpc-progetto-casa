@@ -49,10 +49,8 @@ export default function AnagraficaForm({ params }) {
         toast.error(`Errore durante il salvataggio: ${result.message}`);
         return;
       }
-      toast.success(
-        "Bozza salvata. Procedi con la stampa del modulo e il caricamento della firma.",
-      );
-      router.push(`/${structureId}/anagrafica/${result.id}/registrazione`);
+      toast.success("Scheda anagrafica registrata correttamente");
+      router.push(`/${structureId}/anagrafica/${result.id}`);
     } catch (err) {
       console.error("Errore submit anagrafica:", err);
       toast.error(`Errore durante il salvataggio: ${err.message}`);
@@ -79,26 +77,25 @@ export default function AnagraficaForm({ params }) {
         <div className="max-w-full mx-auto px-4">
           <div className="mb-8 text-center">
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-blue-600 mb-2">
-              Passo 1 di 2
+              Registrazione
             </p>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Nuovo Accesso Casa
             </h1>
             <p className="text-gray-600">
-              Inserisci la persona che entra in casa, assegna l'operatore di
-              riferimento e poi completa la parte di firma.
+              Inserisci la persona che entra in casa e assegna l'operatore di
+              riferimento.
             </p>
           </div>
 
           <Card className="mb-6 border-blue-200 bg-blue-50/80 shadow-sm">
             <CardContent className="pt-6 text-sm text-blue-950 space-y-1">
               <p className="font-medium">
-                In questo primo passaggio salviamo la scheda in bozza.
+                La scheda viene salvata come registrazione attiva.
               </p>
               <p>
-                Nel secondo passaggio potrai generare il PDF di registrazione,
-                stamparlo, raccogliere la firma e caricare il documento firmato
-                nei file della persona.
+                Dopo il salvataggio verrai portato direttamente alla scheda
+                anagrafica.
               </p>
             </CardContent>
           </Card>
@@ -133,7 +130,7 @@ export default function AnagraficaForm({ params }) {
                     Salvataggio...
                   </>
                 ) : (
-                  "Salva bozza e continua alla firma"
+                  "Registra anagrafica"
                 )}
               </Button>
             </div>

@@ -1,4 +1,4 @@
-import { Calendar, Download, ExternalLink } from "lucide-react";
+import { Calendar, Download } from "lucide-react";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -84,9 +84,9 @@ export default function PostAccessDialog({
                 Eventi rilevati ({events.length}):
               </h4>
               <div className="grid gap-2">
-                {events.map((evt, i) => (
+                {events.map((evt) => (
                   <div
-                    key={i}
+                    key={`${evt.title}-${evt.start.toISOString()}-${evt.allDay ? "all-day" : "timed"}`}
                     className="flex items-center justify-between border rounded-md p-3 bg-muted/40"
                   >
                     <div className="min-w-0 flex-1 mr-2">

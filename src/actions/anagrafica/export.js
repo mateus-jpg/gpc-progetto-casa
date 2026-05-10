@@ -30,7 +30,7 @@ function formatDate(value) {
     if (value?._seconds)
       return new Date(value._seconds * 1000).toLocaleDateString("it-IT");
     const d = new Date(value);
-    return isNaN(d.getTime()) ? "" : d.toLocaleDateString("it-IT");
+    return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("it-IT");
   } catch {
     return "";
   }
@@ -53,8 +53,8 @@ export async function exportAccessiCSV({ structureId, startDate, endDate }) {
 
   await verifyUserPermissions({ userUid, structureId });
 
-  const start = new Date(startDate + "T00:00:00.000Z");
-  const end = new Date(endDate + "T23:59:59.999Z");
+  const start = new Date(`${startDate}T00:00:00.000Z`);
+  const end = new Date(`${endDate}T23:59:59.999Z`);
 
   const accessiSnap = await adminDb
     .collection("accessi")
@@ -65,7 +65,11 @@ export async function exportAccessiCSV({ structureId, startDate, endDate }) {
   for (const doc of accessiSnap.docs) {
     const data = doc.data();
     const createdAt = new Date(data.createdAt);
-    if (!isNaN(createdAt.getTime()) && createdAt >= start && createdAt <= end) {
+    if (
+      !Number.isNaN(createdAt.getTime()) &&
+      createdAt >= start &&
+      createdAt <= end
+    ) {
       filtered.push({ id: doc.id, ...data });
     }
   }
@@ -148,6 +152,6 @@ export async function exportAccessiCSV({ structureId, startDate, endDate }) {
     }
   }
 
-  const csv = "\uFEFF" + rows.map(toCSVRow).join("\r\n");
+  const csv = `\uFEFF${rows.map(toCSVRow).join("\r\n")}`;
   return { csv, count: exportedCount };
 }

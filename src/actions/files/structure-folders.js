@@ -1,6 +1,6 @@
 "use server";
 
-import { CACHE_TAGS, invalidateStructureFolderCaches } from "@/lib/cache";
+import { invalidateStructureFolderCaches } from "@/lib/cache";
 import admin from "@/lib/firebase/firebaseAdmin";
 import { logDataCreate, logDataDelete, logDataUpdate } from "@/utils/audit";
 import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
@@ -298,6 +298,9 @@ export async function renameStructureFolder({
     if (!folderDoc.exists) throw new Error("Folder not found");
     const folderData = folderDoc.data();
     if (folderData.deleted) throw new Error("Folder not found");
+    if (structureId && folderData.structureId !== structureId) {
+      throw new Error("Folder belongs to a different structure");
+    }
 
     await verifyUserPermissions({
       userUid,
@@ -320,7 +323,7 @@ export async function renameStructureFolder({
 
     const descendants = descendantsSnapshot.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .filter((f) => f.path.startsWith(oldPath + "/"));
+      .filter((f) => f.path.startsWith(`${oldPath}/`));
 
     const batch = adminDb.batch();
     const affectedFolderIds = [folderId];
@@ -377,6 +380,9 @@ export async function deleteStructureFolder({
     if (!folderDoc.exists) throw new Error("Folder not found");
     const folderData = folderDoc.data();
     if (folderData.deleted) throw new Error("Folder already deleted");
+    if (structureId && folderData.structureId !== structureId) {
+      throw new Error("Folder belongs to a different structure");
+    }
 
     await verifyUserPermissions({
       userUid,
@@ -416,7 +422,7 @@ export async function deleteStructureFolder({
         .get();
       const descendants = allSubsSnap.docs
         .map((doc) => ({ id: doc.id, ...doc.data() }))
-        .filter((f) => f.path.startsWith(folderData.path + "/"));
+        .filter((f) => f.path.startsWith(`${folderData.path}/`));
 
       const allFilesSnap = await adminDb
         .collection("structureFiles")
@@ -501,6 +507,9 @@ export async function moveStructureFolder({
     if (!folderDoc.exists) throw new Error("Folder not found");
     const folderData = folderDoc.data();
     if (folderData.deleted) throw new Error("Folder not found");
+    if (structureId && folderData.structureId !== structureId) {
+      throw new Error("Folder belongs to a different structure");
+    }
 
     await verifyUserPermissions({
       userUid,
@@ -541,7 +550,7 @@ export async function moveStructureFolder({
       .get();
     const descendants = descendantsSnap.docs
       .map((doc) => ({ id: doc.id, ...doc.data() }))
-      .filter((f) => f.path.startsWith(oldPath + "/"));
+      .filter((f) => f.path.startsWith(`${oldPath}/`));
 
     const batch = adminDb.batch();
     const affectedFolderIds = [folderId];
@@ -604,6 +613,9 @@ export async function moveStructureFileToFolder({
     if (!fileDoc.exists) throw new Error("File not found");
     const fileData = fileDoc.data();
     if (fileData.deleted) throw new Error("File not found");
+    if (structureId && fileData.structureId !== structureId) {
+      throw new Error("File belongs to a different structure");
+    }
 
     let targetFolderPath = "/";
     if (targetFolderId) {

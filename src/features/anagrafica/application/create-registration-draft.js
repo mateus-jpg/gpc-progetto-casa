@@ -1,5 +1,4 @@
 import {
-  buildPrivacyPayload,
   buildRegistrationState,
   normalizeRegistrationStatus,
   REGISTRATION_STATUS,
@@ -9,7 +8,6 @@ import { invalidateAnagraficaCaches } from "@/lib/cache";
 import { logDataCreate } from "@/utils/audit";
 import { verifyUserPermissions } from "@/utils/server-auth";
 import {
-  buildDraftPrivacyInput,
   buildDraftRegistrationAuditDetails,
   buildDraftRegistrationResponse,
   buildRegistrationStructureData,
@@ -29,7 +27,6 @@ export async function createRegistrationDraftUseCase({
   const {
     anagrafica: incomingAnagrafica,
     internalNotes,
-    privacy: incomingPrivacy,
     structureGroups: incomingStructureGroups,
   } = sanitizeAnagraficaPayload(body);
 
@@ -44,16 +41,7 @@ export async function createRegistrationDraftUseCase({
     structureIds: [structureId],
     sharedDataGrants: [],
     internalNotes,
-    privacy: buildPrivacyPayload(
-      buildDraftPrivacyInput(incomingPrivacy),
-      userUid,
-      userMail,
-    ),
-    ...buildRegistrationState(
-      REGISTRATION_STATUS.DRAFT_SIGNATURE_PENDING,
-      userUid,
-      userMail,
-    ),
+    ...buildRegistrationState(REGISTRATION_STATUS.ACTIVE, userUid, userMail),
     registeredBy: userUid,
     registeredByMail: userMail,
     registeredByStructure: structureId,

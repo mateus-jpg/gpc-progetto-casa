@@ -103,9 +103,14 @@ export function useFileOperations(structureId, onSuccess) {
    */
   const removeFile = useCallback(
     async (fileId) => {
+      if (!structureId) {
+        toast.error("Structure ID is required");
+        return { success: false };
+      }
+
       setIsDeleting(true);
       try {
-        const result = await deleteFile(fileId);
+        const result = await deleteFile(fileId, structureId);
 
         if (result.error) {
           toast.error(result.message || "Failed to delete file");
@@ -123,7 +128,7 @@ export function useFileOperations(structureId, onSuccess) {
         setIsDeleting(false);
       }
     },
-    [onSuccess],
+    [structureId, onSuccess],
   );
 
   /**
@@ -174,7 +179,7 @@ export function useFileOperations(structureId, onSuccess) {
     }
 
     // Can't drop folder on its own descendant
-    if (target.path && target.path.startsWith(draggedItem.path + "/")) {
+    if (target.path?.startsWith(`${draggedItem.path}/`)) {
       return false;
     }
 

@@ -42,6 +42,11 @@ import {
 import { useFileDownload } from "@/hooks/useFileDownload";
 import { cn, formatBytes } from "@/lib/utils";
 
+const FILE_GRID_SKELETON_KEYS = Array.from(
+  { length: 12 },
+  (_, index) => `file-grid-skeleton-${index + 1}`,
+);
+
 /**
  * Parent folder ".." item for navigation (also droppable)
  */
@@ -407,8 +412,8 @@ export default function FileGridView({
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        {[...Array(12)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
+        {FILE_GRID_SKELETON_KEYS.map((key) => (
+          <Card key={key} className="animate-pulse">
             <CardContent className="p-4">
               <div className="flex flex-col items-center">
                 <div className="w-16 h-16 bg-muted rounded mb-3" />

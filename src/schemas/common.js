@@ -32,7 +32,10 @@ export const optionalSafeString = (maxLength = 500) =>
 // Date string (ISO format or empty)
 export const dateStringSchema = z
   .string()
-  .refine((val) => !val || !isNaN(Date.parse(val)), "Invalid date format")
+  .refine(
+    (val) => !val || !Number.isNaN(Date.parse(val)),
+    "Invalid date format",
+  )
   .optional()
   .nullable();
 

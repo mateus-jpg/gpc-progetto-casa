@@ -68,15 +68,46 @@ export async function updateStructure(structureId, data) {
       throw new Error("Invalid data provided");
     }
 
-    // Update Firestore
-    const payload = {
-      ...data,
-      houseSetup: normalizeHouseSetupInput(data.houseSetup),
-      updatedAt: new Date(),
-      updatedBy: userUid,
-    };
+    const allowedStringFields = [
+      "name",
+      "email",
+      "address",
+      "city",
+      "phone",
+      "description",
+    ];
 
-    await collections.structures().doc(structureId).update(payload);
+    const payload = {};
+
+    for (const field of allowedStringFields) {
+      if (Object.hasOwn(data, field)) {
+        payload[field] =
+          typeof data[field] === "string" ? data[field].trim() : data[field];
+      }
+    }
+
+    if (Object.hasOwn(data, "houseSetup")) {
+      payload.houseSetup = normalizeHouseSetupInput(data.houseSetup);
+    }
+
+    if (Object.hasOwn(payload, "name") && !payload.name) {
+      throw new Error("Structure name is required");
+    }
+
+    const updatedFields = Object.keys(payload);
+    if (updatedFields.length === 0) {
+      throw new Error("No valid fields to update");
+    }
+
+    // Update Firestore
+    await collections
+      .structures()
+      .doc(structureId)
+      .update({
+        ...payload,
+        updatedAt: new Date(),
+        updatedBy: userUid,
+      });
 
     // Log the modification
     await logResourceModification({
@@ -84,7 +115,7 @@ export async function updateStructure(structureId, data) {
       resourceType: "structure",
       resourceId: structureId,
       action: "update",
-      details: { updatedFields: Object.keys(data) },
+      details: { updatedFields },
     });
 
     logger.info("Structure updated", { structureId, userUid });

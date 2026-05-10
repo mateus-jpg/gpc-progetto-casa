@@ -1,4 +1,3 @@
-import admin from "@/lib/firebase/firebaseAdmin";
 import {
   adminDb,
   buildStructureDataPayload,
@@ -23,6 +22,15 @@ export async function findExistingAnagraficaByCodiceFiscale(codiceFiscale) {
   return querySnap.empty ? null : querySnap.docs[0];
 }
 
+function getExistingAccessList(data = {}) {
+  return [
+    ...new Set([
+      ...(Array.isArray(data.canBeAccessedBy) ? data.canBeAccessedBy : []),
+      ...(Array.isArray(data.structureIds) ? data.structureIds : []),
+    ]),
+  ];
+}
+
 export async function createOrLinkGlobalAnagrafica({
   globalData,
   structureId,
@@ -33,14 +41,14 @@ export async function createOrLinkGlobalAnagrafica({
 
   if (existingDoc) {
     const anagraficaId = existingDoc.id;
-    const currentAccess = existingDoc.data().canBeAccessedBy || [];
+    const currentAccess = getExistingAccessList(existingDoc.data());
 
     if (!currentAccess.includes(structureId)) {
-      await adminDb.collection("anagrafica").doc(anagraficaId).update({
-        canBeAccessedBy: admin.firestore.FieldValue.arrayUnion(structureId),
-        structureIds: admin.firestore.FieldValue.arrayUnion(structureId),
-        updatedAt: new Date(),
-      });
+      const error = new Error(
+        "A record with this fiscal code already exists. Use the sharing workflow instead of automatically linking it.",
+      );
+      error.code = "EXISTING_ANAGRAFICA_REQUIRES_SHARE";
+      throw error;
     }
 
     return {
@@ -118,11 +126,6 @@ export async function upsertStructureDataForRegistration({
 
 export function getAllowedStructures(existingDoc, structureId) {
   return existingDoc
-    ? [
-        ...new Set([
-          ...(existingDoc.data().canBeAccessedBy || []),
-          structureId,
-        ]),
-      ]
+    ? [...new Set([...getExistingAccessList(existingDoc.data()), structureId])]
     : [structureId];
 }

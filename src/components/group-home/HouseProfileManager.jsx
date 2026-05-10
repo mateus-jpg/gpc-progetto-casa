@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { upsertHouseProfile } from "@/actions/group-home";
@@ -22,7 +22,6 @@ import {
   BILL_CONTACT_OPTIONS,
   COMMON_SPACE_OPTIONS,
   CONTRACT_TYPE_OPTIONS,
-  createDefaultAppliances,
   PAYMENT_METHOD_OPTIONS,
   TARI_PAYMENT_OPTIONS,
 } from "@/lib/group-home/catalog";
@@ -32,10 +31,39 @@ function getTodayDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function createEmptyAppliance(id = "") {
+  return {
+    functioning: false,
+    id,
+    name: "",
+    notes: "",
+    ownership: "",
+    present: true,
+  };
+}
+
+function hasApplianceContent(item = {}) {
+  return Boolean(
+    item.name &&
+      (item.present || item.functioning || item.ownership || item.notes),
+  );
+}
+
+function normalizeApplianceForForm(item = {}, index = 0) {
+  return {
+    ...createEmptyAppliance(item.id || `appliance-${index}`),
+    functioning: Boolean(item.functioning),
+    name: item.name || "",
+    notes: item.notes || "",
+    ownership: item.ownership || "",
+    present: item.present !== false,
+  };
+}
+
 function createEmptyForm() {
   return {
     address: "",
-    appliances: createDefaultAppliances(),
+    appliances: [],
     commonAreas: {
       cleaningRules: "",
       commonSpaces: [],
@@ -145,24 +173,14 @@ function createFormFromProfile(profile) {
   const empty = createEmptyForm();
   const existingAppliances = Array.isArray(profile.appliances)
     ? profile.appliances
+        .map(normalizeApplianceForForm)
+        .filter(hasApplianceContent)
     : [];
-  const applianceByName = new Map(
-    existingAppliances.map((item) => [item.name, item]),
-  );
 
   return {
     ...empty,
     address: profile.address || "",
-    appliances: APPLIANCE_DEFAULTS.map((name) => {
-      const current = applianceByName.get(name) || {};
-      return {
-        functioning: Boolean(current.functioning),
-        name,
-        notes: current.notes || "",
-        ownership: current.ownership || "",
-        present: Boolean(current.present),
-      };
-    }),
+    appliances: existingAppliances,
     commonAreas: {
       cleaningRules: profile.commonAreas?.cleaningRules || "",
       commonSpaces: profile.commonAreas?.commonSpaces || [],
@@ -319,6 +337,25 @@ export function HouseProfileManager({
       ...current,
       appliances: current.appliances.map((item, itemIndex) =>
         itemIndex === index ? { ...item, [field]: value } : item,
+      ),
+    }));
+  };
+
+  const addAppliance = () => {
+    setFormData((current) => ({
+      ...current,
+      appliances: [
+        ...current.appliances,
+        createEmptyAppliance(`appliance-${Date.now()}`),
+      ],
+    }));
+  };
+
+  const removeAppliance = (index) => {
+    setFormData((current) => ({
+      ...current,
+      appliances: current.appliances.filter(
+        (_item, itemIndex) => itemIndex !== index,
       ),
     }));
   };
@@ -1049,8 +1086,9 @@ export function HouseProfileManager({
                   }
                 />
               </div>
-              <Label className="flex items-center gap-3 rounded-xl border px-3 py-3 self-end">
+              <Label className="flex items-center gap-2 self-end py-2">
                 <Checkbox
+                  className="h-4 w-4 rounded-[2px]"
                   checked={formData.expenses.cashFundEnabled}
                   onCheckedChange={(checked) =>
                     setNestedValue(
@@ -1083,64 +1121,119 @@ export function HouseProfileManager({
             </div>
 
             <div className="space-y-4">
-              <Label>Elettrodomestici presenti e dotazioni</Label>
-              {formData.appliances.map((appliance, index) => (
-                <div
-                  key={appliance.name}
-                  className="grid gap-4 rounded-lg border p-4 md:grid-cols-2 xl:grid-cols-5"
-                >
-                  <div className="space-y-2">
-                    <Label>Elettrodomestico</Label>
-                    <Input
-                      value={appliance.name}
-                      onChange={(event) =>
-                        updateAppliance(index, "name", event.target.value)
-                      }
-                    />
-                  </div>
-                  <Label className="flex items-center gap-3 rounded-xl border px-3 py-3 self-end">
-                    <Checkbox
-                      checked={appliance.present}
-                      onCheckedChange={(checked) =>
-                        updateAppliance(index, "present", Boolean(checked))
-                      }
-                    />
-                    <span>Presente</span>
-                  </Label>
-                  <Label className="flex items-center gap-3 rounded-xl border px-3 py-3 self-end">
-                    <Checkbox
-                      checked={appliance.functioning}
-                      onCheckedChange={(checked) =>
-                        updateAppliance(index, "functioning", Boolean(checked))
-                      }
-                    />
-                    <span>Funzionante</span>
-                  </Label>
-                  <div className="space-y-2">
-                    <Label>Proprietà</Label>
-                    <select
-                      className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
-                      value={appliance.ownership}
-                      onChange={(event) =>
-                        updateAppliance(index, "ownership", event.target.value)
-                      }
-                    >
-                      <option value="">Seleziona</option>
-                      <option value="Casa">Casa</option>
-                      <option value="Inquilino">Inquilino</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2 xl:col-span-5">
-                    <Label>Note</Label>
-                    <Input
-                      value={appliance.notes}
-                      onChange={(event) =>
-                        updateAppliance(index, "notes", event.target.value)
-                      }
-                    />
-                  </div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <Label>Elettrodomestici presenti e dotazioni</Label>
+                <Button type="button" variant="outline" onClick={addAppliance}>
+                  <Plus className="h-4 w-4" />
+                  Aggiungi elettrodomestico
+                </Button>
+              </div>
+
+              {formData.appliances.length === 0 ? (
+                <div className="rounded-md border border-dashed px-4 py-5 text-sm text-muted-foreground">
+                  Nessun elettrodomestico inserito.
                 </div>
-              ))}
+              ) : (
+                formData.appliances.map((appliance, index) => (
+                  <div
+                    key={appliance.id || index}
+                    className="space-y-4 rounded-lg border p-4"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="grid flex-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        <div className="space-y-2">
+                          <Label htmlFor={`appliance-name-${index}`}>
+                            Elettrodomestico
+                          </Label>
+                          <Input
+                            id={`appliance-name-${index}`}
+                            list="appliance-suggestions"
+                            value={appliance.name}
+                            onChange={(event) =>
+                              updateAppliance(index, "name", event.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`appliance-ownership-${index}`}>
+                            Proprietà
+                          </Label>
+                          <select
+                            id={`appliance-ownership-${index}`}
+                            className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+                            value={appliance.ownership}
+                            onChange={(event) =>
+                              updateAppliance(
+                                index,
+                                "ownership",
+                                event.target.value,
+                              )
+                            }
+                          >
+                            <option value="">Seleziona</option>
+                            <option value="Casa">Casa</option>
+                            <option value="Inquilino">Inquilino</option>
+                          </select>
+                        </div>
+                        <Label className="flex items-center gap-2 self-end py-2">
+                          <Checkbox
+                            className="h-4 w-4 rounded-[2px]"
+                            checked={appliance.present}
+                            onCheckedChange={(checked) =>
+                              updateAppliance(
+                                index,
+                                "present",
+                                Boolean(checked),
+                              )
+                            }
+                          />
+                          <span>Presente</span>
+                        </Label>
+                        <Label className="flex items-center gap-2 self-end py-2">
+                          <Checkbox
+                            className="h-4 w-4 rounded-[2px]"
+                            checked={appliance.functioning}
+                            onCheckedChange={(checked) =>
+                              updateAppliance(
+                                index,
+                                "functioning",
+                                Boolean(checked),
+                              )
+                            }
+                          />
+                          <span>Funzionante</span>
+                        </Label>
+                      </div>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeAppliance(index)}
+                        aria-label="Rimuovi elettrodomestico"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor={`appliance-notes-${index}`}>Note</Label>
+                      <Input
+                        id={`appliance-notes-${index}`}
+                        value={appliance.notes}
+                        onChange={(event) =>
+                          updateAppliance(index, "notes", event.target.value)
+                        }
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
+              <datalist id="appliance-suggestions">
+                {APPLIANCE_DEFAULTS.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
             </div>
           </CardContent>
         </Card>
@@ -1284,11 +1377,9 @@ export function HouseProfileManager({
               <Label>Spazi comuni presenti</Label>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                 {COMMON_SPACE_OPTIONS.map((option) => (
-                  <Label
-                    key={option}
-                    className="flex items-center gap-3 rounded-xl border px-3 py-3"
-                  >
+                  <Label key={option} className="flex items-center gap-2 py-1">
                     <Checkbox
+                      className="h-4 w-4 rounded-[2px]"
                       checked={formData.commonAreas.commonSpaces.includes(
                         option,
                       )}

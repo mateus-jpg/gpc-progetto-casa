@@ -43,7 +43,7 @@ const STRUCTURE_FIELDS = [
 export async function migrateAnagraficaStructure(limit = 100, dryRun = true) {
   try {
     const { userUid } = await requireUser();
-    await verifySuperAdmin(userUid);
+    await verifySuperAdmin({ userUid });
 
     console.log(`[MIGRATION] Starting. DryRun: ${dryRun}, Limit: ${limit}`);
 

@@ -5,12 +5,6 @@ import {
   deleteAnagraficaShared,
 } from "./anagrafica-delete";
 import {
-  deleteAnagraficaAsAdmin as deleteAnagraficaAsAdminShared,
-  getAvailableStructuresForSharing as getAvailableStructuresForSharingShared,
-  removeStructureFromAnagrafica as removeStructureFromAnagraficaShared,
-  shareAnagraficaWithStructures as shareAnagraficaWithStructuresShared,
-} from "./anagrafica-sharing";
-import {
   getAnagraficaInternalShared,
   getAnagraficaShared,
 } from "./anagrafica-read";
@@ -19,6 +13,12 @@ import {
   createRegistrationDraftShared,
   finalizeRegistrationDraftShared,
 } from "./anagrafica-registration";
+import {
+  deleteAnagraficaAsAdmin as deleteAnagraficaAsAdminShared,
+  getAvailableStructuresForSharing as getAvailableStructuresForSharingShared,
+  removeStructureFromAnagrafica as removeStructureFromAnagraficaShared,
+  shareAnagraficaWithStructures as shareAnagraficaWithStructuresShared,
+} from "./anagrafica-sharing";
 import {
   updateAnagraficaInternalShared,
   updateAnagraficaShared,

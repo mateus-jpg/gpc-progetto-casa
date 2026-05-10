@@ -5,6 +5,28 @@ function sanitizeHeader(value) {
   return (value || "").replace(/[\r\n]/g, "");
 }
 
+function getConfiguredOrigin() {
+  const configured =
+    process.env.AUTH_VERIFY_ORIGIN || process.env.NEXT_PUBLIC_APP_URL || "";
+
+  if (!configured) return null;
+
+  try {
+    return new URL(configured).origin;
+  } catch {
+    return null;
+  }
+}
+
+function getVerifyUrl(req) {
+  const configuredOrigin = getConfiguredOrigin();
+  if (configuredOrigin) {
+    return new URL("/api/auth/verify", configuredOrigin);
+  }
+
+  return new URL("/api/auth/verify", req.nextUrl.origin);
+}
+
 function createResponseWithUserHeaders(req, user) {
   const headers = new Headers(req.headers);
   headers.set("x-user-uid", sanitizeHeader(user.uid));
@@ -47,16 +69,14 @@ export async function middleware(req) {
   }
 
   // Cache miss - verify session via API
-  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
-  const protocol = req.headers.get("x-forwarded-proto") || "http";
-  const absoluteUrl = `${protocol}://${host}/api/auth/verify`;
+  const verifyUrl = getVerifyUrl(req);
 
   // Create AbortController for timeout
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
   try {
-    const verifyRes = await fetch(absoluteUrl, {
+    const verifyRes = await fetch(verifyUrl, {
       headers: {
         cookie: req.headers.get("cookie") || "",
         "cache-control": "no-cache",

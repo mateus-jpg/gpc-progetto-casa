@@ -1,60 +1,66 @@
-# apphosting.yaml
-# Settings for Backend (on Cloud Run).
-# See https://firebase.google.com/docs/app-hosting/configure#cloud-run
+# App Hosting configuration for the Progetto Casa client project.
 
 runConfig:
   minInstances: 0
   maxInstances: 50
-  # concurrency: 80
-  # cpu: 1
-  # memoryMiB: 512
 
 env:
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: "AIzaSyBwX8ksH1E_S-oYFiQO-RfZgoqz4gTA5go"
+    value: "AIzaSyAft5fG7zycuUz5REN-NzrdWYeL2tfM8BQ"
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: "gpc-obt.firebaseapp.com"
+    value: "progetto-casa-a26cd.firebaseapp.com"
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: "gpc-obt"
+    value: "progetto-casa-a26cd"
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: "gpc-obt.firebasestorage.app"
+    value: "progetto-casa-a26cd.firebasestorage.app"
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: "537122439985"
+    value: "718649341989"
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: "1:537122439985:web:4bc68f02a47c7fce9ea610"
+    value: "1:718649341989:web:9fa17ee0b288647034e7cc"
     availability:
       - BUILD
       - RUNTIME
 
   - variable: SESSION_COOKIE_NAME
-    value: "_gpc_obt_session-cookie"
+    value: "_progetto_casa_session_cookie"
     availability:
       - BUILD
       - RUNTIME
 
-
   - variable: FIREBASE_PROJECT_ID
-    value: "gpc-obt"
+    value: "progetto-casa-a26cd"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: FIREBASE_STORAGE_BUCKET
+    value: "progetto-casa-a26cd.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: FIREBASE_CLIENT_EMAIL
+    value: "firebase-adminsdk-fbsvc@progetto-casa-a26cd.iam.gserviceaccount.com"
     availability:
       - BUILD
       - RUNTIME
@@ -70,16 +76,3 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  
-  - variable: VERTEX_AI_LOCATION
-    value: europe-west4
-    availability:
-      - BUILD
-      - RUNTIME
-      
-  - variable: VERTEX_AI_MODEL
-    value: gemini-2.5-flash
-    availability:
-      - BUILD
-      - RUNTIME
-

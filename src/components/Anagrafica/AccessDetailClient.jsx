@@ -100,8 +100,8 @@ function ServiceReadView({ service, anagraficaId }) {
             Sottocategorie
           </span>
           <div className="flex flex-wrap gap-1">
-            {subcategories.map((s, i) => (
-              <Badge key={i} variant="secondary">
+            {subcategories.map((s) => (
+              <Badge key={s} variant="secondary">
                 {s}
               </Badge>
             ))}
@@ -144,9 +144,9 @@ function ServiceReadView({ service, anagraficaId }) {
             File allegati
           </span>
           <div className="border rounded-md px-3 py-1">
-            {service.files.map((f, i) => (
+            {service.files.map((f) => (
               <FileRow
-                key={i}
+                key={f.path || f.nomeOriginale || f.nome}
                 file={f}
                 anagraficaId={anagraficaId}
                 editMode={false}
@@ -221,7 +221,7 @@ export default function AccessDetailClient({
       setEditMode(false);
       router.refresh();
     } catch (err) {
-      toast.error("Errore durante il salvataggio: " + err.message);
+      toast.error(`Errore durante il salvataggio: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -318,7 +318,12 @@ export default function AccessDetailClient({
       {!editMode && (
         <div className="space-y-4">
           {(accesso.services || []).map((svc, i) => (
-            <Card key={i}>
+            <Card
+              key={
+                svc.id ||
+                `${svc.tipoAccesso || "service"}-${svc.createdAt || svc.note || ""}`
+              }
+            >
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <span className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs font-bold">
@@ -365,9 +370,9 @@ export default function AccessDetailClient({
                         File esistenti
                       </p>
                       <div className="border rounded-md px-3 py-1">
-                        {existing.map((f, i) => (
+                        {existing.map((f) => (
                           <FileRow
-                            key={i}
+                            key={f.path || f.nomeOriginale || f.nome}
                             file={f}
                             anagraficaId={anagraficaId}
                             editMode

@@ -305,9 +305,9 @@ export function RegistrationSignaturePdfDocument({
 
           <View style={styles.infoBox}>
             <Text style={styles.paragraph}>
-              Integrare questo modulo con l&apos;informativa privacy ufficiale
-              della struttura e con eventuali riferimenti di protocollo o timbro
-              previsti dalla vostra procedura interna.
+              Conservare questo modulo secondo le procedure interne della
+              struttura, con eventuali riferimenti di protocollo o timbro
+              previsti.
             </Text>
           </View>
 
@@ -328,15 +328,11 @@ export function RegistrationSignaturePdfDocument({
                 <Text style={styles.signatureLabel}>
                   Firma della persona presa in carico
                 </Text>
-                <Text style={styles.signatureLine}>
-                  Nome e firma leggibile
-                </Text>
+                <Text style={styles.signatureLine}>Nome e firma leggibile</Text>
               </View>
               <View style={styles.signatureBox}>
                 <Text style={styles.signatureLabel}>Firma operatore</Text>
-                <Text style={styles.signatureLine}>
-                  Nome, cognome e firma
-                </Text>
+                <Text style={styles.signatureLine}>Nome, cognome e firma</Text>
               </View>
             </View>
           </View>

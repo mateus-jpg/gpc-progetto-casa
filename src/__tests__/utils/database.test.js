@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { arraysIntersect } from "@/utils/database";
 
 // Note: getUserDocument and collections are harder to test without mocking Firebase Admin

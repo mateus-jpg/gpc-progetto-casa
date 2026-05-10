@@ -261,8 +261,7 @@ async function migrateAccessiFiles() {
             folderName,
             structureIds,
           );
-          const isNew =
-            !folderCache[anagraficaId]?.[folderName] || DRY_RUN ? false : true; // approximate
+          const _isNew = !(!folderCache[anagraficaId]?.[folderName] || DRY_RUN); // approximate
           console.log(`  Folder "${folderName}": ${folderId}`);
 
           if (!DRY_RUN) stats.foldersCreated++; // will over-count but cache prevents real duplicates

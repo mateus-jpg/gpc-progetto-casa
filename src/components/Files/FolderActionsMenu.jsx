@@ -30,30 +30,36 @@ export default function FolderActionsMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
+        <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
           <MoreVertical className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="min-w-[160px]">
         {!folder.isDefaultCategory && (
           <>
-            <DropdownMenuItem onClick={handle(() => onRename?.(folder))}>
-              <Edit className="mr-2 h-4 w-4" />
+            <DropdownMenuItem
+              className="text-sm py-2.5"
+              onClick={handle(() => onRename?.(folder))}
+            >
+              <Edit className="mr-2.5 h-4 w-4" />
               Rename
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handle(() => onMove?.(folder))}>
-              <Folder className="mr-2 h-4 w-4" />
+            <DropdownMenuItem
+              className="text-sm py-2.5"
+              onClick={handle(() => onMove?.(folder))}
+            >
+              <Folder className="mr-2.5 h-4 w-4" />
               Move
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
         )}
         <DropdownMenuItem
+          className="text-sm py-2.5 text-destructive focus:text-destructive disabled:opacity-50"
           onClick={handle(() => onDelete?.(folder))}
           disabled={!canDelete}
-          className="text-destructive focus:text-destructive disabled:opacity-50"
         >
-          <Trash2 className="mr-2 h-4 w-4" />
+          <Trash2 className="mr-2.5 h-4 w-4" />
           Delete {!canDelete && "(Protected)"}
         </DropdownMenuItem>
       </DropdownMenuContent>

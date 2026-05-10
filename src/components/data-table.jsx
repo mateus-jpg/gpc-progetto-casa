@@ -29,7 +29,6 @@ import {
   IconLayoutColumns,
   IconLoader,
   IconPlus,
-  IconTrendingUp,
 } from "@tabler/icons-react";
 import {
   flexRender,
@@ -42,27 +41,10 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import * as React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
-import { toast } from "sonner";
 import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -71,7 +53,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -80,7 +61,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -90,7 +70,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export const schema = z.object({
   id: z.number(),
@@ -579,7 +558,7 @@ export function DataTable({ data: initialData }) {
   );
 }
 
-const chartData = [
+const _chartData = [
   { month: "January", desktop: 186, mobile: 80 },
   { month: "February", desktop: 305, mobile: 200 },
   { month: "March", desktop: 237, mobile: 120 },
@@ -588,7 +567,7 @@ const chartData = [
   { month: "June", desktop: 214, mobile: 140 },
 ];
 
-const chartConfig = {
+const _chartConfig = {
   desktop: {
     label: "Desktop",
     color: "var(--primary)",

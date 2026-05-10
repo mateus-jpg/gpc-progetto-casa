@@ -3,9 +3,11 @@
 import { FolderPlus, RefreshCw, Upload } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useSWRConfig } from "swr";
+import { getFileUrl } from "@/actions/files/files";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { FileDownloadContext } from "@/hooks/useFileDownload";
 import { useFileOperations } from "@/hooks/useFileOperations";
 import { useFolderOperations } from "@/hooks/useFolderOperations";
 import {
@@ -38,7 +40,7 @@ export default function FileBrowser({ anagraficaId, structureId }) {
     rootFolders,
     isLoading: isLoadingTree,
     mutate: mutateTree,
-  } = useFolderTree(anagraficaId);
+  } = useFolderTree(anagraficaId, structureId);
 
   // Fetch current folder contents
   const {
@@ -48,7 +50,7 @@ export default function FileBrowser({ anagraficaId, structureId }) {
     breadcrumbs,
     isLoading: isLoadingContents,
     mutate: mutateContents,
-  } = useFolderContents(currentFolderId, anagraficaId);
+  } = useFolderContents(currentFolderId, anagraficaId, structureId);
 
   // Setup folder operations
   const folderOps = useFolderOperations(anagraficaId, structureId, () => {
@@ -83,6 +85,11 @@ export default function FileBrowser({ anagraficaId, structureId }) {
     mutateContents();
     invalidateFolderTreeCache(mutate, anagraficaId);
   };
+
+  const getScopedFileUrl = useCallback(
+    (fileId) => getFileUrl(fileId, structureId),
+    [structureId],
+  );
 
   // Get current folder name for dialog
   const currentFolderName = currentFolder?.nome || "Root";
@@ -165,44 +172,50 @@ export default function FileBrowser({ anagraficaId, structureId }) {
               <Separator />
 
               {/* File and Folder List */}
-              <FileListTable
-                files={files}
-                subfolders={subfolders}
-                onFolderOpen={handleFolderSelect}
-                onFileMove={(fileId, targetFolderId) => {
-                  fileOps.moveFile(fileId, targetFolderId);
-                }}
-                onFileDelete={(file) => {
-                  if (
-                    confirm(
-                      `Are you sure you want to delete "${file.nome}"? This action cannot be undone.`,
-                    )
-                  ) {
-                    fileOps.removeFile(file.id);
-                  }
-                }}
-                onFolderDelete={(folder) => {
-                  const hasContents = subfolders.length > 0 || files.length > 0;
-                  const message = hasContents
-                    ? `"${folder.nome}" is not empty. Delete all contents?`
-                    : `Are you sure you want to delete "${folder.nome}"?`;
+              <FileDownloadContext.Provider value={getScopedFileUrl}>
+                <FileListTable
+                  files={files}
+                  subfolders={subfolders}
+                  onFolderOpen={handleFolderSelect}
+                  onFileMove={(fileId, targetFolderId) => {
+                    fileOps.moveFile(fileId, targetFolderId);
+                  }}
+                  onFileDelete={(file) => {
+                    if (
+                      confirm(
+                        `Are you sure you want to delete "${file.nome}"? This action cannot be undone.`,
+                      )
+                    ) {
+                      fileOps.removeFile(file.id);
+                    }
+                  }}
+                  onFolderDelete={(folder) => {
+                    const hasContents =
+                      subfolders.length > 0 || files.length > 0;
+                    const message = hasContents
+                      ? `"${folder.nome}" is not empty. Delete all contents?`
+                      : `Are you sure you want to delete "${folder.nome}"?`;
 
-                  if (confirm(message)) {
-                    folderOps.remove(folder.id, hasContents);
-                  }
-                }}
-                onFolderRename={(folder) => {
-                  const newName = prompt("Enter new folder name:", folder.nome);
-                  if (newName && newName !== folder.nome) {
-                    folderOps.rename(folder.id, newName);
-                  }
-                }}
-                onFileRename={(file) => {
-                  // TODO: Implement file rename
-                  alert("File rename not yet implemented");
-                }}
-                isLoading={isLoadingContents}
-              />
+                    if (confirm(message)) {
+                      folderOps.remove(folder.id, hasContents);
+                    }
+                  }}
+                  onFolderRename={(folder) => {
+                    const newName = prompt(
+                      "Enter new folder name:",
+                      folder.nome,
+                    );
+                    if (newName && newName !== folder.nome) {
+                      folderOps.rename(folder.id, newName);
+                    }
+                  }}
+                  onFileRename={() => {
+                    // TODO: Implement file rename
+                    alert("File rename not yet implemented");
+                  }}
+                  isLoading={isLoadingContents}
+                />
+              </FileDownloadContext.Provider>
             </div>
           </div>
         </div>

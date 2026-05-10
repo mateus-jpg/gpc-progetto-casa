@@ -6,7 +6,13 @@ import { v4 as uuidv4 } from "uuid";
 import { CACHE_TAGS, invalidateFilesCache, REVALIDATE } from "@/lib/cache";
 import admin from "@/lib/firebase/firebaseAdmin";
 import { logDataCreate, logDataDelete, logFileAccess } from "@/utils/audit";
-import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
+import { validateFileSignature } from "@/utils/fileValidation";
+import {
+  canAccessScopedResource,
+  requireAnagraficaAccess,
+  requireAnagraficaFileAccess,
+} from "@/utils/resource-guards";
+import { requireUser } from "@/utils/server-auth";
 import { resolveExistingStorageObject } from "@/utils/storage";
 import { getAnagraficaInternal } from "../anagrafica/anagrafica";
 import { createFolderInternal } from "./folders";
@@ -71,6 +77,13 @@ function validateFile(file, maxSizeMB = 10) {
 
   if (!allowedTypes.includes(file.type)) {
     throw new Error(`File type ${file.type} not allowed`);
+  }
+
+  const buffer =
+    file.buffer instanceof ArrayBuffer ? Buffer.from(file.buffer) : file.buffer;
+
+  if (!buffer || !validateFileSignature(buffer, file.type)) {
+    throw new Error("File content does not match the declared type");
   }
 
   return true;
@@ -208,18 +221,11 @@ export async function uploadFiles({
     const userEmail = headers.get("x-user-email");
 
     // 2. VERIFY ACCESS TO ANAGRAFICA
-    const anagraficaData = await getAnagraficaInternal(anagraficaId, userUid);
-    const allowedStructures = anagraficaData.canBeAccessedBy || [];
-
-    // Verify user has access through specified structure
-    await verifyUserPermissions({
+    const { allowedStructures, isSuperAdmin } = await requireAnagraficaAccess({
       userUid,
+      anagraficaId,
       structureId,
     });
-
-    if (structureId && !allowedStructures.includes(structureId)) {
-      throw new Error("Forbidden: structureId not allowed for this anagrafica");
-    }
 
     // 3. RESOLVE TARGET FOLDER
     let targetFolderId = folderId;
@@ -269,6 +275,16 @@ export async function uploadFiles({
       if (folderDoc.data().anagraficaId !== anagraficaId) {
         throw new Error("Folder does not belong to this anagrafica");
       }
+
+      if (
+        !canAccessScopedResource({
+          resourceData: folderDoc.data(),
+          structureId,
+          isSuperAdmin,
+        })
+      ) {
+        throw new Error("Folder does not belong to this structure");
+      }
     }
 
     // 4. VALIDATE FILES
@@ -305,7 +321,7 @@ export async function uploadFiles({
           tags,
           documentDate: file.documentDate || null,
           expirationDate: file.expirationDate || expirationDate,
-          structureIds: allowedStructures,
+          structureIds: structureId ? [structureId] : allowedStructures,
           uploadedByStructure: structureId,
           userUid,
           userEmail,
@@ -417,13 +433,17 @@ export async function getFiles(anagraficaId, options = {}) {
       options = { accessoId: options };
     }
 
-    const { accessoId = null, folderId = null } = options;
+    const { accessoId = null, folderId = null, structureId = null } = options;
 
     // 1. AUTHENTICATION
     const { userUid } = await requireUser();
 
     // 2. VERIFY ACCESS TO ANAGRAFICA
-    await getAnagraficaInternal(anagraficaId, userUid);
+    const { isSuperAdmin } = await requireAnagraficaAccess({
+      userUid,
+      anagraficaId,
+      structureId,
+    });
 
     // 3. GET CACHED FILES
     const cacheKey = `${anagraficaId}-${accessoId || "all"}-${folderId || "all"}`;
@@ -436,7 +456,13 @@ export async function getFiles(anagraficaId, options = {}) {
       },
     );
 
-    const files = await getCachedFiles();
+    const files = (await getCachedFiles()).filter((file) =>
+      canAccessScopedResource({
+        resourceData: file,
+        structureId,
+        isSuperAdmin,
+      }),
+    );
 
     return {
       success: true,
@@ -457,27 +483,17 @@ export async function getFiles(anagraficaId, options = {}) {
  *
  * @param {string} fileId - File document ID
  */
-export async function getFileUrl(fileId) {
+export async function getFileUrl(fileId, structureId = null) {
   try {
     // 1. AUTHENTICATION
     const { userUid } = await requireUser();
 
-    // 2. GET FILE DOCUMENT
-    const fileDoc = await adminDb.collection("files").doc(fileId).get();
-
-    if (!fileDoc.exists) {
-      throw new Error("File not found");
-    }
-
-    const fileData = fileDoc.data();
-
-    // Check soft delete
-    if (fileData.deleted) {
-      throw new Error("File not found");
-    }
-
-    // 3. VERIFY ACCESS TO ANAGRAFICA
-    await getAnagraficaInternal(fileData.anagraficaId, userUid);
+    const { data: fileData, snapshot: fileDoc } =
+      await requireAnagraficaFileAccess({
+        userUid,
+        fileId,
+        structureId,
+      });
 
     // 4. GENERATE SIGNED URL
     const storageObject = await resolveExistingStorageObject(
@@ -488,7 +504,9 @@ export async function getFileUrl(fileId) {
       throw new Error("File not found in storage");
     }
 
-    const originalName = fileData.nomeOriginale || fileData.nome;
+    const originalName = (fileData.nomeOriginale || fileData.nome || "file")
+      .replace(/[\r\n"]/g, "_")
+      .slice(0, 255);
     const [url] = await storageObject.file.getSignedUrl({
       action: "read",
       expires: Date.now() + 3600000, // 1 hour
@@ -542,27 +560,17 @@ export async function getFileUrl(fileId) {
  *
  * @param {string} fileId - File document ID
  */
-export async function deleteFile(fileId) {
+export async function deleteFile(fileId, structureId = null) {
   try {
     // 1. AUTHENTICATION
     const { userUid } = await requireUser();
 
-    // 2. GET FILE DOCUMENT
-    const fileDoc = await adminDb.collection("files").doc(fileId).get();
-
-    if (!fileDoc.exists) {
-      throw new Error("File not found");
-    }
-
-    const fileData = fileDoc.data();
-
-    // Check if already deleted
-    if (fileData.deleted) {
-      throw new Error("File already deleted");
-    }
-
-    // 3. VERIFY ACCESS TO ANAGRAFICA
-    await getAnagraficaInternal(fileData.anagraficaId, userUid);
+    const { data: fileData } = await requireAnagraficaFileAccess({
+      userUid,
+      fileId,
+      structureId,
+      writable: true,
+    });
 
     // 4. SOFT DELETE
     await adminDb.collection("files").doc(fileId).update({
@@ -609,27 +617,17 @@ export async function deleteFile(fileId) {
  * @param {string} fileId - File document ID
  * @param {Object} updates - Fields to update
  */
-export async function updateFileMetadata(fileId, updates) {
+export async function updateFileMetadata(fileId, updates, structureId = null) {
   try {
     // 1. AUTHENTICATION
     const { userUid } = await requireUser();
 
-    // 2. GET FILE DOCUMENT
-    const fileDoc = await adminDb.collection("files").doc(fileId).get();
-
-    if (!fileDoc.exists) {
-      throw new Error("File not found");
-    }
-
-    const fileData = fileDoc.data();
-
-    // Check if deleted
-    if (fileData.deleted) {
-      throw new Error("File not found");
-    }
-
-    // 3. VERIFY ACCESS TO ANAGRAFICA
-    await getAnagraficaInternal(fileData.anagraficaId, userUid);
+    const { data: fileData } = await requireAnagraficaFileAccess({
+      userUid,
+      fileId,
+      structureId,
+      writable: true,
+    });
 
     // 4. VALIDATE AND PREPARE UPDATES
     const allowedFields = ["nome", "tags", "category", "dataScadenza"];

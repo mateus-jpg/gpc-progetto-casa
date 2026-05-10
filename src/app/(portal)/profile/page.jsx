@@ -20,7 +20,7 @@ export default function ProfilePage() {
       } else {
         toast.error(result.error || "Failed to load profile");
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error("Failed to load profile");
     } finally {
       setLoading(false);

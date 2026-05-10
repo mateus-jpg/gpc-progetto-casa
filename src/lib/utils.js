@@ -18,7 +18,7 @@ export function cn(...inputs) {
  * @returns {any} Serialized data safe for JSON stringification
  */
 export function serializeFirestoreData(data) {
-  if (data === null || data === undefined) return data;
+  if (data === null || data === undefined) return null;
 
   // Handle arrays
   if (Array.isArray(data)) {

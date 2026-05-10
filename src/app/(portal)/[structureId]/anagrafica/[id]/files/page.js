@@ -3,8 +3,6 @@
 import {
   ArrowLeft,
   FolderPlus,
-  Grid3x3,
-  List,
   RefreshCw,
   Upload,
 } from "lucide-react";
@@ -12,16 +10,13 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useSWRConfig } from "swr";
-import FolderBreadcrumbs from "@/components/Files/Breadcrumbs/FolderBreadcrumbs";
+import { getFileUrl } from "@/actions/files/files";
 import CreateFolderDialog from "@/components/Files/Dialogs/CreateFolderDialog";
 import MoveItemDialog from "@/components/Files/Dialogs/MoveItemDialog";
 import UploadFilesDialog from "@/components/Files/Dialogs/UploadFilesDialog";
-import FileGridView from "@/components/Files/FileList/FileGridView";
-import FileListTable from "@/components/Files/FileList/FileListTable";
-import FolderTree from "@/components/Files/FolderTree/FolderTree";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import MobileFileList from "@/components/Files/FileList/MobileFileList";
+import FolderBreadcrumbs from "@/components/Files/Breadcrumbs/FolderBreadcrumbs";
+import { FileDownloadContext } from "@/hooks/useFileDownload";
 import { useFileOperations } from "@/hooks/useFileOperations";
 import { useFolderOperations } from "@/hooks/useFolderOperations";
 import {
@@ -29,10 +24,8 @@ import {
   useFolderContents,
   useFolderTree,
 } from "@/hooks/useFolderTree";
+import { cn } from "@/lib/utils";
 
-/**
- * Files page with Google Drive-style grid view
- */
 export default function FilesPage() {
   const params = useParams();
   const anagraficaId = params.id;
@@ -41,19 +34,16 @@ export default function FilesPage() {
   const { mutate } = useSWRConfig();
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [createFolderDialogOpen, setCreateFolderDialogOpen] = useState(false);
-  const [viewMode, setViewMode] = useState("grid"); // 'grid' or 'list'
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [movingItem, setMovingItem] = useState(null);
 
-  // Fetch folder tree
   const {
     folders,
     rootFolders,
     isLoading: isLoadingTree,
     mutate: mutateTree,
-  } = useFolderTree(anagraficaId);
+  } = useFolderTree(anagraficaId, structureId);
 
-  // Fetch current folder contents
   const {
     folder: currentFolder,
     files,
@@ -61,26 +51,22 @@ export default function FilesPage() {
     breadcrumbs,
     isLoading: isLoadingContents,
     mutate: mutateContents,
-  } = useFolderContents(currentFolderId, anagraficaId);
+  } = useFolderContents(currentFolderId, anagraficaId, structureId);
 
-  // Setup folder operations
   const folderOps = useFolderOperations(anagraficaId, structureId, () => {
     mutateTree();
     mutateContents();
     invalidateFolderTreeCache(mutate, anagraficaId);
   });
 
-  // Setup file operations
   const fileOps = useFileOperations(structureId, () => {
     mutateContents();
   });
 
-  // Handle folder navigation
   const handleFolderSelect = useCallback((folderId) => {
     setCurrentFolderId(folderId);
   }, []);
 
-  // Handle create folder
   const handleCreateFolder = async (folderName) => {
     const result = await folderOps.create(folderName, currentFolderId);
     if (result.success) {
@@ -88,13 +74,11 @@ export default function FilesPage() {
     }
   };
 
-  // Open the move dialog for a file or folder
   const handleMoveClick = useCallback((item) => {
     setMovingItem(item);
     setMoveDialogOpen(true);
   }, []);
 
-  // Execute move after destination is selected in the dialog
   const handleMoveConfirm = useCallback(
     async (targetFolderId) => {
       if (!movingItem) return;
@@ -109,7 +93,6 @@ export default function FilesPage() {
     [movingItem, folderOps, fileOps],
   );
 
-  // Handle refresh
   const handleRefresh = () => {
     mutateTree();
     mutateContents();
@@ -138,6 +121,11 @@ export default function FilesPage() {
     [fileOps],
   );
 
+  const getScopedFileUrl = useCallback(
+    (fileId) => getFileUrl(fileId, structureId),
+    [structureId],
+  );
+
   const handleFolderDelete = useCallback(
     (folder) => {
       const hasContents = subfolders.length > 0 || files.length > 0;
@@ -161,181 +149,118 @@ export default function FilesPage() {
     [folderOps],
   );
 
+  const isLoading = isLoadingTree || isLoadingContents;
+
   return (
-    <div className="container mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Files & Documents</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage files and folders for this record
-          </p>
-        </div>
-        <Button variant="outline" asChild>
+    <div
+      className="flex flex-col bg-stone-50 -mt-4 md:-mt-6"
+      style={{ height: "calc(100dvh - var(--header-height))" }}
+    >
+      {/* Sticky header */}
+      <header className="flex-shrink-0 bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <Link href={`/${structureId}/anagrafica/${anagraficaId}`}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Record
+            <span className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 active:bg-white/20 cursor-pointer">
+              <ArrowLeft className="w-5 h-5" />
+            </span>
           </Link>
-        </Button>
+          <div>
+            <h1 className="text-sm font-semibold leading-tight tracking-tight">
+              File &amp; Documenti
+            </h1>
+            <p className="text-[11px] text-slate-400 leading-tight">
+              Gestione documenti
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleRefresh}
+          disabled={isLoading}
+          aria-label="Aggiorna"
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 active:bg-white/20 disabled:opacity-40 transition-opacity"
+        >
+          <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} />
+        </button>
+      </header>
+
+      {/* Breadcrumbs */}
+      <div className="flex-shrink-0 bg-white border-b border-stone-200">
+        <FolderBreadcrumbs
+          breadcrumbs={breadcrumbs}
+          onNavigate={handleFolderSelect}
+        />
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>File Browser</CardTitle>
-            <div className="flex items-center gap-2">
-              {/* View toggle */}
-              <div className="flex border rounded-md">
-                <Button
-                  variant={viewMode === "grid" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("grid")}
-                  className="rounded-r-none"
-                >
-                  <Grid3x3 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "list" ? "secondary" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className="rounded-l-none"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isLoadingTree || isLoadingContents}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-6">
-            {/* Left Sidebar: Folder Tree */}
-            <div className="w-64 flex-shrink-0 border-r pr-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">
-                    FOLDERS
-                  </h3>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => setCreateFolderDialogOpen(true)}
-                    disabled={folderOps.isProcessing}
-                    title="Create new folder"
-                  >
-                    <FolderPlus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <Separator />
-                <div className="max-h-[600px] overflow-y-auto pr-2">
-                  <FolderTree
-                    rootFolders={rootFolders}
-                    currentFolderId={currentFolderId}
-                    onSelectFolder={handleFolderSelect}
-                    isLoading={isLoadingTree}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Right Panel: File Grid/List */}
-            <div className="flex-1 min-w-0">
-              <div className="space-y-4">
-                {/* Breadcrumbs and Actions */}
-                <div className="flex items-center justify-between">
-                  <FolderBreadcrumbs
-                    breadcrumbs={breadcrumbs}
-                    onNavigate={handleFolderSelect}
-                  />
-                  <UploadFilesDialog
-                    anagraficaId={anagraficaId}
-                    structureId={structureId}
-                    currentFolderId={currentFolderId}
-                    folders={folders}
-                    onSuccess={() => mutateContents()}
-                    trigger={
-                      <Button>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload Files
-                      </Button>
-                    }
-                  />
-                </div>
-
-                <Separator />
-
-                {/* File Grid or List View */}
-                {viewMode === "grid"
-                  ? <FileGridView
-                      files={files}
-                      subfolders={subfolders}
-                      currentFolder={currentFolder}
-                      onFolderOpen={handleFolderSelect}
-                      onFileMove={handleFileMove}
-                      onFileDelete={handleFileDelete}
-                      onFolderMove={(folderIdOrObj, targetFolderId) => {
-                        if (targetFolderId !== undefined) {
-                          folderOps.move(folderIdOrObj, targetFolderId);
-                        } else {
-                          handleMoveClick({ ...folderIdOrObj, isFolder: true });
-                        }
-                      }}
-                      onFolderDelete={handleFolderDelete}
-                      onFolderRename={handleFolderRename}
-                      onFileRename={() =>
-                        alert("File rename not yet implemented")
-                      }
-                      isLoading={isLoadingContents}
-                    />
-                  : <FileListTable
-                      files={files}
-                      subfolders={subfolders}
-                      onFolderOpen={handleFolderSelect}
-                      onFileMove={handleFileMove}
-                      onFileDelete={handleFileDelete}
-                      onFolderDelete={handleFolderDelete}
-                      onFolderMove={(folder) =>
-                        handleMoveClick({ ...folder, isFolder: true })
-                      }
-                      onFolderRename={handleFolderRename}
-                      onFileRename={() =>
-                        alert("File rename not yet implemented")
-                      }
-                      isLoading={isLoadingContents}
-                    />}
-              </div>
-            </div>
-          </div>
-
-          {/* Create Folder Dialog */}
-          <CreateFolderDialog
-            open={createFolderDialogOpen}
-            onOpenChange={setCreateFolderDialogOpen}
-            onSubmit={handleCreateFolder}
-            parentFolderName={currentFolderName}
-            isCreating={folderOps.isCreating}
+      {/* Scrollable file list */}
+      <main className="flex-1 overflow-y-auto">
+        <FileDownloadContext.Provider value={getScopedFileUrl}>
+          <MobileFileList
+            files={files}
+            subfolders={subfolders}
+            currentFolder={currentFolder}
+            onFolderOpen={handleFolderSelect}
+            onFileMove={handleFileMove}
+            onFileDelete={handleFileDelete}
+            onFolderMove={(folderIdOrObj, targetFolderId) => {
+              if (targetFolderId !== undefined) {
+                folderOps.move(folderIdOrObj, targetFolderId);
+              } else {
+                handleMoveClick({ ...folderIdOrObj, isFolder: true });
+              }
+            }}
+            onFolderDelete={handleFolderDelete}
+            onFolderRename={handleFolderRename}
+            onFileRename={() => alert("File rename not yet implemented")}
+            isLoading={isLoadingContents}
           />
+        </FileDownloadContext.Provider>
+      </main>
 
-          {/* Move Dialog */}
-          <MoveItemDialog
-            open={moveDialogOpen}
-            onOpenChange={setMoveDialogOpen}
-            item={movingItem}
-            folders={folders}
-            onConfirm={handleMoveConfirm}
-            isMoving={fileOps.isMoving || folderOps.isMoving}
-          />
-        </CardContent>
-      </Card>
+      {/* Sticky bottom action bar */}
+      <div
+        className="flex-shrink-0 bg-white border-t border-stone-200 px-4 pt-3 flex gap-3"
+        style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+      >
+        <button
+          onClick={() => setCreateFolderDialogOpen(true)}
+          disabled={folderOps.isProcessing}
+          className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-stone-200 text-sm font-medium text-stone-700 active:bg-stone-50 disabled:opacity-40 transition-colors"
+        >
+          <FolderPlus className="w-4 h-4" />
+          Nuova Cartella
+        </button>
+
+        <UploadFilesDialog
+          anagraficaId={anagraficaId}
+          structureId={structureId}
+          currentFolderId={currentFolderId}
+          folders={folders}
+          onSuccess={() => mutateContents()}
+          trigger={
+            <button className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl bg-orange-600 text-white text-sm font-semibold active:bg-orange-700 transition-colors shadow-sm shadow-orange-200">
+              <Upload className="w-4 h-4" />
+              Carica File
+            </button>
+          }
+        />
+      </div>
+
+      <CreateFolderDialog
+        open={createFolderDialogOpen}
+        onOpenChange={setCreateFolderDialogOpen}
+        onSubmit={handleCreateFolder}
+        parentFolderName={currentFolderName}
+        isCreating={folderOps.isCreating}
+      />
+
+      <MoveItemDialog
+        open={moveDialogOpen}
+        onOpenChange={setMoveDialogOpen}
+        item={movingItem}
+        folders={folders}
+        onConfirm={handleMoveConfirm}
+        isMoving={fileOps.isMoving || folderOps.isMoving}
+      />
     </div>
   );
 }

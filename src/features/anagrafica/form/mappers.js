@@ -56,8 +56,11 @@ export function prepareAnagraficaPayload(formData) {
 }
 
 export function prepareRegistrationDraftPayload(formData, structureId) {
+  const payload = prepareAnagraficaPayload(formData);
+  delete payload.privacy;
+
   return {
-    ...prepareAnagraficaPayload(formData),
+    ...payload,
     registeredByStructure: structureId,
     canBeAccessedBy: [structureId],
   };

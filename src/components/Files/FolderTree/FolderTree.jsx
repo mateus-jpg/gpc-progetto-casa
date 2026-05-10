@@ -5,6 +5,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const FOLDER_TREE_SKELETON_KEYS = [
+  "folder-tree-skeleton-1",
+  "folder-tree-skeleton-2",
+  "folder-tree-skeleton-3",
+  "folder-tree-skeleton-4",
+  "folder-tree-skeleton-5",
+];
+
 /**
  * Individual folder tree item with collapse/expand
  */
@@ -34,11 +42,10 @@ function FolderTreeItem({
     <div>
       <div
         className={cn(
-          "flex items-center gap-1 py-1.5 px-2 rounded-md cursor-pointer hover:bg-accent transition-colors",
+          "w-full flex items-center gap-1 py-1.5 px-2 rounded-md hover:bg-accent transition-colors",
           isSelected && "bg-accent font-medium",
           level > 0 && "ml-4",
         )}
-        onClick={handleSelect}
       >
         {/* Expand/Collapse Icon */}
         {hasChildren ? (
@@ -58,28 +65,34 @@ function FolderTreeItem({
           <span className="w-4" />
         )}
 
-        {/* Folder Icon */}
-        {isExpanded && hasChildren ? (
-          <FolderOpen className="h-4 w-4 text-blue-500 flex-shrink-0" />
-        ) : (
-          <Folder
-            className={cn(
-              "h-4 w-4 flex-shrink-0",
-              isDefaultCategory ? "text-blue-600" : "text-blue-500",
-            )}
-          />
-        )}
-
-        {/* Folder Name */}
-        <span
-          className={cn(
-            "text-sm truncate flex-1",
-            isDefaultCategory && "font-semibold",
-          )}
-          title={folder.nome}
+        <button
+          type="button"
+          className="flex flex-1 min-w-0 items-center gap-1 text-left bg-transparent border-0 p-0"
+          onClick={handleSelect}
         >
-          {folder.nome}
-        </span>
+          {/* Folder Icon */}
+          {isExpanded && hasChildren ? (
+            <FolderOpen className="h-4 w-4 text-blue-500 flex-shrink-0" />
+          ) : (
+            <Folder
+              className={cn(
+                "h-4 w-4 flex-shrink-0",
+                isDefaultCategory ? "text-blue-600" : "text-blue-500",
+              )}
+            />
+          )}
+
+          {/* Folder Name */}
+          <span
+            className={cn(
+              "text-sm truncate flex-1",
+              isDefaultCategory && "font-semibold",
+            )}
+            title={folder.nome}
+          >
+            {folder.nome}
+          </span>
+        </button>
       </div>
 
       {/* Children */}
@@ -119,8 +132,8 @@ export default function FolderTree({
   if (isLoading) {
     return (
       <div className="space-y-2 animate-pulse">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-8 bg-muted rounded" />
+        {FOLDER_TREE_SKELETON_KEYS.map((key) => (
+          <div key={key} className="h-8 bg-muted rounded" />
         ))}
       </div>
     );

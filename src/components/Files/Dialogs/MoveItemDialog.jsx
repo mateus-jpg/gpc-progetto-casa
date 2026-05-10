@@ -67,6 +67,7 @@ export default function MoveItemDialog({
           <ScrollArea className="h-64 border rounded-md p-2">
             {/* Root option */}
             <button
+              type="button"
               className={cn(
                 "w-full text-left px-3 py-2 rounded-md flex items-center gap-2 hover:bg-accent text-sm",
                 selectedFolderId === null && "bg-accent font-medium",
@@ -79,6 +80,7 @@ export default function MoveItemDialog({
 
             {availableFolders.map((folder) => (
               <button
+                type="button"
                 key={folder.id}
                 className={cn(
                   "w-full text-left px-3 py-2 rounded-md flex items-center gap-2 hover:bg-accent text-sm",

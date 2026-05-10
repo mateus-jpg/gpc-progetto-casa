@@ -35,12 +35,12 @@ export function LoginForm({ className, ...props }) {
               <div className="grid gap-3">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
-                  <a
-                    href="#"
+                  <button
+                    type="button"
                     className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
                   >
                     Forgot your password?
-                  </a>
+                  </button>
                 </div>
                 <Input id="password" type="password" required />
               </div>
@@ -55,9 +55,9 @@ export function LoginForm({ className, ...props }) {
             </div>
             <div className="mt-4 text-center text-sm">
               Don&apos;t have an account?{" "}
-              <a href="#" className="underline underline-offset-4">
+              <button type="button" className="underline underline-offset-4">
                 Sign up
-              </a>
+              </button>
             </div>
           </form>
         </CardContent>

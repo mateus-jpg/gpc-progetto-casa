@@ -1,7 +1,5 @@
-import { Plus } from "lucide-react";
 import { AddUserToProjectDialog } from "@/components/admin/AddUserToProjectDialog";
 import { ProjectUsersTable } from "@/components/admin/ProjectUsersTable";
-import { Button } from "@/components/ui/button";
 
 export const metadata = {
   title: "Project Users",

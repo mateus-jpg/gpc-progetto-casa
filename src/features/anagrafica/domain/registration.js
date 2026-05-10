@@ -1,15 +1,5 @@
 export const DRAFT_REGISTRATION_STATUS = "draft_signature_pending";
-
-export function buildDraftPrivacyInput(privacy = {}) {
-  return {
-    ...privacy,
-    paperNoticeCollected: false,
-    paperNoticeSignedAt: null,
-    paperNoticeFileId: null,
-    paperNoticeFileName: "",
-    paperNoticeUploadedAt: null,
-  };
-}
+export const ACTIVE_REGISTRATION_STATUS = "active";
 
 export function buildRegistrationStructureData({
   structureId,
@@ -34,13 +24,13 @@ export function buildDraftRegistrationResponse({
   return {
     id: anagraficaId,
     registrationStatus:
-      existingRegistrationStatus || DRAFT_REGISTRATION_STATUS,
+      existingRegistrationStatus || ACTIVE_REGISTRATION_STATUS,
   };
 }
 
 export function buildDraftRegistrationAuditDetails({ linkedToExisting }) {
   return {
-    draft: true,
     linkedToExisting,
+    registrationActivatedImmediately: true,
   };
 }
