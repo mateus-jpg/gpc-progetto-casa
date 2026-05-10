@@ -1,12 +1,24 @@
 "use client";
+
 import { download, generateCsv, mkConfig } from "export-to-csv";
-import { FileDown, Loader2, MoreVertical, Trash2, View } from "lucide-react";
+import {
+  FileDown,
+  Loader2,
+  Mail,
+  MapPin,
+  MoreVertical,
+  Phone,
+  Trash2,
+  View,
+} from "lucide-react";
 import { MaterialReactTable } from "material-react-table";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import DeleteAnagraficaDialog from "@/components/Anagrafica/DeleteAnagraficaDialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +27,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { hasEffectiveVulnerabilities } from "@/utils/vulnerability";
 import { getExportData } from "./data";
+
+const MOBILE_PAGE_SIZE = 12;
 
 const csvConfig = mkConfig({
   fieldSeparator: ",",
@@ -104,13 +119,6 @@ const columnsDef = [
         enableHiding: false,
       },
       { accessorKey: "anagrafica.nome", header: "Nome", enableHiding: false },
-      /* {
-        accessorFn: (row) => `${row.anagrafica?.nome || ''} ${row.anagrafica?.cognome || ''}`.trim(),
-        id: 'nome_completo',
-        header: 'Nome',
-        size: 150,
-        enableHiding: false
-      }, */
       { accessorKey: "anagrafica.sesso", header: "Sesso", size: 100 },
       {
         accessorKey: "anagrafica.dataDiNascita",
@@ -217,8 +225,8 @@ const columnsDef = [
           const renderedCell =
             extraCount > 0 ? `${first} (+${extraCount})` : first;
           return (
-            <div className="bg-red-500 text-center shadow-gray-800/40 rounded-sm text-background ">
-              <p className="">{renderedCell}</p>
+            <div className="rounded-sm bg-red-500 text-center text-background shadow-gray-800/40">
+              <p>{renderedCell}</p>
             </div>
           );
         },
@@ -241,10 +249,189 @@ const columnsDef = [
   },
 ];
 
+function MobileInfoRow({ icon: Icon, label, value }) {
+  if (!value) return null;
+
+  return (
+    <div className="flex items-start gap-3 rounded-2xl bg-muted/45 px-3 py-2.5 text-sm">
+      <Icon className="mt-0.5 h-4 w-4 text-muted-foreground" />
+      <div className="min-w-0">
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        <p className="break-words text-foreground">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function MobileExportMenu({
+  disabled,
+  filteredRows,
+  handleExportData,
+  handleExportRows,
+  isExporting,
+  visibleRows,
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          className="w-full sm:w-auto"
+          disabled={disabled}
+          variant="outline"
+        >
+          {isExporting
+            ? <Loader2 className="h-4 w-4 animate-spin" />
+            : <FileDown className="h-4 w-4" />}
+          Esporta
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem disabled={disabled} onClick={handleExportData}>
+          <FileDown className="h-4 w-4" />
+          Esporta risultati
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={disabled || filteredRows.length === 0}
+          onClick={() =>
+            handleExportRows(filteredRows.map((row) => ({ original: row })))
+          }
+        >
+          <FileDown className="h-4 w-4" />
+          Esporta tutte le schede filtrate
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={disabled || visibleRows.length === 0}
+          onClick={() =>
+            handleExportRows(visibleRows.map((row) => ({ original: row })))
+          }
+        >
+          <FileDown className="h-4 w-4" />
+          Esporta schede visibili
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function MobileAnagraficaCard({ isAdmin, onDelete, row, structureId }) {
+  const fullName =
+    `${row.anagrafica?.nome || ""} ${row.anagrafica?.cognome || ""}`.trim() ||
+    "Scheda senza nome";
+  const hasVulnerabilities = hasEffectiveVulnerabilities(
+    row.vulnerabilita?.vulnerabilita,
+  );
+  const isRegistrationPending =
+    row.registrationStatus === "draft_signature_pending";
+
+  return (
+    <Card className="gap-0 overflow-hidden rounded-[1.75rem] border-0 bg-gradient-to-br from-background via-background to-muted/35 py-0 shadow-[0_24px_60px_-36px_rgba(15,23,42,0.5)] ring-1 ring-black/5">
+      <CardContent className="px-5 py-5">
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <Link
+              className="block text-base font-semibold text-foreground"
+              href={`/${structureId}/anagrafica/${row.id}`}
+            >
+              {fullName}
+            </Link>
+
+            <div className="mt-2 flex flex-wrap gap-2">
+              {isRegistrationPending && (
+                <Badge className="border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-50">
+                  Registrazione incompleta
+                </Badge>
+              )}
+              {hasVulnerabilities && (
+                <Badge className="bg-red-50 text-red-700 hover:bg-red-50">
+                  Vulnerabilita presenti
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className="rounded-full bg-muted/55 hover:bg-muted/90"
+                size="icon"
+                variant="ghost"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={`/${structureId}/anagrafica/${row.id}`}>
+                  <View className="h-4 w-4" />
+                  Visualizza
+                </Link>
+              </DropdownMenuItem>
+              {isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() =>
+                      onDelete({
+                        id: row.id,
+                        nome: row.anagrafica?.nome || "",
+                        cognome: row.anagrafica?.cognome || "",
+                        canBeAccessedBy: row.canBeAccessedBy || [],
+                      })
+                    }
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Elimina
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        <div className="mt-4 grid gap-3">
+          <MobileInfoRow
+            icon={MapPin}
+            label="Domicilio"
+            value={row.anagrafica?.comuneDiDomicilio}
+          />
+          <MobileInfoRow
+            icon={Phone}
+            label="Telefono"
+            value={row.anagrafica?.telefono}
+          />
+          <MobileInfoRow
+            icon={Mail}
+            label="Email"
+            value={row.anagrafica?.email}
+          />
+        </div>
+
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-muted/35 px-3 py-3">
+          <div className="min-w-0 text-xs text-muted-foreground">
+            {row.updatedAt
+              ? `Aggiornata ${formatTimestamp(row.updatedAt)}`
+              : ""}
+          </div>
+          <Button asChild size="sm">
+            <Link href={`/${structureId}/anagrafica/${row.id}`}>
+              <View className="h-4 w-4" />
+              Apri scheda
+            </Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function AnagraficaTable({ rows, structureId, isAdmin = false }) {
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [isExporting, setIsExporting] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [mobilePage, setMobilePage] = useState(1);
   const router = useRouter();
 
   const columns = useMemo(() => columnsDef, []);
@@ -254,19 +441,18 @@ export function AnagraficaTable({ rows, structureId, isAdmin = false }) {
     const searchTerm = globalFilter.toLowerCase();
     return rows.filter((row) => {
       return (
-        (row.anagrafica?.nome &&
-          row.anagrafica.nome.toLowerCase().includes(searchTerm)) ||
-        (row.anagrafica?.cognome &&
-          row.anagrafica.cognome.toLowerCase().includes(searchTerm)) ||
-        (row.anagrafica?.email &&
-          row.anagrafica.email.toLowerCase().includes(searchTerm)) ||
-        (row.anagrafica?.telefono &&
-          row.anagrafica.telefono.toLowerCase().includes(searchTerm)) ||
-        (row.anagrafica?.comuneDiDomicilio &&
-          row.anagrafica.comuneDiDomicilio.toLowerCase().includes(searchTerm))
+        row.anagrafica?.nome?.toLowerCase().includes(searchTerm) ||
+        row.anagrafica?.cognome?.toLowerCase().includes(searchTerm) ||
+        row.anagrafica?.email?.toLowerCase().includes(searchTerm) ||
+        row.anagrafica?.telefono?.toLowerCase().includes(searchTerm) ||
+        row.anagrafica?.comuneDiDomicilio?.toLowerCase().includes(searchTerm)
       );
     });
   }, [rows, globalFilter]);
+
+  const visibleMobileRows = useMemo(() => {
+    return filteredRows.slice(0, mobilePage * MOBILE_PAGE_SIZE);
+  }, [filteredRows, mobilePage]);
 
   const runExport = async (ids) => {
     setIsExporting(true);
@@ -282,167 +468,229 @@ export function AnagraficaTable({ rows, structureId, isAdmin = false }) {
   };
 
   const handleExportRows = (tableRows) => {
-    const ids = new Set(tableRows.map((r) => r.original.id));
+    const ids = new Set(tableRows.map((row) => row.original.id));
     runExport(ids);
   };
 
   const handleExportData = () => {
-    const ids = new Set(filteredRows.map((r) => r.id));
+    const ids = new Set(filteredRows.map((row) => row.id));
     runExport(ids);
   };
 
+  const hasMoreMobileRows = visibleMobileRows.length < filteredRows.length;
+
   return (
-    <div className="h-full w-full">
-      <Input
-        type="text"
-        placeholder="Cerca Nome, Cognome, Email, Telefono..."
-        value={globalFilter}
-        onChange={(e) => setGlobalFilter(e.target.value)}
-        className="mb-8 p-1 max-w-lg w-full "
-      />
-      <MaterialReactTable
-        columns={columns}
-        data={filteredRows}
-        enableRowActions
-        /* enableRowPinning */
-        enableColumnFilters
-        enableColumnOrdering
-        enableGlobalFilter={false}
-        state={{
-          isLoading: !rows,
-          showAlertBanner: filteredRows.length === 0,
-        }}
-        displayColumnDefOptions={<> </>}
-        renderRowActions={({ row }) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link href={`/${structureId}/anagrafica/${row.original.id}`}>
-                  <View className="mr-2 h-4 w-4" />
-                  Visualizza
-                </Link>
-              </DropdownMenuItem>
-              {isAdmin && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={() =>
-                      setDeleteTarget({
-                        id: row.original.id,
-                        nome: row.original.anagrafica?.nome || "",
-                        cognome: row.original.anagrafica?.cognome || "",
-                        canBeAccessedBy: row.original.canBeAccessedBy || [],
-                      })
-                    }
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Elimina
-                  </DropdownMenuItem>
-                </>
+    <div className="h-full w-full space-y-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <Input
+          className="w-full md:max-w-lg"
+          onChange={(e) => {
+            setGlobalFilter(e.target.value);
+            setMobilePage(1);
+          }}
+          placeholder="Cerca nome, cognome, email, telefono..."
+          type="text"
+          value={globalFilter}
+        />
+
+        <div className="md:hidden">
+          <MobileExportMenu
+            disabled={isExporting}
+            filteredRows={filteredRows}
+            handleExportData={handleExportData}
+            handleExportRows={handleExportRows}
+            isExporting={isExporting}
+            visibleRows={visibleMobileRows}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-3 md:hidden">
+        <div className="flex items-center justify-between px-1 text-sm text-muted-foreground">
+          <span>
+            {filteredRows.length}{" "}
+            {filteredRows.length === 1 ? "scheda" : "schede"}
+          </span>
+          {globalFilter ? <span>Filtro attivo</span> : null}
+        </div>
+
+        {visibleMobileRows.length === 0
+          ? <Card className="rounded-[1.75rem] border-0 py-0 shadow-[0_20px_40px_-28px_rgba(15,23,42,0.35)] ring-1 ring-black/5">
+              <CardContent className="px-4 py-8 text-center text-sm text-muted-foreground">
+                Nessuna scheda trovata con i filtri attuali.
+              </CardContent>
+            </Card>
+          : visibleMobileRows.map((row) => (
+              <MobileAnagraficaCard
+                isAdmin={isAdmin}
+                key={row.id}
+                onDelete={setDeleteTarget}
+                row={row}
+                structureId={structureId}
+              />
+            ))}
+
+        {hasMoreMobileRows && (
+          <Button
+            className="w-full"
+            onClick={() => setMobilePage((current) => current + 1)}
+            variant="outline"
+          >
+            Carica altre schede
+          </Button>
+        )}
+      </div>
+
+      <div className="hidden md:block">
+        <MaterialReactTable
+          columns={columns}
+          data={filteredRows}
+          displayColumnDefOptions={<> </>}
+          enableColumnFilters
+          enableColumnOrdering
+          enableGlobalFilter={false}
+          enableRowActions
+          initialState={{
+            pagination: { pageIndex: 0, pageSize: 25 },
+            density: "compact",
+            columnVisibility: {
+              id: false,
+              "vulnerabilita.intenzioneItalia": false,
+              "lavoroFormazione.titoloDiStudioOrigine": false,
+              "lavoroFormazione.titoloDiStudioItalia": false,
+              createdAt: false,
+              updatedAt: false,
+            },
+          }}
+          muiTableBodyRowProps={({ row }) => ({
+            onClick: () =>
+              router.push(`/${structureId}/anagrafica/${row.original.id}`),
+            sx: {
+              cursor: "pointer",
+              backgroundColor:
+                row.index % 2 !== 0 ? "rgba(0, 0, 0, 0.035)" : "inherit",
+            },
+          })}
+          muiTablePaperProps={{
+            sx: { borderRadius: 3, border: "1px solid gray-300" },
+          }}
+          renderRowActions={({ row }) => (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  className="h-8 w-8"
+                  onClick={(event) => event.stopPropagation()}
+                  size="icon"
+                  variant="ghost"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href={`/${structureId}/anagrafica/${row.original.id}`}>
+                    <View className="mr-2 h-4 w-4" />
+                    Visualizza
+                  </Link>
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() =>
+                        setDeleteTarget({
+                          id: row.original.id,
+                          nome: row.original.anagrafica?.nome || "",
+                          cognome: row.original.anagrafica?.cognome || "",
+                          canBeAccessedBy: row.original.canBeAccessedBy || [],
+                        })
+                      }
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Elimina
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          renderTopToolbarCustomActions={({ table }) => (
+            <div className="flex flex-wrap items-center gap-2">
+              {isExporting && (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
-        initialState={{
-          pagination: { pageSize: 25, pageIndex: 0 },
-          density: "compact",
-          columnVisibility: {
-            id: false,
-            /*             'anagrafica.nome': true,
-            'anagrafica.cognome': false, */
-            "vulnerabilita.intenzioneItalia": false,
-            "lavoroFormazione.titoloDiStudioOrigine": false,
-            "lavoroFormazione.titoloDiStudioItalia": false,
-            createdAt: false,
-            updatedAt: false,
-          },
-        }}
-        muiTablePaperProps={{
-          sx: { borderRadius: 3, border: "1px solid gray-300" },
-        }}
-        muiTableBodyRowProps={({ row }) => ({
-          onClick: () =>
-            router.push(`/${structureId}/anagrafica/${row.original.id}`),
-          sx: {
-            cursor: "pointer",
-            backgroundColor:
-              row.index % 2 !== 0 ? "rgba(0, 0, 0, 0.035)" : "inherit",
-          },
-        })}
-        renderTopToolbarCustomActions={({ table }) => (
-          <div className="flex flex-wrap gap-2 items-center">
-            {isExporting && (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            )}
-            <Button
-              onClick={handleExportData}
-              disabled={isExporting}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <FileDown className="h-4 w-4" />
-              Esporta Tutto
-            </Button>
-            <Button
-              disabled={
-                isExporting ||
-                table.getPrePaginationRowModel().rows.length === 0
-              }
-              onClick={() =>
-                handleExportRows(table.getPrePaginationRowModel().rows)
-              }
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <FileDown className="h-4 w-4" />
-              Esporta Tutte le Righe
-            </Button>
-            <Button
-              disabled={isExporting || table.getRowModel().rows.length === 0}
-              onClick={() => handleExportRows(table.getRowModel().rows)}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <FileDown className="h-4 w-4" />
-              Esporta Pagina
-            </Button>
-            <Button
-              disabled={
-                isExporting ||
-                (!table.getIsSomeRowsSelected() &&
-                  !table.getIsAllRowsSelected())
-              }
-              onClick={() => handleExportRows(table.getSelectedRowModel().rows)}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <FileDown className="h-4 w-4" />
-              Esporta Selezionate
-            </Button>
-          </div>
-        )}
-      />
+              <Button
+                className="flex items-center gap-1"
+                disabled={isExporting}
+                onClick={handleExportData}
+                size="sm"
+                variant="outline"
+              >
+                <FileDown className="h-4 w-4" />
+                Esporta Tutto
+              </Button>
+              <Button
+                className="flex items-center gap-1"
+                disabled={
+                  isExporting ||
+                  table.getPrePaginationRowModel().rows.length === 0
+                }
+                onClick={() =>
+                  handleExportRows(table.getPrePaginationRowModel().rows)
+                }
+                size="sm"
+                variant="outline"
+              >
+                <FileDown className="h-4 w-4" />
+                Esporta Tutte le Righe
+              </Button>
+              <Button
+                className="flex items-center gap-1"
+                disabled={isExporting || table.getRowModel().rows.length === 0}
+                onClick={() => handleExportRows(table.getRowModel().rows)}
+                size="sm"
+                variant="outline"
+              >
+                <FileDown className="h-4 w-4" />
+                Esporta Pagina
+              </Button>
+              <Button
+                className="flex items-center gap-1"
+                disabled={
+                  isExporting ||
+                  (!table.getIsSomeRowsSelected() &&
+                    !table.getIsAllRowsSelected())
+                }
+                onClick={() =>
+                  handleExportRows(table.getSelectedRowModel().rows)
+                }
+                size="sm"
+                variant="outline"
+              >
+                <FileDown className="h-4 w-4" />
+                Esporta Selezionate
+              </Button>
+            </div>
+          )}
+          state={{
+            isLoading: !rows,
+            showAlertBanner: filteredRows.length === 0,
+          }}
+        />
+      </div>
+
       <DeleteAnagraficaDialog
-        open={deleteTarget !== null}
+        anagrafica={deleteTarget}
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null);
         }}
-        anagrafica={deleteTarget}
-        structureId={structureId}
         onSuccess={() => {
           setDeleteTarget(null);
           router.refresh();
         }}
+        open={deleteTarget !== null}
+        structureId={structureId}
       />
     </div>
   );

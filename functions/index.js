@@ -5,10 +5,13 @@ const {
   onDocumentWritten,
 } = require("firebase-functions/v2/firestore");
 const { onRequest } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { getISOWeek, differenceInYears } = require("date-fns");
 
 admin.initializeApp();
 const db = admin.firestore();
+const AUDIT_LOG_RETENTION_DAYS = 90;
+const AUDIT_LOG_DELETE_BATCH_SIZE = 400;
 
 async function authorizeAdminRequest(req) {
   const authHeader =
@@ -105,6 +108,27 @@ function processArrayCategory(counterObj, values, amount = 1) {
 
 function normalizeRegistrationStatus(status) {
   return status === "draft_signature_pending" ? "Firma in attesa" : "Attiva";
+}
+
+async function deleteExpiredAuditLogsBatch(cutoffTimestamp) {
+  const snapshot = await db
+    .collection("audit_logs")
+    .where("timestamp", "<", cutoffTimestamp)
+    .orderBy("timestamp", "asc")
+    .limit(AUDIT_LOG_DELETE_BATCH_SIZE)
+    .get();
+
+  if (snapshot.empty) {
+    return 0;
+  }
+
+  const batch = db.batch();
+  snapshot.docs.forEach((doc) => {
+    batch.delete(doc.ref);
+  });
+  await batch.commit();
+
+  return snapshot.size;
 }
 
 const HISTORY_FIELD_LABELS = {
@@ -1461,5 +1485,34 @@ exports.recalculateStats = onRequest(
       console.error("Error recalculating stats:", error);
       res.status(500).json({ error: error.message });
     }
+  },
+);
+
+exports.cleanupOldAuditLogs = onSchedule(
+  {
+    schedule: "every day 03:00",
+    timeZone: "Europe/Rome",
+    region: "europe-west8",
+    timeoutSeconds: 540,
+    memory: "512MiB",
+  },
+  async () => {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - AUDIT_LOG_RETENTION_DAYS);
+    const cutoffTimestamp = admin.firestore.Timestamp.fromDate(cutoffDate);
+
+    let deletedCount = 0;
+
+    while (true) {
+      const batchDeleted = await deleteExpiredAuditLogsBatch(cutoffTimestamp);
+      if (batchDeleted === 0) {
+        break;
+      }
+      deletedCount += batchDeleted;
+    }
+
+    console.log(
+      `cleanupOldAuditLogs completed. Deleted ${deletedCount} audit logs older than ${AUDIT_LOG_RETENTION_DAYS} days.`,
+    );
   },
 );

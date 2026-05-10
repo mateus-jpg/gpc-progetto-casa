@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { updateStructure } from "@/actions/admin/structure";
+import { HouseSetupFields } from "@/components/admin/HouseSetupFields";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { createEmptyHouseSetup } from "@/lib/house-setup";
 
 export function StructureForm({ structure }) {
   const [formData, setFormData] = useState({
@@ -24,12 +26,26 @@ export function StructureForm({ structure }) {
     city: structure.city || "",
     phone: structure.phone || "",
     description: structure.description || "",
+    houseSetup: {
+      ...createEmptyHouseSetup(),
+      ...(structure.houseSetup || {}),
+    },
   });
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleHouseSetupChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      houseSetup: {
+        ...prev.houseSetup,
+        [field]: value,
+      },
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -40,7 +56,7 @@ export function StructureForm({ structure }) {
       if (result.success) {
         toast.success("Structure updated successfully");
       } else {
-        toast.error("Failed to update structure: " + result.error);
+        toast.error(`Failed to update structure: ${result.error}`);
       }
     } catch (error) {
       console.error(error);
@@ -118,6 +134,10 @@ export function StructureForm({ structure }) {
               onChange={handleChange}
             />
           </div>
+          <HouseSetupFields
+            value={formData.houseSetup}
+            onChange={handleHouseSetupChange}
+          />
         </CardContent>
         <CardFooter>
           <Button type="submit" disabled={loading}>

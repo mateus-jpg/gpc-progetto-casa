@@ -4,16 +4,9 @@ import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { clientAuth } from "@/lib/firebase/firebaseClient"; // your Firebase client SDK init
+import { clientAuth } from "@/lib/firebase/firebaseClient";
 import { cn } from "@/lib/utils";
 
 export function LoginForm({ className, ...props }) {
@@ -23,24 +16,20 @@ export function LoginForm({ className, ...props }) {
   const [error, setError] = useState(null);
   const router = useRouter();
 
-  // Clean up any existing Firebase auth state on mount
   useEffect(() => {
     const cleanup = async () => {
       try {
-        // Wait for auth to initialize
         await new Promise((resolve) => {
-          const unsubscribe = clientAuth.onAuthStateChanged((user) => {
+          const unsubscribe = clientAuth.onAuthStateChanged(() => {
             unsubscribe();
             resolve();
           });
         });
-
         if (clientAuth.currentUser) {
-          console.log("Cleaning up existing auth state");
           await signOut(clientAuth);
         }
-      } catch (error) {
-        console.log("Client auth cleanup:", error.message);
+      } catch (err) {
+        console.log("Client auth cleanup:", err.message);
       }
     };
     cleanup();
@@ -52,12 +41,10 @@ export function LoginForm({ className, ...props }) {
     setLoading(true);
 
     try {
-      // 1. Sign out any existing user first (cleanup)
       if (clientAuth.currentUser) {
         await signOut(clientAuth);
       }
 
-      // 2. Sign in with Firebase
       const userCred = await signInWithEmailAndPassword(
         clientAuth,
         email,
@@ -65,34 +52,25 @@ export function LoginForm({ className, ...props }) {
       );
       const idToken = await userCred.user.getIdToken();
 
-      // 3. Exchange ID token for a session cookie
       const res = await fetch("/api/auth/sessionLogin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken }),
-        credentials: "include", // Ensure cookies are included
+        credentials: "include",
       });
-
-      console.log("Session login response:", res);
 
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.error || "Session creation failed");
       }
 
-      console.log("✓ Session cookie created");
-
-      // 4. Small delay to ensure cookie is properly set before redirect
       await new Promise((resolve) => setTimeout(resolve, 100));
-
-      // 5. Use window.location instead of router.push for hard navigation
-      // This ensures the middleware runs with the fresh cookie
       window.location.href = "/dashboard";
     } catch (err) {
       console.error("Login error:", err);
       setError(
         err.message.includes("auth/")
-          ? "Invalid email or password"
+          ? "Email o password non validi"
           : err.message,
       );
     } finally {
@@ -101,56 +79,62 @@ export function LoginForm({ className, ...props }) {
   }
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center">GPC - Login</CardTitle>
-          <CardDescription>
-            Inserisci mail e password per accedere al portale
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-3">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-3">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                  <a
-                    href="#"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                  >
-                    Hai dimenticato la password?
-                  </a>
-                </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <div className="flex flex-col gap-3">
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Logging in..." : "Login"}
-                </Button>
-              </div>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+    <div className={cn("flex flex-col gap-5", className)} {...props}>
+      <form onSubmit={handleLogin} className="flex flex-col gap-5">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="email" className="text-sm font-medium">
+            Email
+          </Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="operatore@example.com"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="h-12 text-base"
+            autoComplete="email"
+            inputMode="email"
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password" className="text-sm font-medium">
+              Password
+            </Label>
+            <a
+              href="#"
+              className="text-xs text-muted-foreground underline-offset-4 hover:underline"
+            >
+              Password dimenticata?
+            </a>
+          </div>
+          <Input
+            id="password"
+            type="password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="h-12 text-base"
+            autoComplete="current-password"
+          />
+        </div>
+
+        {error && (
+          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </p>
+        )}
+
+        <Button
+          type="submit"
+          className="h-12 w-full text-base font-medium"
+          disabled={loading}
+        >
+          {loading ? "Accesso in corso…" : "Accedi"}
+        </Button>
+      </form>
     </div>
   );
 }

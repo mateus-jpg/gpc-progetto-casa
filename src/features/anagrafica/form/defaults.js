@@ -45,6 +45,14 @@ export function createEmptyAnagraficaFormState({
       referral: "",
       referralAltro: "",
     },
+    contestoCasa: {
+      dataIngresso: "",
+      dataUscita: "",
+      notePercorsoCasa: "",
+      operatoreRiferimentoNome: "",
+      operatoreRiferimentoUid: "",
+      spazioAssegnato: "",
+    },
     internalNotes: "",
     privacy: {
       paperNoticeCollected: false,

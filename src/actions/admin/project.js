@@ -1,5 +1,6 @@
 "use server";
 
+import { normalizeHouseSetupInput } from "@/lib/house-setup";
 import { serializeFirestoreData } from "@/lib/utils";
 import {
   validateCreateProject,
@@ -612,6 +613,7 @@ export async function createStructureInProject(projectId, data) {
       city: data.city?.trim() || "",
       phone: data.phone?.trim() || "",
       description: data.description?.trim() || "",
+      houseSetup: normalizeHouseSetupInput(data.houseSetup),
       projectId: projectId,
       admins: [],
       accessCategories: JSON.parse(JSON.stringify(DefaultAccessTypes)),

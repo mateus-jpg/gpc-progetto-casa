@@ -285,6 +285,7 @@ const GROUP_LABELS = {
   lavoroFormazione: "Lavoro e Formazione",
   vulnerabilita: "Vulnerabilità",
   referral: "Referral",
+  contestoCasa: "Contesto Casa",
 };
 
 const FIELD_LABELS = {
@@ -311,6 +312,12 @@ const FIELD_LABELS = {
   paeseDestinazione: "Paese di Destinazione",
   referral: "Referral",
   referralAltro: "Referral (Altro)",
+  operatoreRiferimentoNome: "Operatore di riferimento",
+  operatoreRiferimentoUid: "UID operatore di riferimento",
+  dataIngresso: "Data ingresso",
+  dataUscita: "Data uscita",
+  spazioAssegnato: "Stanza o spazio assegnato",
+  notePercorsoCasa: "Note percorso casa",
   paperNoticeCollected: "Informativa cartacea raccolta",
   paperNoticeSignedAt: "Data firma informativa",
   paperNoticeReference: "Riferimento documento",
@@ -389,6 +396,7 @@ function AnagraficaDataSection({ anagrafica }) {
   const lavoro = anagrafica.lavoroFormazione || {};
   const vuln = anagrafica.vulnerabilita || {};
   const ref = anagrafica.referral || {};
+  const contestoCasa = anagrafica.contestoCasa || {};
 
   const isFamiglia = nucleo.nucleo === "famiglia";
 
@@ -515,6 +523,40 @@ function AnagraficaDataSection({ anagrafica }) {
             <Text style={styles.fieldValue}>{ref.referralAltro}</Text>
           </View>
         )}
+      </View>
+
+      <Text style={styles.subSectionTitle}>Contesto Casa</Text>
+      <View style={styles.fieldGrid}>
+        <View style={styles.fieldItem}>
+          <Text style={styles.fieldLabel}>Operatore di riferimento</Text>
+          <Text style={styles.fieldValue}>
+            {contestoCasa.operatoreRiferimentoNome || "-"}
+          </Text>
+        </View>
+        <View style={styles.fieldItem}>
+          <Text style={styles.fieldLabel}>Data ingresso</Text>
+          <Text style={styles.fieldValue}>
+            {formatFieldValue(contestoCasa.dataIngresso)}
+          </Text>
+        </View>
+        <View style={styles.fieldItem}>
+          <Text style={styles.fieldLabel}>Data uscita</Text>
+          <Text style={styles.fieldValue}>
+            {formatFieldValue(contestoCasa.dataUscita)}
+          </Text>
+        </View>
+        <View style={styles.fieldItem}>
+          <Text style={styles.fieldLabel}>Stanza o spazio assegnato</Text>
+          <Text style={styles.fieldValue}>
+            {contestoCasa.spazioAssegnato || "-"}
+          </Text>
+        </View>
+        <View style={[styles.fieldItem, { width: "98%" }]}>
+          <Text style={styles.fieldLabel}>Note percorso casa</Text>
+          <Text style={styles.fieldValue}>
+            {contestoCasa.notePercorsoCasa || "-"}
+          </Text>
+        </View>
       </View>
     </View>
   );

@@ -23,6 +23,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import {
   SHAREABLE_STRUCTURE_DATA_FIELDS,
   SHAREABLE_STRUCTURE_DATA_LABELS,
@@ -32,6 +33,9 @@ export function ShareAnagraficaDialog({
   anagraficaId,
   structureId,
   anagraficaName,
+  buttonClassName,
+  buttonLabel = "Condividi",
+  buttonVariant = "outline",
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -141,9 +145,9 @@ export function ShareAnagraficaDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button className={cn(buttonClassName)} variant={buttonVariant}>
           <Share2 className="h-4 w-4 mr-2" />
-          Condividi
+          {buttonLabel}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-2xl">

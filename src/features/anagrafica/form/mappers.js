@@ -98,6 +98,10 @@ export function transformAnagraficaApiToFormState(data) {
       ...data.referral,
       referralAltro: "",
     },
+    contestoCasa: {
+      ...initialState.contestoCasa,
+      ...data.contestoCasa,
+    },
     internalNotes:
       typeof data.internalNotes === "string" ? data.internalNotes : "",
     privacy: {

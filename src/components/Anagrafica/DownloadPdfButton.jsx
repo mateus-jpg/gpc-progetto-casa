@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { getAnagraficaHistory } from "@/actions/anagrafica/history";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function DownloadPdfButton({
   anagrafica,
@@ -12,6 +13,9 @@ export default function DownloadPdfButton({
   anagraficaId,
   structureId,
   structureName,
+  buttonClassName,
+  buttonLabel = "Scarica PDF",
+  buttonVariant = "outline",
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -68,9 +72,14 @@ export default function DownloadPdfButton({
   };
 
   return (
-    <Button variant="outline" onClick={handleDownload} disabled={loading}>
+    <Button
+      className={cn(buttonClassName)}
+      variant={buttonVariant}
+      onClick={handleDownload}
+      disabled={loading}
+    >
       <Download className="w-4 h-4 mr-2" />
-      {loading ? "Generazione..." : "Scarica PDF"}
+      {loading ? "Generazione..." : buttonLabel}
     </Button>
   );
 }

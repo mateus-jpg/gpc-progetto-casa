@@ -1,20 +1,25 @@
-import { ArrowLeft, FolderOpen, PencilIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  BarChart3,
+  ClipboardList,
+  FileText,
+  HandshakeIcon,
+  Heart,
+} from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getStructure } from "@/actions/admin/structure";
 import { getAccessAction } from "@/actions/anagrafica/access";
 import { getAnagrafica } from "@/actions/anagrafica/anagrafica";
-import AccessDialog from "@/components/Anagrafica/AccessDialog/AccessDialog";
 import AccessInfo from "@/components/Anagrafica/AccessInfo";
+import { AnagraficaActionFab } from "@/components/Anagrafica/AnagraficaActionFab";
+import { AnagraficaOptionsMenu } from "@/components/Anagrafica/AnagraficaOptionsMenu";
 import AnagraficaReminders from "@/components/Anagrafica/AnagraficaReminders";
-import DownloadPdfButton from "@/components/Anagrafica/DownloadPdfButton";
 import HistoryTimeline from "@/components/Anagrafica/HistoryTimeline";
 import OperatorNotesCard from "@/components/Anagrafica/OperatorNotesCard";
 import Otherinfo from "@/components/Anagrafica/Otherinfo";
 import OtherStructuresInfo from "@/components/Anagrafica/OtherStructuresInfo";
-import ReminderDialog from "@/components/Anagrafica/ReminderDialog";
-import { ShareAnagraficaDialog } from "@/components/Anagrafica/ShareAnagraficaDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,64 +72,126 @@ export default async function AnagraficaViewPage({ params }) {
   const hasVulnerabilities = hasEffectiveVulnerabilities(
     anagrafica.vulnerabilita?.vulnerabilita,
   );
+  const anagraficaName =
+    `${anagrafica.anagrafica?.nome || ""} ${anagrafica.anagrafica?.cognome || ""}`.trim();
 
   return (
-    <div className="w-full mx-auto px-4">
-      {/* Header */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between px-2">
-          <div className="capitalize flex gap-6">
-            <h1 className="text-3xl font-bold flex items-center align-middle gap-2  text-gray-900">
-              {/*  <IconUser className="w-6 h-6" />  */}
+    <div className="mx-auto w-full px-4 pb-24 md:pb-6">
+      <div className="mb-6 space-y-4 px-2">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="flex flex-col gap-3 capitalize">
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-foreground md:text-3xl">
               {anagrafica.anagrafica?.nome} {anagrafica.anagrafica?.cognome}
             </h1>
             {hasVulnerabilities && (
               <Status status="offline">
                 <StatusIndicator className="w-3 h-3" />
-                <h3 className="text-sm font-medium text-red-600">
+                <h3 className="text-sm font-medium text-destructive">
                   Presenti vulnerabilita
                 </h3>
               </Status>
             )}
+          </div>
 
-            {/*   <p className="text-gray-600 mt-1">
-                Scheda Anagrafica - ID: {id}
-              </p> */}
-          </div>
-          <div className="flex items-center gap-2">
-            {isRegistrationPending && (
-              <Badge className="border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-50">
-                Registrazione da completare
+          <div className="flex flex-col items-start gap-3 md:items-end">
+            <div className="flex flex-wrap items-center gap-2">
+              {isRegistrationPending && (
+                <Badge className="border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-50">
+                  Registrazione da completare
+                </Badge>
+              )}
+              <Badge className="text-sm" variant="outline">
+                Visualizzazione autorizzata
               </Badge>
-            )}
-            <Badge variant="outline" className="text-sm">
-              Visualizzazione Autorizzata
-            </Badge>
+              <AnagraficaOptionsMenu
+                accesses={anagraficaAccesses?.accessi || []}
+                anagrafica={anagrafica}
+                anagraficaId={anagrafica.id}
+                anagraficaName={anagraficaName}
+                canManageSharing={canManageSharing}
+                isRegistrationPending={isRegistrationPending}
+                structureId={structureId}
+                structureName={structureName}
+              />
+            </div>
+
+            <div className="hidden max-w-4xl rounded-lg border bg-muted/20 p-3 md:block">
+              <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+                Percorso persona
+              </p>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button asChild variant="outline">
+                  <Link
+                    href={`/${structureId}/anagrafica/${anagrafica.id}/patto`}
+                  >
+                    <HandshakeIcon className="mr-2 h-4 w-4" />
+                    Patto di Accoglienza
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link
+                    href={`/${structureId}/anagrafica/${anagrafica.id}/progetto-personalizzato`}
+                  >
+                    <FileText className="mr-2 h-4 w-4" />
+                    Progetto Personalizzato
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link
+                    href={`/${structureId}/anagrafica/${anagrafica.id}/autovalutazione`}
+                  >
+                    <Heart className="mr-2 h-4 w-4" />
+                    Autovalutazione
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link
+                    href={`/${structureId}/anagrafica/${anagrafica.id}/monitoraggio`}
+                  >
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    Monitoraggio Individuale
+                  </Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link
+                    href={`/${structureId}/anagrafica/${anagrafica.id}/interventi`}
+                  >
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                    Diario Interventi
+                  </Link>
+                </Button>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <Button asChild variant="outline">
+            <Link href={`/${structureId}/anagrafica`}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Torna alla lista
+            </Link>
+          </Button>
+          <p className="hidden text-sm text-muted-foreground md:block">
+            Le utilità operative della scheda sono raccolte nel menu{" "}
+            <span className="font-medium text-foreground">Opzioni</span>.
+          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* 1. Informazioni Anagrafiche */}
-        <Card className="lg:col-span-2 gap-2  ">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Card className="gap-2 lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 justify-between">
-              <span className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                 1
               </span>
               <div className="flex items-center gap-2 flex-row">
-                {/* <UserRound className="w-5 h-5" /> */}
                 Informazioni Anagrafiche
               </div>
-              <Link
-                href={`/${structureId}/anagrafica/${anagrafica.id}/edit`}
-                className="border-1 border-gray-300 rounded-md p-1 transition-all hover:shadow-sm hover:bg-gray-300 flex items-center"
-              >
-                <PencilIcon className="w-6 h-6 text-gray-600 hover:text-gray-900" />
-              </Link>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-4">
+          <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-4">
             <DataRow label="Nome" value={anagrafica.anagrafica?.nome} />
             <DataRow label="Cognome" value={anagrafica.anagrafica?.cognome} />
             <DataRow label="Sesso" value={anagrafica.anagrafica?.sesso} />
@@ -154,55 +221,11 @@ export default async function AnagraficaViewPage({ params }) {
           </CardContent>
         </Card>
       </div>
-      <div className="flex justify-between items-center mt-4">
-        <Button variant="outline" asChild className="">
-          <Link href={`/${structureId}/anagrafica`}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Torna alla lista
-          </Link>
-        </Button>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link href={`/${structureId}/anagrafica/${anagrafica.id}/files`}>
-              <FolderOpen className="w-4 h-4 mr-2" />
-              Files & Documents
-            </Link>
-          </Button>
-          {isRegistrationPending
-            ? <Button asChild>
-                <Link
-                  href={`/${structureId}/anagrafica/${anagrafica.id}/registrazione`}
-                >
-                  Completa Registrazione
-                </Link>
-              </Button>
-            : <>
-                <ReminderDialog
-                  anagraficaId={anagrafica.id}
-                  structureId={structureId}
-                />
-                <DownloadPdfButton
-                  anagrafica={anagrafica}
-                  accesses={anagraficaAccesses?.accessi || []}
-                  anagraficaId={anagrafica.id}
-                  structureId={structureId}
-                  structureName={structureName}
-                />
-                {canManageSharing && (
-                  <ShareAnagraficaDialog
-                    anagraficaId={anagrafica.id}
-                    structureId={structureId}
-                    anagraficaName={`${anagrafica.anagrafica?.nome || ""} ${anagrafica.anagrafica?.cognome || ""}`.trim()}
-                  />
-                )}
-                {/* <EventDialog anagraficaId={anagrafica.id} structureId={structureId} /> */}
-                <AccessDialog
-                  anagraficaId={anagrafica.id}
-                  structureId={structureId}
-                />
-              </>}
-        </div>
-      </div>
+      <AnagraficaActionFab
+        anagraficaId={anagrafica.id}
+        structureId={structureId}
+        structureName={structureName}
+      />
       <OperatorNotesCard
         anagraficaId={anagrafica.id}
         structureId={structureId}
@@ -254,7 +277,7 @@ function DataRow({ label, value, small = false }) {
       <span className="text-sm text-muted-foreground flex items-center gap-2">
         {label}
       </span>
-      <span className="text-gray-900 font-medium ">{value || "-"}</span>
+      <span className="font-medium text-foreground">{value || "-"}</span>
     </div>
   );
 }

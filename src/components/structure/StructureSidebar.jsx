@@ -37,7 +37,7 @@ import { NavStructures } from "../nav-structures";
 const data = {
   navMain: [
     {
-      title: "Dashboard",
+      title: "Casa",
       url: "",
       icon: IconDashboard,
     },
@@ -47,7 +47,7 @@ const data = {
       icon: IconUsers,
     },
     {
-      title: "Documenti Struttura",
+      title: "Documenti Casa",
       url: "documenti",
       icon: IconFolder,
     },
@@ -184,7 +184,6 @@ export function StructureSidebar({ ...props }) {
       const structure = availableStructures.find((s) => s.id === structureId);
       if (structure) {
         setCurrentStructure(structure);
-        console.log(structure);
       }
     }
   }, [structureId, availableStructures, setCurrentStructure]);

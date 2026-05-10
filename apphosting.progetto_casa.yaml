@@ -1,0 +1,80 @@
+# App Hosting configuration for the Progetto Casa client project.
+# Rename/copy this file to apphosting.yaml when wiring this Firebase backend,
+# or use it as the source of truth for the new environment.
+
+runConfig:
+  minInstances: 0
+  maxInstances: 50
+
+env:
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: "AIzaSyAft5fG7zycuUz5REN-NzrdWYeL2tfM8BQ"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: "progetto-casa-a26cd.firebaseapp.com"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: "progetto-casa-a26cd"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: "progetto-casa-a26cd.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "718649341989"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: "1:718649341989:web:9fa17ee0b288647034e7cc"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: SESSION_COOKIE_NAME
+    value: "_progetto_casa_session_cookie"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: FIREBASE_PROJECT_ID
+    value: "progetto-casa-a26cd"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: FIREBASE_STORAGE_BUCKET
+    value: "progetto-casa-a26cd.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: FIREBASE_CLIENT_EMAIL
+    value: "firebase-adminsdk-fbsvc@progetto-casa-a26cd.iam.gserviceaccount.com"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: SESSION_COOKIE_MAX_AGE
+    value: 1209600000
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NODE_ENV
+    value: "production"
+    availability:
+      - BUILD
+      - RUNTIME

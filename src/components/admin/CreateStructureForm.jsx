@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { createStructure } from "@/actions/admin/structure";
+import { HouseSetupFields } from "@/components/admin/HouseSetupFields";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { createEmptyHouseSetup } from "@/lib/house-setup";
 
 export function CreateStructureForm() {
   const router = useRouter();
@@ -28,11 +30,22 @@ export function CreateStructureForm() {
     city: "",
     phone: "",
     description: "",
+    houseSetup: createEmptyHouseSetup(),
   });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleHouseSetupChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      houseSetup: {
+        ...prev.houseSetup,
+        [field]: value,
+      },
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -142,6 +155,11 @@ export function CreateStructureForm() {
               rows={3}
             />
           </div>
+
+          <HouseSetupFields
+            value={formData.houseSetup}
+            onChange={handleHouseSetupChange}
+          />
 
           <div className="flex gap-4 pt-4">
             <Button type="submit" disabled={loading}>

@@ -7,9 +7,10 @@ import {
 import { sanitizeVulnerabilities } from "@/utils/vulnerability";
 
 export const adminDb = admin.firestore();
-const STRUCTURE_DATA_GROUPS = SHAREABLE_STRUCTURE_DATA_FIELDS.filter(
-  (field) => field !== "notes",
-);
+const STRUCTURE_DATA_GROUPS = [
+  ...SHAREABLE_STRUCTURE_DATA_FIELDS.filter((field) => field !== "notes"),
+  "contestoCasa",
+];
 export const STRUCTURE_DATA_FIELDS = [...STRUCTURE_DATA_GROUPS, "notes"];
 export const REGISTRATION_STATUS = {
   ACTIVE: "active",
@@ -118,6 +119,36 @@ export function sanitizeInternalNotes(value) {
   }
 
   return value.trim().slice(0, 5000);
+}
+
+function sanitizeContestoCasa(contestoCasa = {}) {
+  if (!contestoCasa || typeof contestoCasa !== "object") {
+    return {};
+  }
+
+  return {
+    dataIngresso:
+      typeof contestoCasa.dataIngresso === "string"
+        ? contestoCasa.dataIngresso.trim()
+        : "",
+    dataUscita:
+      typeof contestoCasa.dataUscita === "string"
+        ? contestoCasa.dataUscita.trim()
+        : "",
+    notePercorsoCasa: sanitizeInternalNotes(contestoCasa.notePercorsoCasa),
+    operatoreRiferimentoNome:
+      typeof contestoCasa.operatoreRiferimentoNome === "string"
+        ? contestoCasa.operatoreRiferimentoNome.trim().slice(0, 200)
+        : "",
+    operatoreRiferimentoUid:
+      typeof contestoCasa.operatoreRiferimentoUid === "string"
+        ? contestoCasa.operatoreRiferimentoUid.trim().slice(0, 200)
+        : "",
+    spazioAssegnato:
+      typeof contestoCasa.spazioAssegnato === "string"
+        ? contestoCasa.spazioAssegnato.trim().slice(0, 200)
+        : "",
+  };
 }
 
 export function buildPrivacyPayload(
@@ -268,6 +299,12 @@ export function sanitizeAnagraficaPayload(body = {}) {
         structureGroups.vulnerabilita.vulnerabilita,
       ),
     };
+  }
+
+  if (structureGroups.contestoCasa) {
+    structureGroups.contestoCasa = sanitizeContestoCasa(
+      structureGroups.contestoCasa,
+    );
   }
 
   return {

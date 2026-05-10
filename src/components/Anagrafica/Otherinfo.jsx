@@ -172,6 +172,38 @@ export default async function Otherinfo({ anagrafica }) {
               />
             </CardContent>
           </Card>
+          <Card className="gap-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <span className="w-6 h-6 bg-slate-700 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                  7
+                </span>
+                Contesto Casa
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <DataRow
+                label="Operatore di riferimento"
+                value={anagrafica.contestoCasa?.operatoreRiferimentoNome}
+              />
+              <DataRow
+                label="Data ingresso"
+                value={anagrafica.contestoCasa?.dataIngresso || "-"}
+              />
+              <DataRow
+                label="Data uscita"
+                value={anagrafica.contestoCasa?.dataUscita || "-"}
+              />
+              <DataRow
+                label="Stanza o spazio assegnato"
+                value={anagrafica.contestoCasa?.spazioAssegnato}
+              />
+              <DataRow
+                label="Note percorso casa"
+                value={anagrafica.contestoCasa?.notePercorsoCasa}
+              />
+            </CardContent>
+          </Card>
           <div className="lg:col-span-2 gap-2  border-2 rounded-md bg-gray-100 pt-4 pb-2 ">
             <CardHeader className="">
               <CardTitle className="text-sm items-center flex gap-2">

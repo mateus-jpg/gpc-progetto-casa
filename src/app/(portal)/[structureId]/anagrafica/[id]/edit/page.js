@@ -9,6 +9,7 @@ import {
   getAnagrafica,
   updateAnagrafica,
 } from "@/actions/anagrafica/anagrafica";
+import HouseContextSection from "@/components/Anagrafica/Form/HouseContextSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FormConfigProvider } from "@/context/FormConfigContext";
@@ -168,6 +169,11 @@ export default function EditAnagraficaPage() {
               formData={formData}
               handleChange={handleChange}
               includePrivacy
+            />
+            <HouseContextSection
+              formData={formData}
+              handleChange={handleChange}
+              structureId={structureId}
             />
             <FormActions
               structureId={structureId}

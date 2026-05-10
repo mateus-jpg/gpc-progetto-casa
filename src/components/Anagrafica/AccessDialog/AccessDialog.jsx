@@ -19,12 +19,16 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useAccessForm } from "@/hooks/useAccessForm";
+import { cn } from "@/lib/utils";
 import PostAccessDialog from "./PostAccessDialog";
 
 export default function AccessDialog({
   anagraficaId,
   structureId,
   initialCategories = null,
+  buttonClassName,
+  buttonLabel = "Nuovo accesso",
+  buttonVariant = "default",
 }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -82,9 +86,7 @@ export default function AccessDialog({
               if (cat.value === categoryValue) {
                 const existingSubcats = cat.subCategories || [];
                 // Add before "Altro" if it exists
-                const altroIndex = existingSubcats.findIndex(
-                  (s) => s === "Altro",
-                );
+                const altroIndex = existingSubcats.indexOf("Altro");
                 const newSubcats = [...existingSubcats];
                 if (altroIndex !== -1) {
                   newSubcats.splice(altroIndex, 0, newSubcategory);
@@ -138,7 +140,7 @@ export default function AccessDialog({
       setLastPayload(servicesPayload);
       setOpen(false); // Close the form dialog
       setShowPostDialog(true); // Open the success/download dialog
-    } catch (error) {
+    } catch {
       toast.error(
         "Si è verificato un errore durante la creazione dell'accesso.",
       );
@@ -153,8 +155,8 @@ export default function AccessDialog({
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
         <DialogTrigger asChild className="cursor-pointer">
-          <Button className={""}>
-            Nuovo accesso
+          <Button className={cn(buttonClassName)} variant={buttonVariant}>
+            {buttonLabel}
             <IconDoorEnter className="ml-1" />
           </Button>
         </DialogTrigger>

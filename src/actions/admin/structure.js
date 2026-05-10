@@ -6,9 +6,10 @@ import {
   mergeWithDefaults,
   SECTION_DEFINITIONS,
 } from "@/data/formConfigDefaults";
+import { normalizeHouseSetupInput } from "@/lib/house-setup";
 import { serializeFirestoreData } from "@/lib/utils";
 import { logAdminAction, logResourceModification } from "@/utils/audit";
-import { collections, serializeFirestoreDoc } from "@/utils/database";
+import { collections } from "@/utils/database";
 import { logger } from "@/utils/logger";
 import {
   requireUser,
@@ -59,8 +60,8 @@ export async function updateStructure(structureId, data) {
   try {
     const { userUid } = await requireUser();
 
-    // Verify user has access to this structure
-    await verifyUserPermissions({ userUid, structureId });
+    // Verify user can manage this structure
+    await verifyStructureAdmin({ userUid, structureId });
 
     // Validate data (basic validation)
     if (!data || typeof data !== "object") {
@@ -68,14 +69,14 @@ export async function updateStructure(structureId, data) {
     }
 
     // Update Firestore
-    await collections
-      .structures()
-      .doc(structureId)
-      .update({
-        ...data,
-        updatedAt: new Date(),
-        updatedBy: userUid,
-      });
+    const payload = {
+      ...data,
+      houseSetup: normalizeHouseSetupInput(data.houseSetup),
+      updatedAt: new Date(),
+      updatedBy: userUid,
+    };
+
+    await collections.structures().doc(structureId).update(payload);
 
     // Log the modification
     await logResourceModification({
@@ -95,6 +96,57 @@ export async function updateStructure(structureId, data) {
   }
 }
 
+async function fetchStructureUsers(structureId) {
+  const structureRef = collections.structures().doc(structureId);
+  const structureSnap = await structureRef.get();
+
+  if (!structureSnap.exists) {
+    logger.warn("Structure not found", { structureId });
+    throw new Error("Structure not found");
+  }
+
+  const structureData = structureSnap.data();
+  const structureAdmins = structureData.admins || [];
+
+  const usersQuery = collections
+    .users()
+    .where("structureIds", "array-contains", structureId);
+  const operatorsQuery = collections
+    .operators()
+    .where("structureIds", "array-contains", structureId);
+
+  const [usersSnap, operatorsSnap] = await Promise.all([
+    usersQuery.get(),
+    operatorsQuery.get(),
+  ]);
+
+  const userMap = new Map();
+
+  const processSnapshot = (snap) => {
+    snap.forEach((doc) => {
+      const data = doc.data();
+      const displayName =
+        data.displayName || data.email || data.name || `Operatore ${doc.id}`;
+
+      userMap.set(doc.id, {
+        uid: doc.id,
+        email: data.email,
+        displayName,
+        role: data.role || "user",
+        isStructureAdmin: structureAdmins.includes(doc.id),
+        structureIds: data.structureIds || [],
+      });
+    });
+  };
+
+  processSnapshot(usersSnap);
+  processSnapshot(operatorsSnap);
+
+  return Array.from(userMap.values()).sort((left, right) =>
+    (left.displayName || "").localeCompare(right.displayName || "", "it"),
+  );
+}
+
 /**
  * Retrieves users who have access to a specific structure.
  * Returns their basic info and whether they are an admin of that structure.
@@ -109,53 +161,7 @@ export async function getUsersByStructure(structureId) {
 
     // Verify the requester is allowed to view this structure's users
     await verifyStructureAdmin({ userUid, structureId });
-
-    // 1. Get the Structure to check who is an admin
-    const structureRef = collections.structures().doc(structureId);
-    const structureSnap = await structureRef.get();
-
-    if (!structureSnap.exists) {
-      logger.warn("Structure not found", { structureId });
-      throw new Error("Structure not found");
-    }
-
-    const structureData = structureSnap.data();
-    const structureAdmins = structureData.admins || [];
-
-    // 2. Query users (operators) who have this structureId in their list
-    const usersQuery = collections
-      .users()
-      .where("structureIds", "array-contains", structureId);
-
-    const usersSnap = await usersQuery.get();
-
-    // Also check 'operators' collection
-    const operatorsQuery = collections
-      .operators()
-      .where("structureIds", "array-contains", structureId);
-    const operatorsSnap = await operatorsQuery.get();
-
-    // Map and deduplicate users
-    const userMap = new Map();
-
-    const processSnapshot = (snap) => {
-      snap.forEach((doc) => {
-        const data = doc.data();
-        userMap.set(doc.id, {
-          uid: doc.id,
-          email: data.email,
-          displayName: data.displayName,
-          role: data.role || "user",
-          isStructureAdmin: structureAdmins.includes(doc.id),
-          structureIds: data.structureIds || [],
-        });
-      });
-    };
-
-    processSnapshot(usersSnap);
-    processSnapshot(operatorsSnap);
-
-    const users = Array.from(userMap.values());
+    const users = await fetchStructureUsers(structureId);
     logger.info("Retrieved structure users", {
       structureId,
       userCount: users.length,
@@ -165,6 +171,28 @@ export async function getUsersByStructure(structureId) {
   } catch (error) {
     logger.error("Error fetching structure users", error, { structureId });
     throw new Error("Failed to fetch users for structure.");
+  }
+}
+
+export async function getStructureOperatorOptions(structureId) {
+  try {
+    const { userUid } = await requireUser();
+    await verifyUserPermissions({ userUid, structureId });
+
+    const users = await fetchStructureUsers(structureId);
+
+    return serializeFirestoreData(
+      users.map((user) => ({
+        uid: user.uid,
+        displayName: user.displayName,
+        email: user.email || "",
+      })),
+    );
+  } catch (error) {
+    logger.error("Error fetching structure operator options", error, {
+      structureId,
+    });
+    throw new Error("Failed to fetch structure operators.");
   }
 }
 
@@ -407,7 +435,7 @@ export async function addSubcategoryToStructure(
     }
 
     // Add the new subcategory (before "Altro" if it exists)
-    const altroIndex = existingSubcats.findIndex((sub) => sub === "Altro");
+    const altroIndex = existingSubcats.indexOf("Altro");
     if (altroIndex !== -1) {
       existingSubcats.splice(altroIndex, 0, trimmedSubcategory);
     } else {
@@ -536,6 +564,7 @@ export async function createStructure(data) {
       city: data.city?.trim() || "",
       phone: data.phone?.trim() || "",
       description: data.description?.trim() || "",
+      houseSetup: normalizeHouseSetupInput(data.houseSetup),
       projectId: data.projectId || null,
       admins: [],
       accessCategories: JSON.parse(JSON.stringify(DefaultAccessTypes)),

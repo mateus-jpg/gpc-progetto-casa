@@ -7,13 +7,11 @@ import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
 
 async function validateStructureAccess(structureId) {
   try {
-    // Check if structure exists
     const structureDoc = await collections.structures().doc(structureId).get();
     if (!structureDoc.exists) {
       return { valid: false, reason: "not_found" };
     }
 
-    // Check if user has access
     const { userUid } = await requireUser();
     await verifyUserPermissions({ userUid, structureId });
 
@@ -26,7 +24,6 @@ async function validateStructureAccess(structureId) {
 export default async function Layout({ children, params }) {
   const { structureId } = await params;
 
-  // Validate structure exists and user has access
   const { valid } = await validateStructureAccess(structureId);
   if (!valid) {
     redirect("/");
@@ -39,7 +36,7 @@ export default async function Layout({ children, params }) {
         <SiteHeader />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+            <div className="flex flex-col gap-4 py-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] md:gap-6 md:py-6">
               {children}
             </div>
           </div>

@@ -44,6 +44,7 @@ const GROUP_LABELS = {
   lavoroFormazione: "Lavoro e Formazione",
   vulnerabilita: "Vulnerabilita",
   referral: "Referral",
+  contestoCasa: "Contesto Casa",
   services: "Servizi accesso",
 };
 
@@ -71,6 +72,12 @@ const FIELD_LABELS = {
   paeseDestinazione: "Paese di Destinazione",
   referral: "Referral",
   referralAltro: "Referral (Altro)",
+  operatoreRiferimentoNome: "Operatore di riferimento",
+  operatoreRiferimentoUid: "UID operatore di riferimento",
+  dataIngresso: "Data ingresso",
+  dataUscita: "Data uscita",
+  spazioAssegnato: "Stanza o spazio assegnato",
+  notePercorsoCasa: "Note percorso casa",
   paperNoticeCollected: "Informativa cartacea raccolta",
   paperNoticeSignedAt: "Data firma informativa",
   paperNoticeReference: "Riferimento documento",

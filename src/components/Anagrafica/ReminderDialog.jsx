@@ -16,8 +16,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
-export default function ReminderDialog({ anagraficaId, structureId }) {
+export default function ReminderDialog({
+  anagraficaId,
+  structureId,
+  buttonClassName,
+  buttonLabel = "Promemoria",
+  buttonVariant = "outline",
+}) {
+  const fieldIds = {
+    date: `reminder-date-${anagraficaId}`,
+    note: `reminder-note-${anagraficaId}`,
+    serviceType: `reminder-type-${anagraficaId}`,
+    time: `reminder-time-${anagraficaId}`,
+  };
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPostDialog, setShowPostDialog] = useState(false);
@@ -101,9 +114,9 @@ export default function ReminderDialog({ anagraficaId, structureId }) {
         }}
       >
         <DialogTrigger asChild>
-          <Button variant="outline">
+          <Button className={cn(buttonClassName)} variant={buttonVariant}>
             <Bell className="w-4 h-4 mr-2" />
-            Promemoria
+            {buttonLabel}
           </Button>
         </DialogTrigger>
 
@@ -115,8 +128,14 @@ export default function ReminderDialog({ anagraficaId, structureId }) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Tipo */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium">Tipo *</label>
+              <label
+                className="text-sm font-medium"
+                htmlFor={fieldIds.serviceType}
+              >
+                Tipo *
+              </label>
               <select
+                id={fieldIds.serviceType}
                 className="border rounded-md px-3 py-2 text-sm bg-background"
                 value={form.serviceType}
                 onChange={(e) => handleChange("serviceType", e.target.value)}
@@ -133,34 +152,43 @@ export default function ReminderDialog({ anagraficaId, structureId }) {
             {/* Data + Ora */}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium">Data *</label>
+                <label className="text-sm font-medium" htmlFor={fieldIds.date}>
+                  Data *
+                </label>
                 <input
-                  type="date"
                   className="border rounded-md px-3 py-2 text-sm bg-background"
-                  value={form.date}
+                  id={fieldIds.date}
                   onChange={(e) => handleChange("date", e.target.value)}
+                  type="date"
+                  value={form.date}
                   required
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium">Ora</label>
+                <label className="text-sm font-medium" htmlFor={fieldIds.time}>
+                  Ora
+                </label>
                 <input
-                  type="time"
                   className="border rounded-md px-3 py-2 text-sm bg-background"
-                  value={form.time}
+                  id={fieldIds.time}
                   onChange={(e) => handleChange("time", e.target.value)}
+                  type="time"
+                  value={form.time}
                 />
               </div>
             </div>
 
             {/* Note */}
             <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium">Note</label>
+              <label className="text-sm font-medium" htmlFor={fieldIds.note}>
+                Note
+              </label>
               <textarea
                 className="border rounded-md px-3 py-2 text-sm bg-background min-h-[80px] resize-y"
-                value={form.note}
+                id={fieldIds.note}
                 onChange={(e) => handleChange("note", e.target.value)}
                 placeholder="Note aggiuntive..."
+                value={form.note}
               />
             </div>
 

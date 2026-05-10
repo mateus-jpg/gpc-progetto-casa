@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { use, useState } from "react";
 import { toast } from "sonner";
 import { createRegistrationDraft } from "@/actions/anagrafica/anagrafica";
+import HouseContextSection from "@/components/Anagrafica/Form/HouseContextSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
@@ -32,6 +33,14 @@ export default function AnagraficaForm({ params }) {
 
     try {
       if (!user || !user.uid) throw new Error("Utente non autenticato");
+      if (!formData.contestoCasa?.operatoreRiferimentoUid) {
+        toast.error("Seleziona l'operatore di riferimento della casa");
+        return;
+      }
+      if (!formData.contestoCasa?.dataIngresso) {
+        toast.error("Inserisci la data di ingresso nella casa");
+        return;
+      }
 
       const payload = prepareRegistrationDraftPayload(formData, structureId);
       const resultStr = await createRegistrationDraft(payload);
@@ -73,11 +82,11 @@ export default function AnagraficaForm({ params }) {
               Passo 1 di 2
             </p>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Nuova Registrazione
+              Nuovo Accesso Casa
             </h1>
             <p className="text-gray-600">
-              Salva i dati generali e poi genera il modulo da stampare, far
-              firmare e caricare nella scheda.
+              Inserisci la persona che entra in casa, assegna l'operatore di
+              riferimento e poi completa la parte di firma.
             </p>
           </div>
 
@@ -103,6 +112,13 @@ export default function AnagraficaForm({ params }) {
               handleChange={handleChange}
               itemClassName="w-full lg:w-[calc(50%-8px)] min-w-0"
             />
+            <div className="w-full lg:w-[calc(50%-8px)] min-w-0">
+              <HouseContextSection
+                formData={formData}
+                handleChange={handleChange}
+                structureId={structureId}
+              />
+            </div>
 
             <div className="flex justify-center pt-2 col-span-2 w-full">
               <Button
