@@ -783,26 +783,63 @@ function buildEvaluationRows({
     .filter(Boolean);
 }
 
+function isCurrentEvaluationRow(row = {}) {
+  return row.active !== false && row.superseded !== true;
+}
+
+function getEvaluationRevision(row = {}) {
+  const revision = Number(row.revision);
+  return Number.isFinite(revision) && revision > 0 ? revision : 1;
+}
+
 async function replaceEvaluationRows(sourceEntryId, rows = []) {
   const existing = await db
     .collection(COLLECTIONS.evaluations)
     .where("sourceEntryId", "==", sourceEntryId)
     .get();
 
+  const existingDocs = existing.docs.map((doc) => ({
+    data: doc.data() || {},
+    ref: doc.ref,
+  }));
+  const currentDocs = existingDocs.filter(({ data }) =>
+    isCurrentEvaluationRow(data),
+  );
+  const fallbackStructureId =
+    rows[0]?.structureId ||
+    currentDocs[0]?.data?.structureId ||
+    existingDocs[0]?.data?.structureId;
   const projectId =
     rows.find((row) => row.projectId)?.projectId ||
-    (await getStructureProjectId(rows[0]?.structureId));
+    currentDocs.find(({ data }) => data.projectId)?.data?.projectId ||
+    existingDocs.find(({ data }) => data.projectId)?.data?.projectId ||
+    (await getStructureProjectId(fallbackStructureId));
   const now = new Date().toISOString();
+  const nextRevision =
+    existingDocs.length > 0
+      ? Math.max(
+          ...existingDocs.map(({ data }) => getEvaluationRevision(data)),
+        ) + 1
+      : 1;
 
   const batch = db.batch();
-  existing.docs.forEach((doc) => {
-    batch.delete(doc.ref);
+  currentDocs.forEach(({ ref }) => {
+    batch.update(ref, {
+      active: false,
+      superseded: true,
+      supersededAt: now,
+      supersededByRevision: nextRevision,
+      updatedAt: now,
+    });
   });
   rows.forEach((row) => {
     const ref = db.collection(COLLECTIONS.evaluations).doc();
     batch.set(ref, {
       ...row,
+      active: true,
       projectId: row.projectId || projectId || null,
+      revision: nextRevision,
+      superseded: false,
       createdAt: now,
       updatedAt: now,
     });
@@ -1071,6 +1108,7 @@ function buildMonitoringEvidence({
 }) {
   const periodBounds = getPeriodBounds(options);
   const sortedRows = rows
+    .filter(isCurrentEvaluationRow)
     .map(normalizeEvaluationEvidenceRow)
     .sort(
       (left, right) =>

@@ -166,7 +166,7 @@ Il salvataggio del progetto riscrive le righe derivate in `objectives`, una per 
 | `Valutazione sintetica e prossimi passi` | stato, motivazione, prossime azioni, scadenze, item YAK collegati, campi condivisione/firma |
 | Schede area: `PER`, `ABI`, `ECO`, `REL` | un valore/nota per item YAK, con scala persona `0`, `1`, `2`, `3`, `N/A` |
 
-Al salvataggio, l'app elimina le precedenti righe `yak_evaluations` per la stessa entry sorgente e ricrea una riga per ogni item YAK compilato.
+Al salvataggio, l'app marca le precedenti righe attive `yak_evaluations` della stessa entry sorgente come superseded e crea una nuova revisione attiva, una riga per ogni item YAK compilato.
 
 ### 9. Monitoraggio Individuale
 
@@ -265,7 +265,7 @@ I valori di valutazione sono normalizzati in `yak_evaluations` come numero da `0
 ### Flussi Derivati Di Reporting
 
 - `yak_evaluations` è il flusso long-format per l'analisi a livello item.
-- In aggiornamento, le righe dello stesso `sourceEntryId` vengono eliminate e ricostruite.
+- In aggiornamento, le righe dello stesso `sourceEntryId` vengono conservate come storico superseded e viene scritta una nuova revisione attiva.
 - `objectives` viene ricostruito da `personal_projects.goalsByArea`.
 - Gli helper di monitoring evidence leggono `yak_evaluations` e producono ultimo valore, traiettoria, conteggio tocchi e dati sugli item silenti.
 

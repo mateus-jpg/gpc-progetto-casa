@@ -563,6 +563,9 @@ This is the most important analytical collection.
   "note": "Ha usato la lavatrice con una sola indicazione",
   "operatorUid": "operatorUid1",
   "operatorName": "Giulia Bianchi",
+  "active": true,
+  "revision": 1,
+  "superseded": false,
   "createdAt": "2026-06-10T15:40:00.000Z",
   "updatedAt": "2026-06-10T15:40:00.000Z"
 }
@@ -586,6 +589,9 @@ For group rows:
   "note": "Il gruppo si organizza con supporto",
   "operatorUid": "operatorUid1",
   "operatorName": "Giulia Bianchi",
+  "active": true,
+  "revision": 1,
+  "superseded": false,
   "createdAt": "2026-06-15T19:40:00.000Z",
   "updatedAt": "2026-06-15T19:40:00.000Z"
 }
@@ -606,6 +612,10 @@ Recommended field rules:
 | `recordedAt` | Domain date of the observation, not write time. |
 | `value` | Number `0`, `1`, `2`, `3`, or `null` for N/A. |
 | `isNotApplicable` | Boolean. Prefer this over storing `"na"` as value. |
+| `active` | `true` for the latest revision used by reporting; `false` for preserved historical rows. |
+| `revision` | Monotonic revision number for the same `sourceEntryId`. |
+| `superseded` | `true` when a later save replaced this row as the current analytical value. |
+| `supersededAt` | Timestamp set when the row is superseded. |
 
 Recommended `source` values:
 
@@ -625,7 +635,7 @@ autovalutazione_gruppo
 
 ```txt
 create/update self_assessments/{id}
-  -> delete old yak_evaluations where sourceEntryId == id
+  -> mark previous active yak_evaluations where sourceEntryId == id as superseded
   -> create one yak_evaluations row per answered PER/ABI/ECO/REL item
 ```
 
@@ -633,7 +643,7 @@ create/update self_assessments/{id}
 
 ```txt
 create/update individual_monitorings/{id}
-  -> delete old yak_evaluations where sourceEntryId == id
+  -> mark previous active yak_evaluations where sourceEntryId == id as superseded
   -> create one yak_evaluations row per answered PER/ABI/ECO/REL item
 ```
 
@@ -641,7 +651,7 @@ create/update individual_monitorings/{id}
 
 ```txt
 create/update interventions/{id}
-  -> delete old yak_evaluations where sourceEntryId == id
+  -> mark previous active yak_evaluations where sourceEntryId == id as superseded
   -> create one yak_evaluations row per touched item
 ```
 
@@ -649,7 +659,7 @@ create/update interventions/{id}
 
 ```txt
 create/update group_activities/{id}
-  -> delete old yak_evaluations where sourceEntryId == id
+  -> mark previous active yak_evaluations where sourceEntryId == id as superseded
   -> create GRP rows for observed group indicators
   -> create person rows for individual items touched during the activity
 ```
@@ -658,7 +668,7 @@ create/update group_activities/{id}
 
 ```txt
 create/update group_evaluations/{id}
-  -> delete old yak_evaluations where sourceEntryId == id
+  -> mark previous active yak_evaluations where sourceEntryId == id as superseded
   -> create GRP rows for operator evaluation
   -> create GRP rows for group self-evaluation
 ```
@@ -813,7 +823,7 @@ Avoid renaming existing collections unless a migration is planned. The app alrea
 
 - Never change the meaning of an existing YAK item ID.
 - Never reuse deprecated item IDs.
-- Soft-delete source forms if deletion is needed, and delete/rebuild their derived `yak_evaluations` rows.
+- Soft-delete source forms if deletion is needed, and preserve derived `yak_evaluations` history by superseding old active rows instead of deleting them.
 - Keep `sourceEntryId` mandatory for every derived evaluation row.
 - Denormalize `projectId`, `structureId`, `areaId`, and `subjectType` into `yak_evaluations` for query speed.
 - Treat `recordedAt` as the domain observation date. Use `createdAt` only for audit/write time.

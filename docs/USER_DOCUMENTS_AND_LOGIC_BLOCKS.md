@@ -166,7 +166,7 @@ Saving the project rewrites derived rows in `objectives`, one per goal. Those ro
 | `Valutazione sintetica e prossimi passi` | status, motivation, next actions, due dates, linked YAK items, sharing/signature fields |
 | Area cards: `PER`, `ABI`, `ECO`, `REL` | one value/note per YAK item, using the person-facing scale `0`, `1`, `2`, `3`, `N/A` |
 
-On save, the app deletes previous `yak_evaluations` rows for the same source entry and recreates one row per answered YAK item.
+On save, the app marks previous active `yak_evaluations` rows for the same source entry as superseded and creates a new active revision, one row per answered YAK item.
 
 ### 9. Monitoraggio Individuale
 
@@ -265,7 +265,7 @@ Evaluation values are normalized into `yak_evaluations` as number `0` to `3`, wi
 ### Derived Reporting Streams
 
 - `yak_evaluations` is the long-format stream for item-level analysis.
-- On update, rows for the same `sourceEntryId` are deleted and rebuilt.
+- On update, rows for the same `sourceEntryId` are preserved as superseded history and a new active revision is written.
 - `objectives` is rebuilt from `personal_projects.goalsByArea`.
 - Monitoring evidence helpers read `yak_evaluations` and build latest value, trajectory, touch count, and silent item data.
 
