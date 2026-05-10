@@ -58,7 +58,7 @@ structureFiles/{fileId}
 structureFolders/{folderId}
 ```
 
-The current app already has most of these collections. The main recommended additions are `residencies`, `objectives`, and optionally `yak_item_catalog`.
+The current app already has most of these collections. The main recommended additions still open are `residencies` and optionally `yak_item_catalog`.
 
 ## Core Principle: Source Forms Plus Long Evaluations
 
@@ -767,35 +767,31 @@ The app already matches the proposed architecture in several important ways:
 - Dedicated group-home collections exist in `src/actions/group-home.js`.
 - Source forms are stored separately from analytical rows.
 - `yak_evaluations` exists as the long-format evaluation stream.
+- YAK rows preserve history: updating a source form supersedes previous active rows instead of deleting them.
 - YAK item IDs are stable and centralized in `src/lib/group-home/catalog.js`.
 - `house_profiles` uses `structureId` as the document ID, which is a good one-to-one pattern.
 - `personal_projects` uses `{structureId}__{anagraficaId}`, which is practical for one active project per person per house.
+- `personal_projects` also writes first-class `objectives` rows for goal reporting.
+- `interventions`, `self_assessments`, `individual_monitorings`, `group_activities`, and `group_evaluations` all write derived YAK rows.
+- Patto is correctly source-only today because it has no explicit scored YAK items.
+- `yak_evaluations.value` is normalized to number/null with `isNotApplicable`.
+- YAK-specific indexes are present in `firestore.indexes.json`.
 
-Important gaps:
+Important remaining gaps:
 
-1. `interventions` currently save the source form but do not write `yak_evaluations` rows.
-2. `savePatto` appears to call the intervention evaluation-row helper, even though Patto does not have intervention `items`.
-3. Goals are embedded in `personal_projects`; they should also become first-class `objectives` if the app needs objective-level reporting.
-4. `yak_evaluations.value` is currently stored as a string including `"na"`. Prefer numeric values plus `isNotApplicable`.
-5. The YAK item catalog is hard-coded. That is acceptable short term, but a Firestore mirror helps reporting, exports, and safe deprecation.
-6. There is no dedicated `residencies` history collection. Current house context stores current data well but not full movement history.
-7. The index file does not yet include YAK-specific indexes.
+1. The YAK item catalog is hard-coded. That is acceptable short term, but a Firestore mirror helps reporting, exports, and safe deprecation.
+2. There is no dedicated `residencies` history collection. Current house context stores current data well but not full movement history.
+3. The source document `03_2_GRUPPO_LINEE_GUIDA_REGOLAMENTO_GRUPPO.docx` is only partially represented through static rules/commitments; there is no dedicated editable source document or collection yet.
+4. The app stores superseded YAK rows, but there is not yet a dedicated UI to inspect revision history for a single source form.
 
-## First Implementation Fixes
+## Remaining Implementation Priorities
 
 Recommended order:
 
-1. Move evaluation-row creation into `saveIntervention`.
-2. Remove evaluation-row creation from `savePatto`, unless Patto later adds explicit scored items.
-3. Normalize `yak_evaluations.value` to number/null and add `isNotApplicable`.
-4. Add Firestore indexes for `yak_evaluations`.
-5. Add a read helper that returns monitoring support data:
-   - latest value per item
-   - trajectory per item in the selected period
-   - count of intervention/group-activity observations
-   - silent-area flag when no row exists in the period
-6. Add `objectives` if objective reporting becomes a product requirement.
-7. Add `residencies` before supporting moves between houses as first-class history.
+1. Add `residencies` before supporting moves between houses as first-class history.
+2. Add a Firestore-backed `yak_item_catalog` mirror if reporting/export/versioning needs stable catalog metadata outside the app bundle.
+3. Decide whether `03_2_GRUPPO_LINEE_GUIDA_REGOLAMENTO_GRUPPO.docx` should become a first-class editable document.
+4. Add a UI/read helper for YAK revision history if operators need to compare saved revisions of the same compiled form.
 
 ## Naming Conventions
 

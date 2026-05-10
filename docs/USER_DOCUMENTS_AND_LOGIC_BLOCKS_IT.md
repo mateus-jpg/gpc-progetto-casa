@@ -310,15 +310,15 @@ Comandi eseguiti il 2026-05-10:
 
 I fallimenti lint sono concentrati nel browser file mobile e nei breadcrumb. Attualmente non bloccano `next build`, ma vanno corretti prima di una CI pulita o di un passaggio di formattazione.
 
-### Gap Di Prodotto / Documentazione
+### Gap Di Prodotto Ancora Aperti
 
 | Area | Gap |
 | --- | --- |
 | `03_2_GRUPPO_LINEE_GUIDA_REGOLAMENTO_GRUPPO.docx` | Non è stata trovata una route o collection modificabile dedicata. Alcune regole/impegni compaiono in Patto e Scheda Casa, ma il documento non è rappresentato come scheda autonoma. |
-| `docs/YAK_FIRESTORE_ARCHITECTURE.md` | La sezione `Current App Alignment` è parzialmente non aggiornata. Il codice ora scrive righe YAK dagli interventi, non scrive righe YAK dal Patto, crea `objectives` e salva valori YAK numerici con `isNotApplicable`. |
 | `residencies` | Il documento architetturale raccomanda una collection storica delle residenze, ma l'implementazione conserva ancora soprattutto lo stato corrente in `anagrafica_data.contestoCasa`. Gli spostamenti tra case non sono ancora record storici di primo livello. |
 | Persistenza catalogo YAK | Il catalogo YAK è hard-coded in `catalog.js`; non esiste ancora un mirror Firestore `yak_item_catalog`. Va bene nel breve periodo, ma limita reporting/versioning esterni. |
-| Stato worktree | Il repository contiene molte modifiche e nuovi file. Considerare lo stato corrente come un branch di lavoro attivo prima di commit o deploy. |
+
+Le note architetturali YAK sono ora allineate con l'implementazione corrente: gli interventi scrivono righe YAK, il Patto resta solo documento sorgente, `objectives` viene generato dai progetti personalizzati, i valori YAK sono numerici/null con `isNotApplicable`, e le revisioni delle valutazioni sono conservate tramite metadati `active`/`superseded`.
 
 ## Flusso Operativo Rapido
 

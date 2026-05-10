@@ -310,15 +310,15 @@ Commands run on 2026-05-10:
 
 The lint failures are concentrated in the mobile file browser and breadcrumb components. They do not currently block `next build`, but they should be corrected before a clean CI or formatting pass.
 
-### Product / Documentation Gaps
+### Open Product Gaps
 
 | Area | Gap |
 | --- | --- |
 | `03_2_GRUPPO_LINEE_GUIDA_REGOLAMENTO_GRUPPO.docx` | No dedicated editable route or collection was found. Some rules/commitments appear in Patto and Scheda Casa, but the document is not represented as its own card. |
-| `docs/YAK_FIRESTORE_ARCHITECTURE.md` | The `Current App Alignment` section is partially stale. The code now writes intervention YAK rows, does not write Patto YAK rows, creates `objectives`, and stores numeric YAK values with `isNotApplicable`. |
 | `residencies` | The architecture doc recommends a residency history collection, but the implementation still mainly stores current house context in `anagrafica_data.contestoCasa`. Moves between houses are not first-class historical records yet. |
 | YAK catalog persistence | The YAK catalog is hard-coded in `catalog.js`; there is no Firestore `yak_item_catalog` mirror yet. This is acceptable short term but limits external reporting/versioning. |
-| Worktree state | The repository has many modified and new files. Treat the current state as an active working branch before committing or deploying. |
+
+The YAK architecture notes are now aligned with the current implementation: interventions write YAK rows, Patto stays source-only, `objectives` is generated from personal projects, YAK values are numeric/null with `isNotApplicable`, and evaluation revisions are preserved through `active`/`superseded` metadata.
 
 ## Quick Operator Workflow
 
