@@ -127,7 +127,7 @@ export default function RegistrationCompletionClient({
             Registrazione anagrafica
           </p>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-foreground">
               Completa la registrazione
             </h1>
             <Badge
@@ -141,7 +141,7 @@ export default function RegistrationCompletionClient({
               {isCompleted ? "Registrazione completata" : "Da completare"}
             </Badge>
           </div>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Puoi completare la registrazione di {fullName} senza caricare
             documenti.
           </p>
@@ -177,17 +177,17 @@ export default function RegistrationCompletionClient({
               la firma, se la struttura vuole conservarne una copia operativa.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-lg border border-blue-200 bg-white px-4 py-3">
+              <div className="rounded-lg border border-blue-200 bg-card px-4 py-3">
                 <p className="text-xs uppercase tracking-wide text-blue-600 mb-1">
                   Persona
                 </p>
-                <p className="font-medium text-gray-900">{fullName}</p>
+                <p className="font-medium text-foreground">{fullName}</p>
               </div>
-              <div className="rounded-lg border border-blue-200 bg-white px-4 py-3">
+              <div className="rounded-lg border border-blue-200 bg-card px-4 py-3">
                 <p className="text-xs uppercase tracking-wide text-blue-600 mb-1">
                   Struttura
                 </p>
-                <p className="font-medium text-gray-900">
+                <p className="font-medium text-foreground">
                   {structureName || structureId}
                 </p>
               </div>
@@ -274,7 +274,7 @@ function SummaryRow({ label, value }) {
       <span className="text-xs uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
-      <span className="font-medium text-gray-900">{value || "-"}</span>
+      <span className="font-medium text-foreground">{value || "-"}</span>
     </div>
   );
 }

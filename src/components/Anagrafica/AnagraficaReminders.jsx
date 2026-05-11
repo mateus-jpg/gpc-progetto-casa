@@ -67,10 +67,10 @@ const TYPE_SCHEMES = {
     badge: "bg-teal-50 text-teal-700 border-teal-200",
   },
   default: {
-    accent: "bg-slate-400",
-    dateBg: "bg-slate-50",
-    dateText: "text-slate-600",
-    badge: "bg-slate-50 text-slate-600 border-slate-200",
+    accent: "bg-muted-foreground/50",
+    dateBg: "bg-muted",
+    dateText: "text-muted-foreground",
+    badge: "bg-muted text-muted-foreground border-border",
   },
 };
 
@@ -209,14 +209,14 @@ function ReminderItem({ reminder, structureId, muted = false }) {
 function SkeletonItem() {
   return (
     <div className="flex rounded-md border overflow-hidden mb-2 animate-pulse">
-      <div className="w-1 flex-shrink-0 bg-slate-200" />
-      <div className="flex flex-col items-center justify-center px-3 py-2.5 border-r min-w-[52px] bg-slate-50 gap-1">
-        <div className="h-6 w-6 rounded bg-slate-200" />
-        <div className="h-2 w-8 rounded bg-slate-200" />
+      <div className="w-1 flex-shrink-0 bg-border" />
+      <div className="flex flex-col items-center justify-center px-3 py-2.5 border-r min-w-[52px] bg-muted gap-1">
+        <div className="h-6 w-6 rounded bg-border" />
+        <div className="h-2 w-8 rounded bg-border" />
       </div>
       <div className="flex-1 px-3 py-3 space-y-2">
-        <div className="h-3 w-24 rounded-full bg-slate-200" />
-        <div className="h-2.5 w-3/4 rounded bg-slate-100" />
+        <div className="h-3 w-24 rounded-full bg-border" />
+        <div className="h-2.5 w-3/4 rounded bg-muted" />
       </div>
     </div>
   );

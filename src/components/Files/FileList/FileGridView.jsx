@@ -74,13 +74,13 @@ function ParentFolderItem({ onNavigateUp, parentFolderId }) {
           {/* Icon */}
           <div className="mb-3">
             <div className="relative">
-              <Folder className="w-16 h-16 text-gray-400" />
-              <ArrowUp className="w-6 h-6 text-gray-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              <Folder className="w-16 h-16 text-muted-foreground/60" />
+              <ArrowUp className="w-6 h-6 text-muted-foreground absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
             </div>
           </div>
 
           {/* Name */}
-          <p className="text-sm font-medium text-center text-gray-600">..</p>
+          <p className="text-sm font-medium text-center text-muted-foreground">..</p>
           <p className="text-xs text-muted-foreground mt-1">Parent Folder</p>
         </div>
       </CardContent>
@@ -121,7 +121,7 @@ function getFileIcon(mimeType, className = "w-12 h-12") {
     return <FileCode className={cn(className, "text-blue-500")} />;
   }
 
-  return <FileText className={cn(className, "text-gray-500")} />;
+  return <FileText className={cn(className, "text-muted-foreground")} />;
 }
 
 /**

@@ -1,8 +1,10 @@
 "use client";
 
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { ExternalLink, FileIcon } from "lucide-react";
 import { MaterialReactTable } from "material-react-table";
 import { useParams } from "next/navigation";
+import { useTheme } from "next-themes";
 import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { getAccessFileUrl } from "@/actions/anagrafica/access";
@@ -22,6 +24,32 @@ import {
 export default function AccessInfo({ accesses }) {
   const params = useParams();
   const structureId = params?.structureId;
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
+  const muiTheme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: isDark ? "dark" : "light",
+          background: {
+            default: isDark ? "#22201C" : "#F4EEE2",
+            paper: isDark ? "#2A2722" : "#F8F3EA",
+          },
+          text: {
+            primary: isDark ? "#F1EBE0" : "#2A2420",
+            secondary: isDark ? "#8E7D68" : "#716055",
+          },
+          divider: isDark ? "rgba(255,255,255,0.10)" : "#DAC9B2",
+          primary: {
+            main: isDark ? "#DAC9B2" : "#2A2420",
+            contrastText: isDark ? "#2A2422" : "#F4EEE2",
+          },
+        },
+        shape: { borderRadius: 8 },
+      }),
+    [isDark],
+  );
 
   const data = useMemo(
     () =>
@@ -207,27 +235,29 @@ export default function AccessInfo({ accesses }) {
         </AccordionTrigger>
         <AccordionContent>
           {!data || data.length === 0 ? (
-            <p className="text-gray-500 text-sm px-2">
+            <p className="text-muted-foreground text-sm px-2">
               Nessun accesso registrato per questa anagrafica.
             </p>
           ) : (
-            <MaterialReactTable
-              muiTablePaperProps={{
-                sx: {
-                  borderRadius: 3,
-                  border: "1px solid var(--color-gray-200)",
-                },
-              }}
-              columns={columns}
-              data={data}
-              enableDensityToggle={false}
-              enableColumnActions={false}
-              initialState={{
-                sorting: [{ id: "createdAt", desc: true }],
-              }}
-              muiTableBodyCellProps={{ sx: { fontSize: "0.875rem" } }}
-              muiTableHeadCellProps={{ sx: { fontWeight: "bold" } }}
-            />
+            <ThemeProvider theme={muiTheme}>
+              <MaterialReactTable
+                muiTablePaperProps={{
+                  sx: {
+                    borderRadius: 3,
+                    border: "1px solid var(--color-gray-200)",
+                  },
+                }}
+                columns={columns}
+                data={data}
+                enableDensityToggle={false}
+                enableColumnActions={false}
+                initialState={{
+                  sorting: [{ id: "createdAt", desc: true }],
+                }}
+                muiTableBodyCellProps={{ sx: { fontSize: "0.875rem" } }}
+                muiTableHeadCellProps={{ sx: { fontWeight: "bold" } }}
+              />
+            </ThemeProvider>
           )}
         </AccordionContent>
       </AccordionItem>

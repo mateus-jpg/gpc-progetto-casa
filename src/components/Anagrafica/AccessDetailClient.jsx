@@ -256,7 +256,7 @@ export default function AccessDetailClient({
               {anagraficaName}
             </Link>
           </Button>
-          <h1 className="text-xl font-bold text-gray-900">Dettaglio Accesso</h1>
+          <h1 className="text-xl font-bold text-foreground">Dettaglio Accesso</h1>
           <Badge
             variant="outline"
             className="text-xs text-muted-foreground font-mono hidden sm:inline-flex"

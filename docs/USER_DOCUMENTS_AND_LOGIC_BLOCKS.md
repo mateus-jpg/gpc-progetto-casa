@@ -54,11 +54,11 @@ The repository contains the Progetto Casa source documents in `doc in revisione/
 | `Lavoro e Formazione` | work status, education in origin country, education in Italy, Italian language level | `anagrafica_data.lavoroFormazione` |
 | `Vulnerabilita e Prospettive` | vulnerability flags, intention to stay in Italy, destination country | `anagrafica_data.vulnerabilita` |
 | `Come ci ha conosciuto` | referral source and custom referral text | `anagrafica_data.referral` |
-| `Contesto Casa` | reference operator, assigned room/space, entry date, exit date, journey notes | `anagrafica_data.contestoCasa` |
+| `Contesto Casa` | free main reference, operative figures with role/name/surname, assigned room/space, entry date, exit date, journey notes | `anagrafica_data.contestoCasa` |
 | `Privacy` / registration completion | paper notice collected, signature date, reference, notes, signed file metadata | `anagrafica.privacy` |
 | `Note Operatori` | internal notes visible to authorized operators | `anagrafica.internalNotes` |
 
-Creation checks that a reference operator and entry date are present before saving. The server splits global identity data from structure-specific data and prevents automatic linking if another active record with the same fiscal code exists outside the current structure.
+Creation requires an entry date before saving, but the reference no longer has to be linked to an operator account. Operative figures are stored as free data in `contestoCasa.figureOperative` with role codes `EDU`, `AS`, `OML`, `PSI`, `MED`, `OSS`, `VOL`, `FAM`. The server splits global identity data from structure-specific data and prevents automatic linking if another active record with the same fiscal code exists outside the current structure.
 
 ### 2. Scheda Persona
 
@@ -243,6 +243,7 @@ Evaluation values are normalized into `yak_evaluations` as number `0` to `3`, wi
 - `src/middleware.js` verifies sessions and sends identity in request headers.
 - `requireUser()` reads `x-user-uid` server-side.
 - `verifyUserPermissions()` checks super admin, project access, structure access, or allowed structure intersection.
+- Any operator assigned to the structure can create, modify, and operate on anagrafiche accessible by that structure; admin blocks remain for administrative/configuration areas only.
 - `requireAnagraficaAccess()` checks record existence, soft deletion, allowed structures, and optional structure scope.
 - Firestore client rules allow limited reads of own operator/project/structure context only; all other data operations go through Admin SDK server actions.
 - Storage rules deny direct client read/write; files are accessed through signed URLs from server actions.
@@ -297,26 +298,15 @@ Commands run on 2026-05-10:
 
 ### Biome Errors To Fix
 
-| File | Finding |
+The lint issues previously listed for the mobile file browser and breadcrumbs have been closed: unused `rootFolders` was removed, native buttons now declare `type="button"`, the unused `cn` import was removed, skeleton keys no longer use array indexes, and the breadcrumb effect no longer declares redundant dependencies.
+
+### Residual Product Decisions
+
+| Area | Status |
 | --- | --- |
-| `src/app/(portal)/[structureId]/anagrafica/[id]/files/page.js` | `rootFolders` is declared but unused. |
-| `src/app/(portal)/[structureId]/anagrafica/[id]/files/page.js` | Imports are not sorted and formatter would change the lucide import. |
-| `src/app/(portal)/[structureId]/anagrafica/[id]/files/page.js` | Three native `<button>` elements are missing explicit `type="button"`. |
-| `src/components/Files/FileList/MobileFileList.jsx` | `cn` import is unused. |
-| `src/components/Files/FileList/MobileFileList.jsx` | Two skeleton maps use array index keys. |
-| `src/components/Files/FileList/MobileFileList.jsx` | Formatter would reflow several long JSX lines. |
-| `src/components/Files/Breadcrumbs/FolderBreadcrumbs.jsx` | Imports are not sorted. |
-| `src/components/Files/Breadcrumbs/FolderBreadcrumbs.jsx` | `useEffect` dependency list includes `breadcrumbs`, which Biome flags as unnecessary. |
-
-The lint failures are concentrated in the mobile file browser and breadcrumb components. They do not currently block `next build`, but they should be corrected before a clean CI or formatting pass.
-
-### Open Product Gaps
-
-| Area | Gap |
-| --- | --- |
-| `03_2_GRUPPO_LINEE_GUIDA_REGOLAMENTO_GRUPPO.docx` | No dedicated editable route or collection was found. Some rules/commitments appear in Patto and Scheda Casa, but the document is not represented as its own card. |
-| `residencies` | The architecture doc recommends a residency history collection, but the implementation still mainly stores current house context in `anagrafica_data.contestoCasa`. Moves between houses are not first-class historical records yet. |
-| YAK catalog persistence | The YAK catalog is hard-coded in `catalog.js`; there is no Firestore `yak_item_catalog` mirror yet. This is acceptable short term but limits external reporting/versioning. |
+| `03_2_GRUPPO_LINEE_GUIDA_REGOLAMENTO_GRUPPO.docx` | Rules/commitments remain distributed across Patto, Scheda Casa, Group Activities, and Group Evaluations. A standalone card should be added only if separate signed-regulation management is required. |
+| `residencies` | Changes to `contestoCasa`, including entry/exit dates and operative figures, now enter `anagrafica_history`. A dedicated `residencies` collection remains useful only for advanced move reporting. |
+| YAK catalog persistence | `catalog.js` remains the application source for the catalog. A Firestore `yak_item_catalog` mirror is optional for external integrations/reporting and is not required by runtime behavior. |
 
 The YAK architecture notes are now aligned with the current implementation: interventions write YAK rows, Patto stays source-only, `objectives` is generated from personal projects, YAK values are numeric/null with `isNotApplicable`, and evaluation revisions are preserved through `active`/`superseded` metadata.
 

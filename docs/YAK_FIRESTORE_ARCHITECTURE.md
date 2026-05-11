@@ -216,8 +216,22 @@ Structure-specific data for a person. Current app uses the document ID `{anagraf
     "dataIngresso": "2026-05-03",
     "dataUscita": "",
     "spazioAssegnato": "Stanza 2",
-    "operatoreRiferimentoUid": "operatorUid1",
-    "operatoreRiferimentoNome": "Giulia Bianchi",
+    "operatoreRiferimentoUid": "",
+    "operatoreRiferimentoNome": "Equipe educativa",
+    "figureOperative": [
+      {
+        "id": "figure-1",
+        "ruolo": "EDU",
+        "nome": "Giulia",
+        "cognome": "Bianchi"
+      },
+      {
+        "id": "figure-2",
+        "ruolo": "AS",
+        "nome": "Marco",
+        "cognome": "Rossi"
+      }
+    ],
     "notePercorsoCasa": "Ingresso completato"
   },
   "status": "Active",
@@ -229,6 +243,9 @@ Structure-specific data for a person. Current app uses the document ID `{anagraf
 ### `residencies`
 
 Recommended addition. This makes house membership historical instead of only current-state.
+The app now keeps changes to `contestoCasa`, including entry/exit dates and
+operative figures, in `anagrafica_history`; a dedicated `residencies` collection
+is still the recommended model for reporting moves as first-class records.
 
 ```json
 {

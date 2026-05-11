@@ -478,7 +478,7 @@ export function BirthPlaceMap({ stats, isLoading }) {
                         className={`
                         flex items-center justify-center size-6 rounded-full text-xs font-bold
                         ${index === 0 ? "bg-amber-500/20 text-amber-600 dark:text-amber-400" : ""}
-                        ${index === 1 ? "bg-slate-400/20 text-slate-600 dark:text-slate-300" : ""}
+                        ${index === 1 ? "bg-muted text-muted-foreground dark:text-muted-foreground" : ""}
                         ${index === 2 ? "bg-amber-700/20 text-amber-700 dark:text-amber-500" : ""}
                         ${index > 2 ? "bg-muted text-muted-foreground" : ""}
                       `}

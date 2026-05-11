@@ -1,51 +1,52 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { getStructureOperatorOptions } from "@/actions/admin/structure";
+import { Plus, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CARE_TEAM_ROLE_OPTIONS } from "@/data/careTeamRoles";
 
-export default function HouseContextSection({
-  formData,
-  handleChange,
-  structureId,
-}) {
-  const [operatorOptions, setOperatorOptions] = useState([]);
-  const [loading, setLoading] = useState(true);
+function createEmptyCareTeamFigure() {
+  return {
+    id:
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `figure-${Date.now()}`,
+    ruolo: "",
+    nome: "",
+    cognome: "",
+  };
+}
 
-  useEffect(() => {
-    const loadOperators = async () => {
-      if (!structureId) {
-        setOperatorOptions([]);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const options = await getStructureOperatorOptions(structureId);
-        setOperatorOptions(options || []);
-      } catch (error) {
-        console.error("Errore caricamento operatori struttura:", error);
-        setOperatorOptions([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadOperators();
-  }, [structureId]);
-
+export default function HouseContextSection({ formData, handleChange }) {
   const data = formData.contestoCasa || {};
-  const selectedOperatorDescription = useMemo(() => {
-    const selected = operatorOptions.find(
-      (option) => option.uid === data.operatoreRiferimentoUid,
+  const figures = Array.isArray(data.figureOperative)
+    ? data.figureOperative
+    : [];
+
+  const updateFigure = (index, field, value) => {
+    const nextFigures = figures.map((figure, currentIndex) =>
+      currentIndex === index ? { ...figure, [field]: value } : figure,
     );
-    return selected?.email || "";
-  }, [data.operatoreRiferimentoUid, operatorOptions]);
+    handleChange("contestoCasa", "figureOperative", nextFigures);
+  };
+
+  const addFigure = () => {
+    handleChange("contestoCasa", "figureOperative", [
+      ...figures,
+      createEmptyCareTeamFigure(),
+    ]);
+  };
+
+  const removeFigure = (index) => {
+    handleChange(
+      "contestoCasa",
+      "figureOperative",
+      figures.filter((_, currentIndex) => currentIndex !== index),
+    );
+  };
 
   return (
     <Card>
@@ -56,51 +57,24 @@ export default function HouseContextSection({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="contestoCasa-operatore">
-              Operatore di riferimento
+              Riferimento principale
             </Label>
-            <div className="relative">
-              <select
-                className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
-                id="contestoCasa-operatore"
-                value={data.operatoreRiferimentoUid || ""}
-                onChange={(event) => {
-                  const nextUid = event.target.value;
-                  const nextOperator = operatorOptions.find(
-                    (option) => option.uid === nextUid,
-                  );
-
-                  handleChange(
-                    "contestoCasa",
-                    "operatoreRiferimentoUid",
-                    nextUid,
-                  );
-                  handleChange(
-                    "contestoCasa",
-                    "operatoreRiferimentoNome",
-                    nextOperator?.displayName || "",
-                  );
-                }}
-              >
-                <option value="">Seleziona un operatore</option>
-                {operatorOptions.map((option) => (
-                  <option key={option.uid} value={option.uid}>
-                    {option.displayName}
-                  </option>
-                ))}
-              </select>
-              {loading ? (
-                <Loader2 className="absolute top-3 right-3 h-4 w-4 animate-spin text-muted-foreground" />
-              ) : null}
-            </div>
-            {selectedOperatorDescription ? (
-              <p className="text-xs text-muted-foreground">
-                {selectedOperatorDescription}
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                La lista arriva dagli operatori abilitati a questa casa.
-              </p>
-            )}
+            <Input
+              id="contestoCasa-operatore"
+              placeholder="Nome e cognome, equipe o ente"
+              value={data.operatoreRiferimentoNome || ""}
+              onChange={(event) => {
+                handleChange(
+                  "contestoCasa",
+                  "operatoreRiferimentoNome",
+                  event.target.value,
+                );
+                handleChange("contestoCasa", "operatoreRiferimentoUid", "");
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              Campo libero: non deve corrispondere a un account operatore.
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -119,6 +93,98 @@ export default function HouseContextSection({
               }
             />
           </div>
+        </div>
+
+        <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold">
+                Figure che operano sulla persona
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Registra ruolo, nome e cognome anche quando la figura non ha un
+                account in piattaforma.
+              </p>
+            </div>
+            <Button type="button" variant="outline" onClick={addFigure}>
+              <Plus className="h-4 w-4" />
+              Aggiungi figura
+            </Button>
+          </div>
+
+          {figures.length === 0 ? (
+            <p className="rounded-md border border-dashed bg-background px-3 py-4 text-sm text-muted-foreground">
+              Nessuna figura registrata.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {figures.map((figure, index) => (
+                <div
+                  className="grid gap-3 rounded-md border bg-background p-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+                  key={figure.id || `${figure.ruolo}-${index}`}
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor={`contestoCasa-figura-ruolo-${index}`}>
+                      Ruolo
+                    </Label>
+                    <select
+                      className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm"
+                      id={`contestoCasa-figura-ruolo-${index}`}
+                      value={figure.ruolo || ""}
+                      onChange={(event) =>
+                        updateFigure(index, "ruolo", event.target.value)
+                      }
+                    >
+                      <option value="">Seleziona ruolo</option>
+                      {CARE_TEAM_ROLE_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.value} - {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor={`contestoCasa-figura-nome-${index}`}>
+                      Nome
+                    </Label>
+                    <Input
+                      id={`contestoCasa-figura-nome-${index}`}
+                      value={figure.nome || ""}
+                      onChange={(event) =>
+                        updateFigure(index, "nome", event.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor={`contestoCasa-figura-cognome-${index}`}>
+                      Cognome
+                    </Label>
+                    <Input
+                      id={`contestoCasa-figura-cognome-${index}`}
+                      value={figure.cognome || ""}
+                      onChange={(event) =>
+                        updateFigure(index, "cognome", event.target.value)
+                      }
+                    />
+                  </div>
+
+                  <div className="flex items-end">
+                    <Button
+                      aria-label="Rimuovi figura"
+                      className="w-full md:w-10"
+                      type="button"
+                      variant="ghost"
+                      onClick={() => removeFigure(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">

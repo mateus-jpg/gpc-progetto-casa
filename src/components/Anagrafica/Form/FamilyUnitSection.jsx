@@ -47,20 +47,20 @@ export default function FamilyUnitSection({ formData, handleChange }) {
                   value={data.nucleo}
                   className="space-y-2"
                 >
-                  <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                  <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
                     <RadioGroupItem value="singolo" id="singolo" />
                     <Label htmlFor="singolo" className="cursor-pointer flex-1">
                       <div className="font-medium">Persona singola</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground">
                         Vivo da solo/a
                       </div>
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50">
+                  <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
                     <RadioGroupItem value="famiglia" id="famiglia" />
                     <Label htmlFor="famiglia" className="cursor-pointer flex-1">
                       <div className="font-medium">Nucleo familiare</div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-sm text-muted-foreground">
                         Faccio parte di una famiglia
                       </div>
                     </Label>
@@ -72,7 +72,7 @@ export default function FamilyUnitSection({ formData, handleChange }) {
 
           {/* Conditional fields shown when nucleo === 'famiglia' */}
           {data.nucleo === "famiglia" && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg border-l-4 border-green-500">
+            <div className="mt-4 p-4 bg-muted/50 rounded-lg border-l-4 border-green-500">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <ConfiguredField
                   sectionId={sectionId}

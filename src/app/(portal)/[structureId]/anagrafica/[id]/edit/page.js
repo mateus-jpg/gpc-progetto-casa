@@ -28,7 +28,7 @@ function LoadingState() {
     <div className="min-h-screen flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-        <p className="text-gray-600">Caricamento dati in corso...</p>
+        <p className="text-muted-foreground">Caricamento dati in corso...</p>
       </div>
     </div>
   );
@@ -41,7 +41,7 @@ function ErrorState({ error, structureId }) {
       <Card className="max-w-md">
         <CardContent className="pt-6">
           <h2 className="text-xl font-semibold text-red-600 mb-2">Errore</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <p className="text-muted-foreground mb-4">{error}</p>
           <Button asChild variant="outline">
             <Link href={`/${structureId}/anagrafica`}>
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -59,10 +59,10 @@ function PageHeader({ formData, structureId, id }) {
   return (
     <div className="mb-6 flex items-center justify-between">
       <div className="flex flex-col">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Modifica Scheda Anagrafica
         </h1>
-        <p className="px-4 text-gray-600 text-xl border rounded-md">
+        <p className="px-4 text-muted-foreground text-xl border rounded-md">
           {formData.anagrafica.nome} {formData.anagrafica.cognome}
         </p>
       </div>

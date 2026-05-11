@@ -8,6 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getCareTeamRoleLabel } from "@/data/careTeamRoles";
 import { sanitizeVulnerabilities } from "@/utils/vulnerability";
 
 export default async function Otherinfo({ anagrafica }) {
@@ -183,8 +184,11 @@ export default async function Otherinfo({ anagrafica }) {
             </CardHeader>
             <CardContent className="space-y-4">
               <DataRow
-                label="Operatore di riferimento"
+                label="Riferimento principale"
                 value={anagrafica.contestoCasa?.operatoreRiferimentoNome}
+              />
+              <CareTeamRows
+                figures={anagrafica.contestoCasa?.figureOperative}
               />
               <DataRow
                 label="Data ingresso"
@@ -204,14 +208,14 @@ export default async function Otherinfo({ anagrafica }) {
               />
             </CardContent>
           </Card>
-          <div className="lg:col-span-2 gap-2  border-2 rounded-md bg-gray-100 pt-4 pb-2 ">
+          <div className="lg:col-span-2 gap-2  border-2 rounded-md bg-muted pt-4 pb-2 ">
             <CardHeader className="">
               <CardTitle className="text-sm items-center flex gap-2">
                 <FileSliders className="w-4 h-4" />
                 Informazioni di Registrazione
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 flex text-sm space-x-4 text-gray-600">
+            <CardContent className="space-y-2 flex text-sm space-x-4 text-muted-foreground">
               <DataRow
                 label="Registrato da"
                 value={anagrafica.registeredBy}
@@ -296,7 +300,45 @@ function DataRow({ label, value, small = false }) {
       <span className="text-sm text-muted-foreground flex items-center gap-2">
         {label}
       </span>
-      <span className="text-gray-900  font-medium ">{value || "-"}</span>
+      <span className="text-foreground  font-medium ">{value || "-"}</span>
+    </div>
+  );
+}
+
+function CareTeamRows({ figures }) {
+  const normalizedFigures = Array.isArray(figures)
+    ? figures.filter(
+        (figure) => figure?.ruolo || figure?.nome || figure?.cognome,
+      )
+    : [];
+
+  if (normalizedFigures.length === 0) {
+    return <DataRow label="Figure operative" value="-" />;
+  }
+
+  return (
+    <div className="flex flex-col text-base">
+      <span className="text-sm text-muted-foreground flex items-center gap-2">
+        Figure operative
+      </span>
+      <div className="space-y-1">
+        {normalizedFigures.map((figure, index) => {
+          const roleLabel = getCareTeamRoleLabel(figure.ruolo);
+          const fullName = [figure.nome, figure.cognome]
+            .filter(Boolean)
+            .join(" ");
+          const value = [roleLabel, fullName].filter(Boolean).join(" - ");
+
+          return (
+            <span
+              className="block text-foreground font-medium"
+              key={figure.id || `${figure.ruolo}-${index}`}
+            >
+              {value || "-"}
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }

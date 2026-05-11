@@ -54,11 +54,11 @@ Il repository contiene i documenti sorgente di Progetto Casa in `doc in revision
 | `Lavoro e Formazione` | situazione lavorativa, titolo di studio nel paese di origine, titolo di studio in Italia, livello italiano | `anagrafica_data.lavoroFormazione` |
 | `Vulnerabilità e Prospettive` | vulnerabilità selezionate, intenzione di fermarsi in Italia, paese di destinazione | `anagrafica_data.vulnerabilita` |
 | `Come ci ha conosciuto` | fonte referral e testo referral personalizzato | `anagrafica_data.referral` |
-| `Contesto Casa` | operatore di riferimento, stanza/spazio assegnato, data ingresso, data uscita, note percorso | `anagrafica_data.contestoCasa` |
+| `Contesto Casa` | riferimento principale libero, figure operative con ruolo/nome/cognome, stanza/spazio assegnato, data ingresso, data uscita, note percorso | `anagrafica_data.contestoCasa` |
 | `Privacy` / completamento registrazione | informativa cartacea raccolta, data firma, riferimento, note, metadati file firmato | `anagrafica.privacy` |
 | `Note Operatori` | note interne visibili agli operatori autorizzati | `anagrafica.internalNotes` |
 
-La creazione verifica che siano presenti operatore di riferimento e data di ingresso prima del salvataggio. Il server separa i dati identitari globali dai dati specifici della struttura e impedisce il collegamento automatico se esiste già una scheda attiva con lo stesso codice fiscale fuori dalla struttura corrente.
+La creazione richiede la data di ingresso prima del salvataggio, ma non richiede più che il riferimento sia collegato a un account operatore. Le figure operative sono registrate come dati liberi in `contestoCasa.figureOperative` con codici ruolo `EDU`, `AS`, `OML`, `PSI`, `MED`, `OSS`, `VOL`, `FAM`. Il server separa i dati identitari globali dai dati specifici della struttura e impedisce il collegamento automatico se esiste già una scheda attiva con lo stesso codice fiscale fuori dalla struttura corrente.
 
 ### 2. Scheda Persona
 
@@ -243,6 +243,7 @@ I valori di valutazione sono normalizzati in `yak_evaluations` come numero da `0
 - `src/middleware.js` verifica le sessioni e invia l'identità negli header della richiesta.
 - `requireUser()` legge `x-user-uid` lato server.
 - `verifyUserPermissions()` controlla super admin, accesso progetto, accesso struttura o intersezione con strutture consentite.
+- Ogni operatore presente nella struttura può creare, modificare e operare sulle anagrafiche accessibili dalla struttura; i blocchi admin restano per le sole aree amministrative/configurative.
 - `requireAnagraficaAccess()` verifica esistenza scheda, soft delete, strutture consentite e scope struttura opzionale.
 - Le regole client Firestore permettono solo letture limitate del contesto operatore/progetto/struttura; tutte le altre operazioni dati passano da server actions con Admin SDK.
 - Le regole Storage negano lettura/scrittura client diretta; i file sono accessibili tramite URL firmati generati da server actions.
@@ -297,26 +298,15 @@ Comandi eseguiti il 2026-05-10:
 
 ### Errori Biome Da Correggere
 
-| File | Riscontro |
+Le anomalie lint precedentemente riportate nel browser file mobile e nei breadcrumb sono state chiuse: `rootFolders` inutilizzato è stato rimosso, i bottoni nativi hanno `type="button"`, l'import inutilizzato `cn` è stato eliminato, le chiavi skeleton non usano più l'indice array e l'effetto breadcrumb non dichiara più dipendenze ridondanti.
+
+### Decisioni Di Prodotto Residue
+
+| Area | Stato |
 | --- | --- |
-| `src/app/(portal)/[structureId]/anagrafica/[id]/files/page.js` | `rootFolders` è dichiarata ma non usata. |
-| `src/app/(portal)/[structureId]/anagrafica/[id]/files/page.js` | Gli import non sono ordinati e il formatter modificherebbe l'import da lucide. |
-| `src/app/(portal)/[structureId]/anagrafica/[id]/files/page.js` | Tre elementi nativi `<button>` non hanno `type="button"` esplicito. |
-| `src/components/Files/FileList/MobileFileList.jsx` | L'import `cn` non è usato. |
-| `src/components/Files/FileList/MobileFileList.jsx` | Due map per skeleton usano l'indice array come key. |
-| `src/components/Files/FileList/MobileFileList.jsx` | Il formatter riorganizzerebbe diverse righe JSX lunghe. |
-| `src/components/Files/Breadcrumbs/FolderBreadcrumbs.jsx` | Gli import non sono ordinati. |
-| `src/components/Files/Breadcrumbs/FolderBreadcrumbs.jsx` | La lista dipendenze di `useEffect` include `breadcrumbs`, che Biome segnala come non necessaria. |
-
-I fallimenti lint sono concentrati nel browser file mobile e nei breadcrumb. Attualmente non bloccano `next build`, ma vanno corretti prima di una CI pulita o di un passaggio di formattazione.
-
-### Gap Di Prodotto Ancora Aperti
-
-| Area | Gap |
-| --- | --- |
-| `03_2_GRUPPO_LINEE_GUIDA_REGOLAMENTO_GRUPPO.docx` | Non è stata trovata una route o collection modificabile dedicata. Alcune regole/impegni compaiono in Patto e Scheda Casa, ma il documento non è rappresentato come scheda autonoma. |
-| `residencies` | Il documento architetturale raccomanda una collection storica delle residenze, ma l'implementazione conserva ancora soprattutto lo stato corrente in `anagrafica_data.contestoCasa`. Gli spostamenti tra case non sono ancora record storici di primo livello. |
-| Persistenza catalogo YAK | Il catalogo YAK è hard-coded in `catalog.js`; non esiste ancora un mirror Firestore `yak_item_catalog`. Va bene nel breve periodo, ma limita reporting/versioning esterni. |
+| `03_2_GRUPPO_LINEE_GUIDA_REGOLAMENTO_GRUPPO.docx` | Le regole/impegni restano distribuiti tra Patto, Scheda Casa, Attività di Gruppo e Valutazioni di Gruppo. Una scheda autonoma va aggiunta solo se serve gestione separata del regolamento firmato. |
+| `residencies` | Le modifiche a `contestoCasa`, incluse date ingresso/uscita e figure operative, ora entrano nello storico `anagrafica_history`. Una collection `residencies` dedicata resta utile solo per reporting avanzato sugli spostamenti. |
+| Persistenza catalogo YAK | `catalog.js` resta la fonte applicativa del catalogo. Un mirror Firestore `yak_item_catalog` è opzionale per integrazioni/report esterni, non richiesto dal runtime. |
 
 Le note architetturali YAK sono ora allineate con l'implementazione corrente: gli interventi scrivono righe YAK, il Patto resta solo documento sorgente, `objectives` viene generato dai progetti personalizzati, i valori YAK sono numerici/null con `isNotApplicable`, e le revisioni delle valutazioni sono conservate tramite metadati `active`/`superseded`.
 

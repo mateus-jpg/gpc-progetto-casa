@@ -48,6 +48,7 @@ export function createEmptyAnagraficaFormState({
     contestoCasa: {
       dataIngresso: "",
       dataUscita: "",
+      figureOperative: [],
       notePercorsoCasa: "",
       operatoreRiferimentoNome: "",
       operatoreRiferimentoUid: "",

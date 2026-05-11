@@ -74,6 +74,7 @@ const FIELD_LABELS = {
   referralAltro: "Referral (Altro)",
   operatoreRiferimentoNome: "Operatore di riferimento",
   operatoreRiferimentoUid: "UID operatore di riferimento",
+  figureOperative: "Figure operative",
   dataIngresso: "Data ingresso",
   dataUscita: "Data uscita",
   spazioAssegnato: "Stanza o spazio assegnato",

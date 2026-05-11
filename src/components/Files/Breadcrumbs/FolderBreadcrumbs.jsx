@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight, Home } from "lucide-react";
-import { useRef, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -15,7 +15,7 @@ export default function FolderBreadcrumbs({ breadcrumbs = [], onNavigate }) {
     if (scrollRef.current) {
       scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
     }
-  }, [breadcrumbs]);
+  });
 
   return (
     <div
@@ -30,8 +30,8 @@ export default function FolderBreadcrumbs({ breadcrumbs = [], onNavigate }) {
         className={cn(
           "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors",
           breadcrumbs.length === 0
-            ? "text-stone-900 bg-stone-100"
-            : "text-stone-500 active:bg-stone-100",
+            ? "text-foreground bg-muted"
+            : "text-muted-foreground active:bg-muted",
         )}
       >
         <Home className="w-3.5 h-3.5" />
@@ -42,15 +42,15 @@ export default function FolderBreadcrumbs({ breadcrumbs = [], onNavigate }) {
         const isLast = index === breadcrumbs.length - 1;
         return (
           <div key={crumb.id} className="flex items-center flex-shrink-0">
-            <ChevronRight className="w-3.5 h-3.5 text-stone-300 mx-0.5 flex-shrink-0" />
+            <ChevronRight className="w-3.5 h-3.5 text-border mx-0.5 flex-shrink-0" />
             <button
               type="button"
               onClick={() => !isLast && onNavigate(crumb.id)}
               className={cn(
                 "px-2 py-1 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors",
                 isLast
-                  ? "text-stone-900 bg-stone-100 cursor-default"
-                  : "text-stone-500 active:bg-stone-100",
+                  ? "text-foreground bg-muted cursor-default"
+                  : "text-muted-foreground active:bg-muted",
               )}
             >
               {crumb.nome}

@@ -1,21 +1,16 @@
 "use client";
 
-import {
-  ArrowLeft,
-  FolderPlus,
-  RefreshCw,
-  Upload,
-} from "lucide-react";
+import { ArrowLeft, FolderPlus, RefreshCw, Upload } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useSWRConfig } from "swr";
 import { getFileUrl } from "@/actions/files/files";
+import FolderBreadcrumbs from "@/components/Files/Breadcrumbs/FolderBreadcrumbs";
 import CreateFolderDialog from "@/components/Files/Dialogs/CreateFolderDialog";
 import MoveItemDialog from "@/components/Files/Dialogs/MoveItemDialog";
 import UploadFilesDialog from "@/components/Files/Dialogs/UploadFilesDialog";
 import MobileFileList from "@/components/Files/FileList/MobileFileList";
-import FolderBreadcrumbs from "@/components/Files/Breadcrumbs/FolderBreadcrumbs";
 import { FileDownloadContext } from "@/hooks/useFileDownload";
 import { useFileOperations } from "@/hooks/useFileOperations";
 import { useFolderOperations } from "@/hooks/useFolderOperations";
@@ -39,7 +34,6 @@ export default function FilesPage() {
 
   const {
     folders,
-    rootFolders,
     isLoading: isLoadingTree,
     mutate: mutateTree,
   } = useFolderTree(anagraficaId, structureId);
@@ -153,11 +147,11 @@ export default function FilesPage() {
 
   return (
     <div
-      className="flex flex-col bg-stone-50 -mt-4 md:-mt-6"
+      className="flex flex-col bg-muted/50 -mt-4 md:-mt-6"
       style={{ height: "calc(100dvh - var(--header-height))" }}
     >
       {/* Sticky header */}
-      <header className="flex-shrink-0 bg-slate-900 text-white px-4 py-3 flex items-center justify-between">
+      <header className="flex-shrink-0 bg-primary text-primary-foreground px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href={`/${structureId}/anagrafica/${anagraficaId}`}>
             <span className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 active:bg-white/20 cursor-pointer">
@@ -168,12 +162,13 @@ export default function FilesPage() {
             <h1 className="text-sm font-semibold leading-tight tracking-tight">
               File &amp; Documenti
             </h1>
-            <p className="text-[11px] text-slate-400 leading-tight">
+            <p className="text-[11px] text-primary-foreground/60 leading-tight">
               Gestione documenti
             </p>
           </div>
         </div>
         <button
+          type="button"
           onClick={handleRefresh}
           disabled={isLoading}
           aria-label="Aggiorna"
@@ -184,7 +179,7 @@ export default function FilesPage() {
       </header>
 
       {/* Breadcrumbs */}
-      <div className="flex-shrink-0 bg-white border-b border-stone-200">
+      <div className="flex-shrink-0 bg-card border-b border-border">
         <FolderBreadcrumbs
           breadcrumbs={breadcrumbs}
           onNavigate={handleFolderSelect}
@@ -218,13 +213,14 @@ export default function FilesPage() {
 
       {/* Sticky bottom action bar */}
       <div
-        className="flex-shrink-0 bg-white border-t border-stone-200 px-4 pt-3 flex gap-3"
+        className="flex-shrink-0 bg-card border-t border-border px-4 pt-3 flex gap-3"
         style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
       >
         <button
+          type="button"
           onClick={() => setCreateFolderDialogOpen(true)}
           disabled={folderOps.isProcessing}
-          className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-stone-200 text-sm font-medium text-stone-700 active:bg-stone-50 disabled:opacity-40 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl border-2 border-border text-sm font-medium text-foreground active:bg-muted/50 disabled:opacity-40 transition-colors"
         >
           <FolderPlus className="w-4 h-4" />
           Nuova Cartella
@@ -237,7 +233,10 @@ export default function FilesPage() {
           folders={folders}
           onSuccess={() => mutateContents()}
           trigger={
-            <button className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl bg-orange-600 text-white text-sm font-semibold active:bg-orange-700 transition-colors shadow-sm shadow-orange-200">
+            <button
+              className="flex-1 flex items-center justify-center gap-2 h-12 rounded-xl bg-orange-600 text-white text-sm font-semibold active:bg-orange-700 transition-colors shadow-sm shadow-orange-200"
+              type="button"
+            >
               <Upload className="w-4 h-4" />
               Carica File
             </button>

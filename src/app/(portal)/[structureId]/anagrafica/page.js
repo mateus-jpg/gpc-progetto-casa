@@ -1,30 +1,18 @@
-import { requireUser, verifyStructureAdmin } from "@/utils/server-auth";
+import { requireUser, verifyUserPermissions } from "@/utils/server-auth";
 import { AnagraficaTable } from "./AnagraficaTable";
 import { getData } from "./data";
 
 export default async function AnagraficaPage({ params }) {
   const { structureId } = await params;
+  const { userUid } = await requireUser();
+  await verifyUserPermissions({ userUid, structureId });
 
   const rows = await getData(structureId);
   const data = JSON.parse(rows);
 
-  const { userUid } = await requireUser();
-
-  let isAdmin = false;
-  try {
-    await verifyStructureAdmin({ userUid, structureId });
-    isAdmin = true;
-  } catch (err) {
-    console.error("[ANAGRAFICA_PAGE] isAdmin check failed:", err);
-  }
-
   return (
     <div className="p-4">
-      <AnagraficaTable
-        rows={data}
-        structureId={structureId}
-        isAdmin={isAdmin}
-      />
+      <AnagraficaTable rows={data} structureId={structureId} canOperate />
     </div>
   );
 }

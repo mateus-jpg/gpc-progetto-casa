@@ -7,6 +7,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { format } from "date-fns";
 import {
   Download,
@@ -17,6 +18,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { MaterialReactTable } from "material-react-table";
+import { useTheme } from "next-themes";
 import { useMemo, useState } from "react";
 import FolderActionsMenu from "@/components/Files/FolderActionsMenu";
 import { Button } from "@/components/ui/button";
@@ -108,7 +110,7 @@ function FileNameCell({ row, onFolderOpen, draggedItem }) {
       {isFolder ? (
         <Folder className="h-4 w-4 text-blue-500 flex-shrink-0" />
       ) : (
-        <File className="h-4 w-4 text-gray-500 flex-shrink-0" />
+        <File className="h-4 w-4 text-muted-foreground flex-shrink-0" />
       )}
       <span className="truncate" title={row.original.nome}>
         {row.original.nome}
@@ -146,6 +148,32 @@ export default function FileListTable({
   isLoading = false,
 }) {
   const [draggedItem, setDraggedItem] = useState(null);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
+  const muiTheme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: isDark ? "dark" : "light",
+          background: {
+            default: isDark ? "#22201C" : "#F4EEE2",
+            paper: isDark ? "#2A2722" : "#F8F3EA",
+          },
+          text: {
+            primary: isDark ? "#F1EBE0" : "#2A2420",
+            secondary: isDark ? "#8E7D68" : "#716055",
+          },
+          divider: isDark ? "rgba(255,255,255,0.10)" : "#DAC9B2",
+          primary: {
+            main: isDark ? "#DAC9B2" : "#2A2420",
+            contrastText: isDark ? "#2A2422" : "#F4EEE2",
+          },
+        },
+        shape: { borderRadius: 8 },
+      }),
+    [isDark],
+  );
 
   // Combine folders and files into single dataset
   const data = useMemo(() => {
@@ -307,6 +335,7 @@ export default function FileListTable({
       onDragEnd={handleDragEnd}
       onDragStart={handleDragStart}
     >
+      <ThemeProvider theme={muiTheme}>
       <MaterialReactTable
         columns={columns}
         data={data}
@@ -357,6 +386,7 @@ export default function FileListTable({
           },
         }}
       />
+      </ThemeProvider>
     </DndContext>
   );
 }

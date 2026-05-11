@@ -79,7 +79,7 @@ export default function AccessServicesForm({
       defaultValue={accessTypes[0]?.value}
       className="flex-1 flex flex-col overflow-hidden"
     >
-      <div className="mb-4 overflow-x-auto rounded-md bg-gray-100 border-b px-1">
+      <div className="mb-4 overflow-x-auto rounded-md bg-muted border-b px-1">
         <TabsList className="flex w-max space-x-2 overflow-x-auto">
           {accessTypes.map((type) => {
             const isValid = isTypeValid(type.value);
@@ -207,7 +207,7 @@ export default function AccessServicesForm({
                     ...newFiles,
                   ]);
                 }}
-                className="border border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50"
+                className="border border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:bg-muted/50"
               >
                 <p className="text-muted-foreground">
                   Clicca o trascina file qui per caricarli

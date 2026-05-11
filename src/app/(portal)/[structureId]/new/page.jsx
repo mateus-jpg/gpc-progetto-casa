@@ -33,10 +33,6 @@ export default function AnagraficaForm({ params }) {
 
     try {
       if (!user || !user.uid) throw new Error("Utente non autenticato");
-      if (!formData.contestoCasa?.operatoreRiferimentoUid) {
-        toast.error("Seleziona l'operatore di riferimento della casa");
-        return;
-      }
       if (!formData.contestoCasa?.dataIngresso) {
         toast.error("Inserisci la data di ingresso nella casa");
         return;
@@ -79,12 +75,12 @@ export default function AnagraficaForm({ params }) {
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-blue-600 mb-2">
               Registrazione
             </p>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               Nuovo Accesso Casa
             </h1>
-            <p className="text-gray-600">
-              Inserisci la persona che entra in casa e assegna l'operatore di
-              riferimento.
+            <p className="text-muted-foreground">
+              Inserisci la persona che entra in casa e registra il contesto
+              operativo.
             </p>
           </div>
 

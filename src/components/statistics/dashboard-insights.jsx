@@ -491,7 +491,7 @@ function FlowChip({ children, tone = "default" }) {
   const toneClass =
     tone === "target"
       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-      : "border-slate-200 bg-slate-50 text-slate-700";
+      : "border-border bg-muted text-muted-foreground";
 
   return (
     <span

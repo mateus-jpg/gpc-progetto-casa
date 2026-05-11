@@ -48,7 +48,7 @@ export function NavMain({ structureId, items }) {
                   isActive={pathname === itemUrl}
                   variant={pathname === itemUrl ? "outline" : "default"}
                   className={clsx(
-                    "disabled:font-bold  disabled:text-black disabled:text",
+                    "disabled:font-bold  disabled:text-foreground disabled:text",
                     item.className,
                   )}
                 >

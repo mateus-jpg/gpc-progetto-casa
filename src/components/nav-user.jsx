@@ -31,10 +31,10 @@ import { useLogout } from "@/hooks/use-logout";
 function SkeletonUser() {
   return (
     <div className="flex pb-2 pl-2 items-center space-x-4">
-      <Skeleton className="h-7 w-7 rounded-lg bg-gray-700" />
+      <Skeleton className="h-7 w-7 rounded-lg bg-muted-foreground/40" />
       <div className="space-y-2">
-        <Skeleton className="h-2 w-[150px] bg-gray-700" />
-        <Skeleton className="h-2 w-[100px] bg-gray-600" />
+        <Skeleton className="h-2 w-[150px] bg-muted-foreground/40" />
+        <Skeleton className="h-2 w-[100px] bg-muted-foreground/30" />
       </div>
     </div>
   );

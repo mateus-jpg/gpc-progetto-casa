@@ -12,6 +12,7 @@ import {
 } from "@react-pdf/renderer";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
+import { getCareTeamRoleLabel } from "@/data/careTeamRoles";
 
 // Simple HTML stripper safe for non-DOM context (PDF renderer)
 function stripHtmlSimple(html) {
@@ -314,6 +315,7 @@ const FIELD_LABELS = {
   referralAltro: "Referral (Altro)",
   operatoreRiferimentoNome: "Operatore di riferimento",
   operatoreRiferimentoUid: "UID operatore di riferimento",
+  figureOperative: "Figure operative",
   dataIngresso: "Data ingresso",
   dataUscita: "Data uscita",
   spazioAssegnato: "Stanza o spazio assegnato",
@@ -345,6 +347,30 @@ function formatFieldValue(value) {
     return JSON.stringify(value);
   }
   return String(value) || "-";
+}
+
+function formatCareTeamFigure(figure) {
+  if (!figure || typeof figure !== "object") return "";
+
+  const roleLabel = getCareTeamRoleLabel(figure.ruolo);
+  const fullName = [figure.nome, figure.cognome].filter(Boolean).join(" ");
+
+  return [roleLabel, fullName].filter(Boolean).join(" - ");
+}
+
+function getCareTeamFigureLines(figures) {
+  if (!Array.isArray(figures)) return [];
+
+  return figures
+    .map((figure) => ({
+      key:
+        figure?.id ||
+        [figure?.ruolo, figure?.nome, figure?.cognome]
+          .filter(Boolean)
+          .join("-"),
+      label: formatCareTeamFigure(figure),
+    }))
+    .filter((figure) => figure.label);
 }
 
 function isEmptyValue(val) {
@@ -397,6 +423,7 @@ function AnagraficaDataSection({ anagrafica }) {
   const vuln = anagrafica.vulnerabilita || {};
   const ref = anagrafica.referral || {};
   const contestoCasa = anagrafica.contestoCasa || {};
+  const figureOperative = getCareTeamFigureLines(contestoCasa.figureOperative);
 
   const isFamiglia = nucleo.nucleo === "famiglia";
 
@@ -528,10 +555,22 @@ function AnagraficaDataSection({ anagrafica }) {
       <Text style={styles.subSectionTitle}>Contesto Casa</Text>
       <View style={styles.fieldGrid}>
         <View style={styles.fieldItem}>
-          <Text style={styles.fieldLabel}>Operatore di riferimento</Text>
+          <Text style={styles.fieldLabel}>Riferimento principale</Text>
           <Text style={styles.fieldValue}>
             {contestoCasa.operatoreRiferimentoNome || "-"}
           </Text>
+        </View>
+        <View style={[styles.fieldItem, { width: "98%" }]}>
+          <Text style={styles.fieldLabel}>Figure operative</Text>
+          {figureOperative.length > 0 ? (
+            figureOperative.map((figure) => (
+              <Text key={figure.key} style={styles.fieldValue}>
+                {figure.label}
+              </Text>
+            ))
+          ) : (
+            <Text style={styles.fieldValue}>-</Text>
+          )}
         </View>
         <View style={styles.fieldItem}>
           <Text style={styles.fieldLabel}>Data ingresso</Text>

@@ -29,7 +29,7 @@ export function NavStructures({ items, structureId }) {
                   : "default"
               }
               className={clsx(
-                "disabled:font-bold  disabled:text-black disabled:text",
+                "disabled:font-bold  disabled:text-foreground disabled:text",
                 item.className,
               )}
             >

@@ -60,11 +60,11 @@ export default function OperatorNotesCard({
   const hasNotes = typeof notes === "string" && notes.trim().length > 0;
 
   return (
-    <Card className="mt-4 border-slate-200 shadow-sm">
+    <Card className="mt-4 border-border shadow-sm">
       <CardHeader className="flex flex-row items-start justify-between gap-4">
         <div className="space-y-1">
           <CardTitle className="flex items-center gap-2">
-            <NotebookPen className="h-5 w-5 text-slate-700" />
+            <NotebookPen className="h-5 w-5 text-foreground" />
             Note Operatori
           </CardTitle>
           <p className="text-sm text-muted-foreground">
@@ -129,8 +129,8 @@ export default function OperatorNotesCard({
       </CardHeader>
 
       <CardContent>
-        <div className="rounded-md border bg-slate-50/70 px-4 py-3">
-          <p className="whitespace-pre-wrap text-sm text-slate-700">
+        <div className="rounded-md border bg-muted/70 px-4 py-3">
+          <p className="whitespace-pre-wrap text-sm text-foreground">
             {hasNotes ? notes : "Nessuna nota operativa presente."}
           </p>
         </div>

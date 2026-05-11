@@ -84,8 +84,8 @@ function DataRow({ label, value }) {
 
   return (
     <div className="grid grid-cols-3 gap-2">
-      <span className="text-gray-500">{label}:</span>
-      <span className="col-span-2 font-medium text-gray-800">{value}</span>
+      <span className="text-muted-foreground">{label}:</span>
+      <span className="col-span-2 font-medium text-foreground">{value}</span>
     </div>
   );
 }
@@ -99,7 +99,7 @@ function SharedSection({ data, field }) {
 
   return (
     <div className="space-y-1">
-      <h4 className="font-medium text-gray-900 border-b pb-1 mb-2">
+      <h4 className="font-medium text-foreground border-b pb-1 mb-2">
         {SHAREABLE_STRUCTURE_DATA_LABELS[field] || field}
       </h4>
       {rows.map(([label, value]) => (
@@ -128,8 +128,8 @@ export default function OtherStructuresInfo({ otherStructuresData }) {
             <AccordionItem key={data.id} value={data.id}>
               <AccordionTrigger className="hover:no-underline">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <Building2 className="w-4 h-4 text-gray-500" />
-                  <span className="font-semibold text-gray-700">
+                  <Building2 className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-semibold text-foreground">
                     Struttura: {data.structureName || data.structureId}
                   </span>
                   <Badge variant="secondary" className="text-xs font-normal">

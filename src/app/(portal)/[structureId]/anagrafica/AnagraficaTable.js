@@ -1,5 +1,6 @@
 "use client";
 
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { download, generateCsv, mkConfig } from "export-to-csv";
 import {
   FileDown,
@@ -14,6 +15,7 @@ import {
 import { MaterialReactTable } from "material-react-table";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { useMemo, useState } from "react";
 import DeleteAnagraficaDialog from "@/components/Anagrafica/DeleteAnagraficaDialog";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { getCareTeamRoleLabel } from "@/data/careTeamRoles";
 import { hasEffectiveVulnerabilities } from "@/utils/vulnerability";
 import { getExportData } from "./data";
 
@@ -51,6 +54,21 @@ const formatTimestamp = (ts, includeTime = false) => {
 const formatArrayField = (arr) => {
   if (!Array.isArray(arr) || arr.length === 0) return "";
   return arr.join("; ");
+};
+
+const formatCareTeamFigures = (figures) => {
+  if (!Array.isArray(figures) || figures.length === 0) return "";
+
+  return figures
+    .map((figure) => {
+      const roleLabel = getCareTeamRoleLabel(figure?.ruolo);
+      const fullName = [figure?.nome, figure?.cognome]
+        .filter(Boolean)
+        .join(" ");
+      return [roleLabel, fullName].filter(Boolean).join(" - ");
+    })
+    .filter(Boolean)
+    .join("; ");
 };
 
 const transformDataForExport = (data) => {
@@ -81,6 +99,12 @@ const transformDataForExport = (data) => {
     intenzioneItalia: row.vulnerabilita?.intenzioneItalia || "",
     paeseDestinazione: row.vulnerabilita?.paeseDestinazione || "",
     referral: row.referral?.referral || "",
+    riferimentoPrincipale: row.contestoCasa?.operatoreRiferimentoNome || "",
+    figureOperative: formatCareTeamFigures(row.contestoCasa?.figureOperative),
+    dataIngressoCasa: row.contestoCasa?.dataIngresso || "",
+    dataUscitaCasa: row.contestoCasa?.dataUscita || "",
+    spazioAssegnato: row.contestoCasa?.spazioAssegnato || "",
+    notePercorsoCasa: row.contestoCasa?.notePercorsoCasa || "",
     note: row.internalNotes || row.notes || "",
     createdAt: formatTimestamp(row.createdAt, true),
     updatedAt: formatTimestamp(row.updatedAt, true),
@@ -315,7 +339,7 @@ function MobileExportMenu({
   );
 }
 
-function MobileAnagraficaCard({ isAdmin, onDelete, row, structureId }) {
+function MobileAnagraficaCard({ canOperate, onDelete, row, structureId }) {
   const fullName =
     `${row.anagrafica?.nome || ""} ${row.anagrafica?.cognome || ""}`.trim() ||
     "Scheda senza nome";
@@ -368,7 +392,7 @@ function MobileAnagraficaCard({ isAdmin, onDelete, row, structureId }) {
                   Visualizza
                 </Link>
               </DropdownMenuItem>
-              {isAdmin && (
+              {canOperate && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -427,12 +451,38 @@ function MobileAnagraficaCard({ isAdmin, onDelete, row, structureId }) {
   );
 }
 
-export function AnagraficaTable({ rows, structureId, isAdmin = false }) {
+export function AnagraficaTable({ rows, structureId, canOperate = false }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [mobilePage, setMobilePage] = useState(1);
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
+  const muiTheme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: isDark ? "dark" : "light",
+          background: {
+            default: isDark ? "#22201C" : "#F4EEE2",
+            paper: isDark ? "#2A2722" : "#F8F3EA",
+          },
+          text: {
+            primary: isDark ? "#F1EBE0" : "#2A2420",
+            secondary: isDark ? "#8E7D68" : "#716055",
+          },
+          divider: isDark ? "rgba(255,255,255,0.10)" : "#DAC9B2",
+          primary: {
+            main: isDark ? "#DAC9B2" : "#2A2420",
+            contrastText: isDark ? "#2A2422" : "#F4EEE2",
+          },
+        },
+        shape: { borderRadius: 8 },
+      }),
+    [isDark],
+  );
 
   const columns = useMemo(() => columnsDef, []);
 
@@ -522,7 +572,7 @@ export function AnagraficaTable({ rows, structureId, isAdmin = false }) {
             </Card>
           : visibleMobileRows.map((row) => (
               <MobileAnagraficaCard
-                isAdmin={isAdmin}
+                canOperate={canOperate}
                 key={row.id}
                 onDelete={setDeleteTarget}
                 row={row}
@@ -542,142 +592,152 @@ export function AnagraficaTable({ rows, structureId, isAdmin = false }) {
       </div>
 
       <div className="hidden md:block">
-        <MaterialReactTable
-          columns={columns}
-          data={filteredRows}
-          displayColumnDefOptions={<> </>}
-          enableColumnFilters
-          enableColumnOrdering
-          enableGlobalFilter={false}
-          enableRowActions
-          initialState={{
-            pagination: { pageIndex: 0, pageSize: 25 },
-            density: "compact",
-            columnVisibility: {
-              id: false,
-              "vulnerabilita.intenzioneItalia": false,
-              "lavoroFormazione.titoloDiStudioOrigine": false,
-              "lavoroFormazione.titoloDiStudioItalia": false,
-              createdAt: false,
-              updatedAt: false,
-            },
-          }}
-          muiTableBodyRowProps={({ row }) => ({
-            onClick: () =>
-              router.push(`/${structureId}/anagrafica/${row.original.id}`),
-            sx: {
-              cursor: "pointer",
-              backgroundColor:
-                row.index % 2 !== 0 ? "rgba(0, 0, 0, 0.035)" : "inherit",
-            },
-          })}
-          muiTablePaperProps={{
-            sx: { borderRadius: 3, border: "1px solid gray-300" },
-          }}
-          renderRowActions={({ row }) => (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  className="h-8 w-8"
-                  onClick={(event) => event.stopPropagation()}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link href={`/${structureId}/anagrafica/${row.original.id}`}>
-                    <View className="mr-2 h-4 w-4" />
-                    Visualizza
-                  </Link>
-                </DropdownMenuItem>
-                {isAdmin && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onClick={() =>
-                        setDeleteTarget({
-                          id: row.original.id,
-                          nome: row.original.anagrafica?.nome || "",
-                          cognome: row.original.anagrafica?.cognome || "",
-                          canBeAccessedBy: row.original.canBeAccessedBy || [],
-                        })
-                      }
+        <ThemeProvider theme={muiTheme}>
+          <MaterialReactTable
+            columns={columns}
+            data={filteredRows}
+            displayColumnDefOptions={<> </>}
+            enableColumnFilters
+            enableColumnOrdering
+            enableGlobalFilter={false}
+            enableRowActions
+            initialState={{
+              pagination: { pageIndex: 0, pageSize: 25 },
+              density: "compact",
+              columnVisibility: {
+                id: false,
+                "vulnerabilita.intenzioneItalia": false,
+                "lavoroFormazione.titoloDiStudioOrigine": false,
+                "lavoroFormazione.titoloDiStudioItalia": false,
+                createdAt: false,
+                updatedAt: false,
+              },
+            }}
+            muiTableBodyRowProps={({ row }) => ({
+              onClick: () =>
+                router.push(`/${structureId}/anagrafica/${row.original.id}`),
+              sx: {
+                cursor: "pointer",
+                backgroundColor:
+                  row.index % 2 !== 0
+                    ? isDark
+                      ? "rgba(255,255,255,0.03)"
+                      : "rgba(0,0,0,0.025)"
+                    : "inherit",
+              },
+            })}
+            muiTablePaperProps={{
+              sx: { borderRadius: 3 },
+            }}
+            renderRowActions={({ row }) => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    className="h-8 w-8"
+                    onClick={(event) => event.stopPropagation()}
+                    size="icon"
+                    variant="ghost"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href={`/${structureId}/anagrafica/${row.original.id}`}
                     >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Elimina
-                    </DropdownMenuItem>
-                  </>
+                      <View className="mr-2 h-4 w-4" />
+                      Visualizza
+                    </Link>
+                  </DropdownMenuItem>
+                  {canOperate && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() =>
+                          setDeleteTarget({
+                            id: row.original.id,
+                            nome: row.original.anagrafica?.nome || "",
+                            cognome: row.original.anagrafica?.cognome || "",
+                            canBeAccessedBy: row.original.canBeAccessedBy || [],
+                          })
+                        }
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Elimina
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+            renderTopToolbarCustomActions={({ table }) => (
+              <div className="flex flex-wrap items-center gap-2">
+                {isExporting && (
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                 )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-          renderTopToolbarCustomActions={({ table }) => (
-            <div className="flex flex-wrap items-center gap-2">
-              {isExporting && (
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              )}
-              <Button
-                className="flex items-center gap-1"
-                disabled={isExporting}
-                onClick={handleExportData}
-                size="sm"
-                variant="outline"
-              >
-                <FileDown className="h-4 w-4" />
-                Esporta Tutto
-              </Button>
-              <Button
-                className="flex items-center gap-1"
-                disabled={
-                  isExporting ||
-                  table.getPrePaginationRowModel().rows.length === 0
-                }
-                onClick={() =>
-                  handleExportRows(table.getPrePaginationRowModel().rows)
-                }
-                size="sm"
-                variant="outline"
-              >
-                <FileDown className="h-4 w-4" />
-                Esporta Tutte le Righe
-              </Button>
-              <Button
-                className="flex items-center gap-1"
-                disabled={isExporting || table.getRowModel().rows.length === 0}
-                onClick={() => handleExportRows(table.getRowModel().rows)}
-                size="sm"
-                variant="outline"
-              >
-                <FileDown className="h-4 w-4" />
-                Esporta Pagina
-              </Button>
-              <Button
-                className="flex items-center gap-1"
-                disabled={
-                  isExporting ||
-                  (!table.getIsSomeRowsSelected() &&
-                    !table.getIsAllRowsSelected())
-                }
-                onClick={() =>
-                  handleExportRows(table.getSelectedRowModel().rows)
-                }
-                size="sm"
-                variant="outline"
-              >
-                <FileDown className="h-4 w-4" />
-                Esporta Selezionate
-              </Button>
-            </div>
-          )}
-          state={{
-            isLoading: !rows,
-            showAlertBanner: filteredRows.length === 0,
-          }}
-        />
+                <Button
+                  className="flex items-center gap-1"
+                  disabled={isExporting}
+                  onClick={handleExportData}
+                  size="sm"
+                  variant="outline"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Esporta Tutto
+                </Button>
+                <Button
+                  className="flex items-center gap-1"
+                  disabled={
+                    isExporting ||
+                    table.getPrePaginationRowModel().rows.length === 0
+                  }
+                  onClick={() =>
+                    handleExportRows(table.getPrePaginationRowModel().rows)
+                  }
+                  size="sm"
+                  variant="outline"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Esporta Tutte le Righe
+                </Button>
+                <Button
+                  className="flex items-center gap-1"
+                  disabled={
+                    isExporting || table.getRowModel().rows.length === 0
+                  }
+                  onClick={() => handleExportRows(table.getRowModel().rows)}
+                  size="sm"
+                  variant="outline"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Esporta Pagina
+                </Button>
+                <Button
+                  className="flex items-center gap-1"
+                  disabled={
+                    isExporting ||
+                    (!table.getIsSomeRowsSelected() &&
+                      !table.getIsAllRowsSelected())
+                  }
+                  onClick={() =>
+                    handleExportRows(table.getSelectedRowModel().rows)
+                  }
+                  size="sm"
+                  variant="outline"
+                >
+                  <FileDown className="h-4 w-4" />
+                  Esporta Selezionate
+                </Button>
+              </div>
+            )}
+            state={{
+              isLoading: !rows,
+              showAlertBanner: filteredRows.length === 0,
+            }}
+          />
+        </ThemeProvider>
       </div>
 
       <DeleteAnagraficaDialog

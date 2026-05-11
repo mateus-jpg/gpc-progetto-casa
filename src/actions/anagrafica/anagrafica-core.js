@@ -1,3 +1,4 @@
+import { CARE_TEAM_ROLE_CODES } from "@/data/careTeamRoles";
 import admin from "@/lib/firebase/firebaseAdmin";
 import {
   buildSharedStructurePayload,
@@ -121,6 +122,44 @@ export function sanitizeInternalNotes(value) {
   return value.trim().slice(0, 5000);
 }
 
+const CARE_TEAM_ROLE_SET = new Set(CARE_TEAM_ROLE_CODES);
+
+function sanitizeCareTeamFigures(figures = []) {
+  if (!Array.isArray(figures)) {
+    return [];
+  }
+
+  return figures
+    .slice(0, 20)
+    .map((figure, index) => {
+      if (!figure || typeof figure !== "object") {
+        return null;
+      }
+
+      const ruolo =
+        typeof figure.ruolo === "string" && CARE_TEAM_ROLE_SET.has(figure.ruolo)
+          ? figure.ruolo
+          : "";
+      const nome =
+        typeof figure.nome === "string" ? figure.nome.trim().slice(0, 100) : "";
+      const cognome =
+        typeof figure.cognome === "string"
+          ? figure.cognome.trim().slice(0, 100)
+          : "";
+      const id =
+        typeof figure.id === "string" && figure.id.trim()
+          ? figure.id.trim().slice(0, 100)
+          : `figure-${index + 1}`;
+
+      if (!ruolo && !nome && !cognome) {
+        return null;
+      }
+
+      return { id, ruolo, nome, cognome };
+    })
+    .filter(Boolean);
+}
+
 function sanitizeContestoCasa(contestoCasa = {}) {
   if (!contestoCasa || typeof contestoCasa !== "object") {
     return {};
@@ -135,6 +174,7 @@ function sanitizeContestoCasa(contestoCasa = {}) {
       typeof contestoCasa.dataUscita === "string"
         ? contestoCasa.dataUscita.trim()
         : "",
+    figureOperative: sanitizeCareTeamFigures(contestoCasa.figureOperative),
     notePercorsoCasa: sanitizeInternalNotes(contestoCasa.notePercorsoCasa),
     operatoreRiferimentoNome:
       typeof contestoCasa.operatoreRiferimentoNome === "string"

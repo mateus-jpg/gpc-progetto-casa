@@ -13,6 +13,7 @@ export const ANAGRAFICA_GROUPS = [
   "lavoroFormazione",
   "vulnerabilita",
   "referral",
+  "contestoCasa",
 ];
 
 // Personal/identity fields stored flat in the 'anagrafica' Firestore collection
