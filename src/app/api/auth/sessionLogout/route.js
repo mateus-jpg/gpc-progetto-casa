@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/firebase/firebaseAdmin";
+import { isSecureRequest } from "@/utils/auth-cookies";
 import { logger } from "@/utils/logger";
 
 export async function POST(req) {
@@ -13,7 +14,7 @@ export async function POST(req) {
     // Always clear the cookie, regardless of whether we can verify/revoke it
     response.cookies.set(cookieName, "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isSecureRequest(req),
       sameSite: "lax",
       maxAge: 0,
       path: "/",
@@ -47,7 +48,7 @@ export async function POST(req) {
     );
     response.cookies.set(process.env.SESSION_COOKIE_NAME || "session", "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isSecureRequest(req),
       sameSite: "lax",
       maxAge: 0,
       path: "/",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/firebase/firebaseAdmin";
 import { validateSessionLogin } from "@/schemas/auth";
+import { isSecureRequest } from "@/utils/auth-cookies";
 import { logger } from "@/utils/logger";
 import { rateLimiters } from "@/utils/rateLimit";
 
@@ -45,7 +46,7 @@ export async function POST(req) {
     // Set new secure cookie with proper attributes
     response.cookies.set(cookieName, sessionCookie, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: isSecureRequest(req),
       sameSite: "lax",
       maxAge: expiresIn / 1000,
       path: "/",

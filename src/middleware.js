@@ -18,13 +18,41 @@ function getConfiguredOrigin() {
   }
 }
 
+function getForwardedOrigin(req) {
+  const host = (
+    req.headers.get("x-forwarded-host") ||
+    req.headers.get("host") ||
+    ""
+  )
+    .split(",")[0]
+    .trim();
+
+  if (!host) return null;
+
+  const protocol =
+    req.headers
+      .get("x-forwarded-proto")
+      ?.split(",")[0]
+      ?.trim()
+      ?.toLowerCase() ||
+    req.nextUrl.protocol.replace(":", "") ||
+    "http";
+
+  try {
+    return new URL(`${protocol}://${host}`).origin;
+  } catch {
+    return null;
+  }
+}
+
 function getVerifyUrl(req) {
   const configuredOrigin = getConfiguredOrigin();
   if (configuredOrigin) {
     return new URL("/api/auth/verify", configuredOrigin);
   }
 
-  return new URL("/api/auth/verify", req.nextUrl.origin);
+  const forwardedOrigin = getForwardedOrigin(req);
+  return new URL("/api/auth/verify", forwardedOrigin || req.nextUrl.origin);
 }
 
 function createResponseWithUserHeaders(req, user) {

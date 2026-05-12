@@ -14,8 +14,10 @@ export default function Page() {
             <Logo size={36} />
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-semibold tracking-tight">Quadro Sociale</h1>
-            
+            <h1 className="text-2xl font-semibold tracking-tight">Quadro sociale</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Progetto Abitare
+            </p>
           </div>
         </div>
 
