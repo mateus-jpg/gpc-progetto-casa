@@ -118,7 +118,7 @@ export function PortalSideBar({ ...props }) {
             >
               <Link href="#">
                 <Logo className="!size-8" size={89} />
-                <span className="text-base font-semibold">GPC - OBT</span>
+                <span className="text-base font-semibold">Quadro Sociale</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

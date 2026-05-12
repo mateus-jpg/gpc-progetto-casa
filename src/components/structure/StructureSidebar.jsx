@@ -199,7 +199,7 @@ export function StructureSidebar({ ...props }) {
             >
               <a href="/dashboard">
                 <Logo className="!size-8" size={89} />
-                <span className="text-base font-semibold">GPC - OBT</span>
+                <span className="text-base font-semibold">Quadro Sociale</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>

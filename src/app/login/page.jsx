@@ -14,10 +14,8 @@ export default function Page() {
             <Logo size={36} />
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-semibold tracking-tight">GPC</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Gestione Presa in Carico
-            </p>
+            <h1 className="text-2xl font-semibold tracking-tight">Quadro Sociale</h1>
+            
           </div>
         </div>
 
@@ -29,7 +27,7 @@ export default function Page() {
 
       {/* Footer + bottom safe area */}
       <p className="pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 text-center text-xs text-muted-foreground">
-        OneBridge — Portale Operatori
+        Progetto Casa — Portale Operatori
       </p>
     </div>
   );
